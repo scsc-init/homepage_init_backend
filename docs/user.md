@@ -1,5 +1,5 @@
 # 회원 관련 DB, API 명세서
-**최신개정일:** 2025-05-01
+**최신개정일:** 2025-05-02
 
 # DB 구조
 
@@ -8,41 +8,38 @@
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
-    name TEXT,
-    phone TEXT UNIQUE,
-    student_id TEXT UNIQUE,
-    role TEXT DEFAULT 'user' NOT NULL CHECK (role IN ('user', 'admin', 'moderator')),
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL UNIQUE,
+    student_id TEXT NOT NULL UNIQUE,
+    role TEXT DEFAULT 'user' NOT NULL CHECK (role IN ('user', 'executive', 'president')),
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'banned')),
 
-    login_provider TEXT NOT NULL,
-    oauth_id TEXT NOT NULL,
-    last_login DATETIME,
-
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    major_id INTEGER,
+    major_id INTEGER NOT NULL,
     FOREIGN KEY (major_id) REFERENCES majors(id) ON DELETE RESTRICT
+
+    last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 );
 ```
 - 2025-04-29 spec을 SQLite 형식으로 수정함(By GPT)
 - VARCHAR -> TEXT, ENUM -> CHECK
+- 모든 column을 NOT NULL로 변경
 - ON UPDATE는 없어서 TRIGGER로 처리
+- PK인 id에 관해서는 추후 논의
+- phone, student_id를 정수로 처리하는게 나을지 논의. 문자열이면 형식을 어떻게 할지 정해야 함.
 ```sql
 CREATE TRIGGER update_users_updated_at
 AFTER UPDATE ON users
 FOR EACH ROW
 WHEN 
+    OLD.email IS NOT NEW.email OR
     OLD.name IS NOT NEW.name OR
     OLD.phone IS NOT NEW.phone OR
-    OLD.major_id IS NOT NEW.major OR
     OLD.student_id IS NOT NEW.student_id OR
     OLD.role IS NOT NEW.role OR
     OLD.status IS NOT NEW.status OR
-    OLD.last_login IS NOT NEW.last_login OR
-    OLD.login_provider IS NOT NEW.login_provider OR
-    OLD.oauth_id IS NOT NEW.oauth_id OR
-    OLD.email IS NOT NEW.email
+    OLD.major_id IS NOT NEW.major OR
 BEGIN
     UPDATE users
     SET updated_at = CURRENT_TIMESTAMP
@@ -83,20 +80,23 @@ CREATE TABLE majors (
 - Update, Delete User 기능을 admin이 할 수 있게 해야 하는지
 - 로그인 유지 방식을 어떻게 처리할지: `from starlette.middleware.sessions import SessionMiddleware`을 사용할까?
 - Get My Info에서 정보를 얼마나 가려야 할지
-- OAuth2 리다이렉트를 프엔에서 할지, 백엔에서 할지
 
 ---
 
 ## 🔹 Create User (회원 등록)
 
 - **Method**: `POST`  
-- **URL**: `/api/users`
+- **URL**: `/api/users/create`
 - **설명**: 회원 최초 등록. 
 - **Request Body**:
 ```json
 {
-  "login_provider": "google",
-  "oauth_code": "google-oauth-code-123",
+  "frontend_secret": "some-secret-code",
+  "email": "user@example.com",
+  "name": "홍길동",
+  "phone": "01012345678",
+  "student_id": "202312345",
+  "major_id": 1
 }
 ```
 - **Response**:
@@ -105,13 +105,11 @@ CREATE TABLE majors (
   "id": 1,
   "email": "user@example.com",
   "name": "홍길동",
-  "phone": null,
-  "student_id": null,
+  "phone": "01012345678",
+  "student_id": "202312345",
   "role": "user",
   "status": "pending",
-  "login_provider": "google",
-  "oauth_id": "google-oauth-id-123",
-  "major_id": null,
+  "major_id": 1,
   "last_login": "2025-04-01T12:00:00",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00"
@@ -120,14 +118,16 @@ CREATE TABLE majors (
 - **Status Codes**:
   - `201 Created`
   - `400 Bad Request` (오류, 제약 위반 등)
+  - `401 Unauthorized` (인증 실패 시)
+  - `409 Conflict` (UNIQUE 필드 중복)
 
 ---
 
 ## 🔹 Get My Info (내 정보 조회)
 
 - **Method**: `GET`  
-- **URL**: `/api/users/me`  
-- **설명**: 로그인한 사용자의 정보 조회  
+- **URL**: `/api/users/profile`  
+- **설명**: 로그인한 사용자의 정보 조회
 - **Response**:
 ```json
 {
@@ -138,8 +138,6 @@ CREATE TABLE majors (
   "student_id": "20230123",
   "role": "user",
   "status": "active",
-  "login_provider": "google",
-  "oauth_id": "google-oauth-id-123",
   "major_id": 1,
   "last_login": "2025-05-01T09:00:00",
   "created_at": "2025-04-01T12:00:00",
@@ -154,15 +152,15 @@ CREATE TABLE majors (
 
 ## 🔹 Update My Info (내 정보 수정)
 
-- **Method**: `PUT`  
-- **URL**: `/api/users/me`  
+- **Method**: `POST`  
+- **URL**: `/api/users/update`  
 - **설명**: 로그인한 사용자의 정보 수정  
 - **Request Body**:
 ```json
 {
   "name": "김철수",
-  "phone": "010-5678-1234", // optional
-  "student_id": "20231234", // optional
+  "phone": "010-5678-1234", 
+  "student_id": "20231234", 
   "major_id": 2
 }
 ```
@@ -176,14 +174,14 @@ CREATE TABLE majors (
   - `200 OK`
   - `400 Bad Request`
   - `401 Unauthorized`
-  - `409 Conflict` (중복 phone 또는 student_id)
+  - `409 Conflict` (UNIQUE 필드 중복)
 
 ---
 
 ## 🔹 Delete My Account (회원 탈퇴)
 
-- **Method**: `DELETE`  
-- **URL**: `/api/users/me`  
+- **Method**: `POST`  
+- **URL**: `/api/users/delete`  
 - **설명**: 로그인한 사용자의 계정을 삭제함  
 - **Response**:
 ```json
@@ -195,19 +193,19 @@ CREATE TABLE majors (
   - `200 OK`
   - `401 Unauthorized`
   - `403 Forbidden` (관리자 계정은 자기 삭제 불가 등)
-  - `409 Conflict` (외래 키 제약 등)
 
 ---
 
-## 🔹 Login (OAuth2 로그인)
+## 🔹 Login
 
 - **Method**: `POST`  
-- **URL**: `/api/users/oauth-login`  
-- **설명**: OAuth2 로그인
+- **URL**: `/api/users/login`  
+- **설명**: 로그인
 - **Request Body**:
 ```json
 {
-  "oauth_code": "google-oauth-code-123",
+  "frontend_secret": "some-secret-code",
+  "email": "user@example.com",
 }
 ```
 - **Response**:
@@ -216,17 +214,17 @@ null
 ```
 - **Status Codes**:
   - `200 OK` (기존 유저 로그인)
-  - `401 Unauthorized` (유효하지 않은 OAuth 정보)
+  - `401 Unauthorized` (유효하지 않은 이메일 정보)
 
 > ⚙ `last_login`은 이 시점에서 자동 업데이트.  
 
 ---
 
-## 🔹 Change User Status (관리자 기능)
+## 🔹 Change User (관리자 기능)
 
-- **Method**: `PATCH`  
-- **URL**: `/api/users/:id/status`  
-- **설명**: 관리자가 회원 상태(`status`) 변경  
+- **Method**: `POST`  
+- **URL**: `/api/executive/users/:id`  
+- **설명**: 관리자(executive)가 회원 정보 변경  
 - **Request Body**:
 ```json
 {
@@ -242,7 +240,8 @@ null
 - **Status Codes**:
   - `200 OK`
   - `400 Bad Request` (유효하지 않은 상태값)
-  - `403 Forbidden` (관리자 권한 없음)
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (관리자(executive) 권한 없음)
   - `404 Not Found`
 
 ---
@@ -258,7 +257,7 @@ null
 ## 🔹 Create Major
 
 - **Method**: `POST`
-- **URL**: `/api/majors`
+- **URL**: `/api/executive/majors`
 - **Request Body** (JSON):
 ```json
 {
@@ -269,12 +268,16 @@ null
 - **Response**:
 ```json
 {
-  "id": 1
+  "id": 1,
+  "college": "공과대학",
+  "major_name": "컴퓨터공학과"
 }
 ```
 - **Status Codes**:
   - `201 Created`: 생성 성공
   - `400 Bad Request`: 필수 필드 누락 또는 중복
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (관리자(executive) 권한 없음)
 
 ---
 
@@ -322,8 +325,8 @@ null
 
 ## 🔹 Update Major
 
-- **Method**: `PUT`
-- **URL**: `/api/majors/:id`
+- **Method**: `POST`
+- **URL**: `/api/executive/majors/update/:id`
 - **Request Body** (JSON):
 ```json
 {
@@ -340,14 +343,16 @@ null
 - **Status Codes**:
   - `200 OK`: 성공
   - `400 Bad Request`: 필드 누락 또는 유효성 오류
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (관리자(executive) 권한 없음)
   - `404 Not Found`: 해당 ID 없음
 
 ---
 
 ## 🔹 Delete Major
 
-- **Method**: `DELETE`
-- **URL**: `/api/majors/:id`
+- **Method**: `POST`
+- **URL**: `/api/executive/majors/delete/:id`
 - **Response**:
 ```json
 {
@@ -357,6 +362,8 @@ null
 - **Status Codes**:
   - `200 OK`: 삭제 성공
   - `400 Bad Request`: 외래 키 제약으로 삭제 불가 (`ON DELETE RESTRICT`)
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (관리자(executive) 권한 없음)
   - `404 Not Found`: 해당 ID 없음
 
 ---
