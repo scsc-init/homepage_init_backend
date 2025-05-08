@@ -1,11 +1,11 @@
 # 회원 관련 DB, API 명세서
-**최신개정일:** 2025-05-02
+**최신개정일:** 2025-05-08
 
 # DB 구조
 
 ## 회원 DB
 ```sql
-CREATE TABLE users (
+CREATE TABLE user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
@@ -14,12 +14,12 @@ CREATE TABLE users (
     role TEXT DEFAULT 'user' NOT NULL CHECK (role IN ('user', 'executive', 'president')),
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'banned')),
 
-    major_id INTEGER NOT NULL,
-    FOREIGN KEY (major_id) REFERENCES majors(id) ON DELETE RESTRICT
-
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    major_id INTEGER NOT NULL,
+    FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT
 );
 ```
 - 2025-04-29 spec을 SQLite 형식으로 수정함(By GPT)
@@ -29,19 +29,19 @@ CREATE TABLE users (
 - PK인 id에 관해서는 추후 논의
 - phone, student_id를 정수로 처리하는게 나을지 논의. 문자열이면 형식을 어떻게 할지 정해야 함.
 ```sql
-CREATE TRIGGER update_users_updated_at
-AFTER UPDATE ON users
+CREATE TRIGGER update_user_updated_at
+AFTER UPDATE ON user
 FOR EACH ROW
 WHEN 
-    OLD.email IS NOT NEW.email OR
-    OLD.name IS NOT NEW.name OR
-    OLD.phone IS NOT NEW.phone OR
-    OLD.student_id IS NOT NEW.student_id OR
-    OLD.role IS NOT NEW.role OR
-    OLD.status IS NOT NEW.status OR
-    OLD.major_id IS NOT NEW.major OR
+    OLD.email != NEW.email OR
+    OLD.name != NEW.name OR
+    OLD.phone != NEW.phone OR
+    OLD.student_id != NEW.student_id OR
+    OLD.role != NEW.role OR
+    OLD.status != NEW.status OR
+    OLD.major_id != NEW.major_id
 BEGIN
-    UPDATE users
+    UPDATE user
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
@@ -57,10 +57,10 @@ END;
 - 학부, 대학원 모두 서울대이면 대학원 기준으로 할지
 
 ```sql
-CREATE TABLE majors (
+CREATE TABLE major (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     college TEXT NOT NULL,
-    major_name TEXT,
+    major_name TEXT NOT NULL,
     UNIQUE (college, major_name)
 );
 ```
@@ -70,13 +70,13 @@ CREATE TABLE majors (
 
 # API 구조
 
-## 회원 관련 API(/api/users)
+## 회원 관련 API(/api/user)
 
 - 회원 정보를 관리하는 API
-- 회원은 이메일, 이름, 전화번호, 전공 등을 포함하고 있으며, 전공은 `majors` 테이블과 외래 키 관계로 연결됨
+- 회원은 이메일, 이름, 전화번호, 전공 등을 포함하고 있으며, 전공은 `major` 테이블과 외래 키 관계로 연결됨
 
 논의점
-- Get All Users 기능, Get User by ID 기능을 만들어야 하는지, 만든다면 권한이나 정보 보호는 어떻게 해야 하는지
+- Get All User 기능, Get User by ID 기능을 만들어야 하는지, 만든다면 권한이나 정보 보호는 어떻게 해야 하는지
 - Update, Delete User 기능을 admin이 할 수 있게 해야 하는지
 - 로그인 유지 방식을 어떻게 처리할지: `from starlette.middleware.sessions import SessionMiddleware`을 사용할까?
 - Get My Info에서 정보를 얼마나 가려야 할지
@@ -86,7 +86,7 @@ CREATE TABLE majors (
 ## 🔹 Create User (회원 등록)
 
 - **Method**: `POST`  
-- **URL**: `/api/users/create`
+- **URL**: `/api/user/create`
 - **설명**: 회원 최초 등록. 
 - **Request Body**:
 ```json
@@ -126,7 +126,7 @@ CREATE TABLE majors (
 ## 🔹 Get My Info (내 정보 조회)
 
 - **Method**: `GET`  
-- **URL**: `/api/users/profile`  
+- **URL**: `/api/user/profile`  
 - **설명**: 로그인한 사용자의 정보 조회
 - **Response**:
 ```json
@@ -153,7 +153,7 @@ CREATE TABLE majors (
 ## 🔹 Update My Info (내 정보 수정)
 
 - **Method**: `POST`  
-- **URL**: `/api/users/update`  
+- **URL**: `/api/user/update`  
 - **설명**: 로그인한 사용자의 정보 수정  
 - **Request Body**:
 ```json
@@ -181,7 +181,7 @@ CREATE TABLE majors (
 ## 🔹 Delete My Account (회원 탈퇴)
 
 - **Method**: `POST`  
-- **URL**: `/api/users/delete`  
+- **URL**: `/api/user/delete`  
 - **설명**: 로그인한 사용자의 계정을 삭제함  
 - **Response**:
 ```json
@@ -199,7 +199,7 @@ CREATE TABLE majors (
 ## 🔹 Login
 
 - **Method**: `POST`  
-- **URL**: `/api/users/login`  
+- **URL**: `/api/user/login`  
 - **설명**: 로그인
 - **Request Body**:
 ```json
@@ -223,7 +223,7 @@ null
 ## 🔹 Change User (관리자 기능)
 
 - **Method**: `POST`  
-- **URL**: `/api/executive/users/:id`  
+- **URL**: `/api/executive/user/:id`  
 - **설명**: 관리자(executive)가 회원 정보 변경  
 - **Request Body**:
 ```json
@@ -247,7 +247,7 @@ null
 ---
 
 
-## 전공 관련 API(/api/majors)
+## 전공 관련 API(/api/major)
 
 - 전공 정보를 관리하는 API
 - 전공은 단과대학(college)과 전공 이름(major_name)으로 구성
@@ -257,7 +257,7 @@ null
 ## 🔹 Create Major
 
 - **Method**: `POST`
-- **URL**: `/api/executive/majors`
+- **URL**: `/api/executive/major/create`
 - **Request Body** (JSON):
 ```json
 {
@@ -275,9 +275,10 @@ null
 ```
 - **Status Codes**:
   - `201 Created`: 생성 성공
-  - `400 Bad Request`: 필수 필드 누락 또는 중복
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
+  - `409 Conflict` (중복 데이터 삽입)
+  - `422 Unprocessable Content`: 필수 필드 누락
 
 ---
 
@@ -308,7 +309,7 @@ null
 ## 🔹 Get Major by ID
 
 - **Method**: `GET`
-- **URL**: `/api/majors/:id`
+- **URL**: `/api/major/:id`
 - **Response**:
 ```json
 {
@@ -326,7 +327,7 @@ null
 ## 🔹 Update Major
 
 - **Method**: `POST`
-- **URL**: `/api/executive/majors/update/:id`
+- **URL**: `/api/executive/major/update/:id`
 - **Request Body** (JSON):
 ```json
 {
@@ -342,17 +343,18 @@ null
 ```
 - **Status Codes**:
   - `200 OK`: 성공
-  - `400 Bad Request`: 필드 누락 또는 유효성 오류
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
   - `404 Not Found`: 해당 ID 없음
+  - `409 Conflict` (중복 데이터 삽입)
+  - `422 Unprocessable Content`: 필수 필드 누락
 
 ---
 
 ## 🔹 Delete Major
 
 - **Method**: `POST`
-- **URL**: `/api/executive/majors/delete/:id`
+- **URL**: `/api/executive/major/delete/:id`
 - **Response**:
 ```json
 {

@@ -1,0 +1,4 @@
+*.db
+*.env
+.vscode/
+__pycache__/
