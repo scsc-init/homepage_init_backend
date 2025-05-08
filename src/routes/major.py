@@ -61,5 +61,12 @@ async def delete_major(id: int, session: SessionDep):
     if not major:
         raise HTTPException(status_code=404, detail="major not found")
     session.delete(major)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete major: it is referenced by existing users"
+        )
     return {'deleted':True}
