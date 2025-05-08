@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlmodel import select
+from sqlalchemy.exc import IntegrityError
 
 from ..db.engine import SessionDep
 from ..models.major import Major
@@ -17,10 +18,12 @@ class BodyCreateMajor(BaseModel):
 @major_router.post('/executive/major/create', tags=['major'], status_code=201)
 async def create_major(body: BodyCreateMajor, session: SessionDep):
     major = Major(college=body.college, major_name=body.major_name)
-    if session.exec(select(Major).where(Major.college==body.college).where(Major.major_name==body.major_name)).all():
-        raise HTTPException(status_code=409, detail="major already exists")
     session.add(major)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="major already exists")
     session.refresh(major)
     return major
 
@@ -42,12 +45,14 @@ async def update_major(id: int, body: BodyCreateMajor, session: SessionDep):
     major = session.get(Major, id)
     if not major:
         raise HTTPException(status_code=404, detail="major not found")
-    if session.exec(select(Major).where(Major.college==body.college).where(Major.major_name==body.major_name)).all():
-        raise HTTPException(status_code=409, detail="major already exists")
     major.college = body.college
     major.major_name = body.major_name
     session.add(major)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="major already exists")
     return {'updated':True}
 
 @major_router.post('/executive/major/delete/{id}', tags=['major'], status_code=200)
