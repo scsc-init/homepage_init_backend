@@ -94,8 +94,8 @@ CREATE TABLE major (
   "frontend_secret": "some-secret-code",
   "email": "user@example.com",
   "name": "홍길동",
-  "phone": "01012345678",
-  "student_id": "202312345",
+  "phone": "010-1234-5678",
+  "student_id": "2023-12345",
   "major_id": 1
 }
 ```
@@ -105,8 +105,8 @@ CREATE TABLE major (
   "id": 1,
   "email": "user@example.com",
   "name": "홍길동",
-  "phone": "01012345678",
-  "student_id": "202312345",
+  "phone": "010-1234-5678",
+  "student_id": "2023-12345",
   "role": "user",
   "status": "pending",
   "major_id": 1,
@@ -135,7 +135,7 @@ CREATE TABLE major (
   "email": "user@example.com",
   "name": "홍길동",
   "phone": "010-1234-5678",
-  "student_id": "20230123",
+  "student_id": "2023-12345",
   "role": "user",
   "status": "active",
   "major_id": 1,
@@ -160,18 +160,13 @@ CREATE TABLE major (
 {
   "name": "김철수",
   "phone": "010-5678-1234", 
-  "student_id": "20231234", 
+  "student_id": "2023-12345", 
   "major_id": 2
 }
 ```
-- **Response**:
-```json
-{
-  "updated": true
-}
-```
+
 - **Status Codes**:
-  - `200 OK`
+  - `204 No Content`
   - `400 Bad Request`
   - `401 Unauthorized`
   - `409 Conflict` (UNIQUE 필드 중복)
@@ -183,14 +178,9 @@ CREATE TABLE major (
 - **Method**: `POST`  
 - **URL**: `/api/user/delete`  
 - **설명**: 로그인한 사용자의 계정을 삭제함  
-- **Response**:
-```json
-{
-  "deleted": true
-}
-```
+
 - **Status Codes**:
-  - `200 OK`
+  - `204 No Content`
   - `401 Unauthorized`
   - `403 Forbidden` (관리자 계정은 자기 삭제 불가 등)
 
@@ -231,14 +221,9 @@ null
   "status": "banned"
 }
 ```
-- **Response**:
-```json
-{
-  "updated": true
-}
-```
+
 - **Status Codes**:
-  - `200 OK`
+  - `204 No Content`
   - `400 Bad Request` (유효하지 않은 상태값)
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
@@ -335,14 +320,9 @@ null
   "major_name": "소프트웨어공학과"
 }
 ```
-- **Response**:
-```json
-{
-  "updated": true
-}
-```
+
 - **Status Codes**:
-  - `200 OK`: 성공
+  - `204 No Content`: 성공
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
   - `404 Not Found`: 해당 ID 없음
@@ -356,13 +336,9 @@ null
 - **Method**: `POST`
 - **URL**: `/api/executive/major/delete/:id`
 - **Response**:
-```json
-{
-  "deleted": true
-}
-```
+
 - **Status Codes**:
-  - `200 OK`: 삭제 성공
+  - `204 No Content`: 삭제 성공
   - `400 Bad Request`: 외래 키 제약으로 삭제 불가 (`ON DELETE RESTRICT`)
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
