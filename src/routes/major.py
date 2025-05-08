@@ -5,7 +5,7 @@ from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 
 from ..db.engine import SessionDep
-from ..models.major import Major
+from ..model.major import Major
 
 
 major_router = APIRouter()

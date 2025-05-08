@@ -117,13 +117,13 @@ CREATE TABLE major (
 ```
 - **Status Codes**:
   - `201 Created`
-  - `400 Bad Request` (오류, 제약 위반 등)
   - `401 Unauthorized` (인증 실패 시)
   - `409 Conflict` (UNIQUE 필드 중복)
+  - `422 Unprocessable Content` (오류, 제약 위반 등)
 
 ---
 
-## 🔹 Get My Info (내 정보 조회)
+## 🔹 Get My Profile (내 정보 조회)
 
 - **Method**: `GET`  
 - **URL**: `/api/user/profile`  
@@ -150,7 +150,7 @@ CREATE TABLE major (
 
 ---
 
-## 🔹 Update My Info (내 정보 수정)
+## 🔹 Update My Profile (내 정보 수정)
 
 - **Method**: `POST`  
 - **URL**: `/api/user/update`  
@@ -167,13 +167,13 @@ CREATE TABLE major (
 
 - **Status Codes**:
   - `204 No Content`
-  - `400 Bad Request`
   - `401 Unauthorized`
   - `409 Conflict` (UNIQUE 필드 중복)
+  - `422 Unprocessable Content`
 
 ---
 
-## 🔹 Delete My Account (회원 탈퇴)
+## 🔹 Delete My Profile (회원 탈퇴)
 
 - **Method**: `POST`  
 - **URL**: `/api/user/delete`  
@@ -195,18 +195,28 @@ CREATE TABLE major (
 ```json
 {
   "frontend_secret": "some-secret-code",
-  "email": "user@example.com",
+  "email": "user@example.com"
 }
 ```
-- **Response**:
-```json
-null
-```
+
 - **Status Codes**:
-  - `200 OK` (기존 유저 로그인)
-  - `401 Unauthorized` (유효하지 않은 이메일 정보)
+  - `204 No Content` (기존 유저 로그인)
+  - `401 Unauthorized` (유효하지 않은 frontend_secret)
+  - `404 Not Found` (유효하지 않은 email)
 
 > ⚙ `last_login`은 이 시점에서 자동 업데이트.  
+
+---
+
+## 🔹 Logout
+
+- **Method**: `POST`  
+- **URL**: `/api/user/logout`  
+- **설명**: 로그아웃
+
+- **Status Codes**:
+  - `204 No Content` 
+  - `401 Unauthorized` (로그인 하지 않음)
 
 ---
 
@@ -224,10 +234,10 @@ null
 
 - **Status Codes**:
   - `204 No Content`
-  - `400 Bad Request` (유효하지 않은 상태값)
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
-  - `404 Not Found`
+  - `404 Not Found` (id 사용자 계정 없음)
+  - `409 Confilct` (UNIQUE 필드 중복)
 
 ---
 
