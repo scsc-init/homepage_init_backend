@@ -7,10 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from ..db.engine import SessionDep
 from ..model.major import Major
 
-
 major_router = APIRouter()
-
-
 
 class BodyCreateMajor(BaseModel):
     college: str
