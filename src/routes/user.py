@@ -6,9 +6,6 @@ from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
 from ..auth.login import get_current_user
-
-from ..core.config import check_frontend_secret
-
 from ..db.engine import SessionDep
 from ..model.user import User, UserRole, UserStatus
 
@@ -27,8 +24,6 @@ class BodyCreateUser(BaseModel):
 
 @user_router.post('/user/create', tags=['user'], status_code=201)
 async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
-    if not check_frontend_secret(body.frontend_secret):
-        raise HTTPException(401, detail="frontend_secret unauthorized")
     user = User(
         email=body.email,
         name=body.name,
@@ -88,8 +83,6 @@ class BodyLogin(BaseModel):
 
 @user_router.post('/user/login', tags=['user'], status_code=204)
 async def login(body: BodyLogin, request: Request, session: SessionDep) -> None:
-    if not check_frontend_secret(body.frontend_secret):
-        raise HTTPException(401, detail="invalid frontend_secret")
     result = session.exec(select(User).where(User.email==body.email)).first()
     if result is None:
         raise HTTPException(404, detail="invalid email address")

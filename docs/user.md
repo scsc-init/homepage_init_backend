@@ -70,6 +70,18 @@ CREATE TABLE major (
 
 # API 구조
 
+## 공통
+
+모든 경로에는 header에 x-api-secret을 포함해야 함
+
+```http
+x-api-secret: YOUR_SECRET_KEY
+```
+
+- **Status Codes**:
+  - `401 Unauthorized` (인증 실패 시)
+ 
+
 ## 회원 관련 API(/api/user)
 
 - 회원 정보를 관리하는 API
@@ -91,7 +103,6 @@ CREATE TABLE major (
 - **Request Body**:
 ```json
 {
-  "frontend_secret": "some-secret-code",
   "email": "user@example.com",
   "name": "홍길동",
   "phone": "010-1234-5678",
@@ -194,14 +205,12 @@ CREATE TABLE major (
 - **Request Body**:
 ```json
 {
-  "frontend_secret": "some-secret-code",
   "email": "user@example.com"
 }
 ```
 
 - **Status Codes**:
   - `204 No Content` (기존 유저 로그인)
-  - `401 Unauthorized` (유효하지 않은 frontend_secret)
   - `404 Not Found` (유효하지 않은 email)
 
 > ⚙ `last_login`은 이 시점에서 자동 업데이트.  

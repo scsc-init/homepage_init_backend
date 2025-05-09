@@ -3,11 +3,11 @@ import os
 
 load_dotenv(verbose=True)
 
-_FRONTEND_SECRET = os.getenv('FRONTEND_SECRET')
+_API_SECRET = os.getenv('API_SECRET')
 _SESSION_SECRET = os.getenv('SESSION_SECRET')
 
-def check_frontend_secret(frontend_secret: str) -> bool:
-    return frontend_secret == _FRONTEND_SECRET
+def check_api_secret(api_secret: str) -> bool:
+    return api_secret == _API_SECRET
 
 def get_session_secret() -> str:
     if not _SESSION_SECRET:

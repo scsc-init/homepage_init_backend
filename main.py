@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
+from src.middleware.api_secret import APISecretMiddleware
 from src.core.config import get_session_secret
 from src.middleware.assert_permission import AssertPermissionMiddleware
-from src.routes.major import major_router
-from src.routes.user import user_router
+from src.routes.root import root_router
 
 app = FastAPI()
 
@@ -17,6 +17,6 @@ app.add_middleware(
     # same_site="strict",
     https_only=True,
 )
+app.add_middleware(APISecretMiddleware)
 
-app.include_router(major_router, prefix='/api')
-app.include_router(user_router, prefix='/api')
+app.include_router(root_router)
