@@ -2,27 +2,34 @@
 
 2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
 
+> 최종개정일: 2025-05-09  
 
 ## 실행 방법
 
-### conda 환경을 설정합니다. 
+conda 환경을 설정 및 실행합니다. linux가 요구됩니다.
+
 ```bash
-conda env update -n my_env --file environment.yml
+conda env create --file environment.yml
+conda activate scsc_init_backend
 ```
 
-### .env 파일을 작성합니다. 
-- API_SECRET: api 요청 시 코드가 맞지 않으면 401 상태 코드로 거절
-- SESSION_SECRET: 로그인 세션 관련 비밀 코드
-- SQLITE_FILE_NAME: sqlite3 DB 파일 경로
-```
+.env 파일을 작성합니다. .env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 
+
+```env
 API_SECRET="some-secret-code"
 SESSION_SECRET="some-session-secret"
 SQLITE_FILE_NAME="dbname.db"
 ```
 
-### 실행
+| Key Name           | Description                                                      |
+|--------------------|------------------------------------------------------------------|
+| `API_SECRET`       | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
+| `SESSION_SECRET`   | 로그인 세션을 암호화하거나 검증하는 데 사용하는 비밀 키          |
+| `SQLITE_FILE_NAME` | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+
+실행합니다. `fastapi-cli`를 요구합니다.
 ```bash
-fastapi run main.py --host YOUR_HOST --port YOUR_PORT
+fastapi run main.py --host 0.0.0.0 --port 8080
 ```
 
 ### 기타
@@ -39,7 +46,9 @@ fastapi run --help
 fastapi dev main.py
 ```
 
-- 개발 중 https 실행 명령어
+## https 설정 및 실행
+
+https 설정 후 main.py 25행의 `https_only=False` 값을 True로 바꿀 것이 요구됩니다.
 
 Generate self-signed certs:
 ```bash
@@ -51,37 +60,20 @@ Run FastAPI dev server with HTTPS:
 uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfile=cert.pem
 ```
 
+## 디렉토리 구조
 
-## 프로젝트 구조
-
-### /(root)
-- main.py
-- requirements.txt: 파이썬 패키지 정보
-- environment.yml: conda 환경 정보
-- .env: 환경 변수 정보
-
-
-### /docs
-API 문서를 포함합니다.
-
-
-### /src
-main.py를 제외한 모든 코드를 포함합니다. 
-
-#### /auth
-로그인 관련 로직을 포함합니다.
-
-#### /core
-환경변수 등 프로젝트 전반에 필요한 로직을 포함합니다.
-
-#### /db
-SQLite3 DB 연결 관련 로직을 포함합니다.
-
-#### /middleware
-미들웨어를 포함합니다.
-
-#### /model
-DB 테이블 관련 로직을 포함합니다. 
-
-#### /routes
-라우터를 포함합니다. `root.py`는 모든 라우터를 포함한 루트 라우터를 정의합니다. 
+| Path                | Description |
+|---------------------|-------------|
+| `/main.py`          | 애플리케이션 진입점 (entry point) |
+| `/requirements.txt` | 필요한 Python 패키지 목록 (pip용) |
+| `/environment.yml`  | Conda 환경 설정 파일 |
+| `/.env`             | 환경 변수 설정 파일 |
+| `/docs/`            | API 문서 등 프로젝트 관련 문서 |
+| `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
+| ├── `/auth/`        | 로그인 및 인증 관련 로직 |
+| ├── `/core/`        | 환경 변수 등 프로젝트 전역 설정 로직 |
+| ├── `/db/`          | SQLite3 DB 연결 및 설정 관련 코드 |
+| ├── `/middleware/`  | 미들웨어 정의 및 처리 |
+| ├── `/model/`       | DB 테이블 정의 및 ORM 모델 |
+| └── `/routes/`      | API 라우터 모음 |
+| &nbsp;&nbsp;&nbsp;&nbsp;└── `root.py` | 루트 라우터 |
