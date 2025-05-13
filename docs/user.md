@@ -1,12 +1,12 @@
 # 회원 관련 DB, API 명세서
-**최신개정일:** 2025-05-08
+**최신개정일:** 2025-05-13
 
 # DB 구조
 
 ## 회원 DB
 ```sql
 CREATE TABLE user (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
@@ -22,12 +22,10 @@ CREATE TABLE user (
     FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT
 );
 ```
-- 2025-04-29 spec을 SQLite 형식으로 수정함(By GPT)
-- VARCHAR -> TEXT, ENUM -> CHECK
-- 모든 column을 NOT NULL로 변경
-- ON UPDATE는 없어서 TRIGGER로 처리
-- PK인 id에 관해서는 추후 논의
-- phone, student_id를 정수로 처리하는게 나을지 논의. 문자열이면 형식을 어떻게 할지 정해야 함.
+- id는 email의 hash 사용. hash는 sha256을 사용. 
+- phone은 `01012345678`처럼 대시 없는 숫자 문자열 형식. (`/^010\d{8}$/`)
+- student_id는 `202512345`처럼 대시 없는 숫자 문자열 형식. (`/^(\d{4})\d{5}$/`, group 1 should be valid year)
+
 ```sql
 CREATE TRIGGER update_user_updated_at
 AFTER UPDATE ON user
@@ -48,12 +46,7 @@ END;
 ```
 
 ## 전공 DB
-필요성
-- 전공에 대한 유효성 검사를 하드코딩으로 하는 것은 별로일듯
-- 첨단융합학부(2024년 신설), 농업생명과학대학 스마트시스템과학과(2025년 신설)처럼 새로운 전공이 생김
-
 논의점
-- 다전공을 처리해야 하는지
 - 학부, 대학원 모두 서울대이면 대학원 기준으로 할지
 
 ```sql
@@ -90,7 +83,6 @@ x-api-secret: YOUR_SECRET_KEY
 논의점
 - Get All User 기능, Get User by ID 기능을 만들어야 하는지, 만든다면 권한이나 정보 보호는 어떻게 해야 하는지
 - Update, Delete User 기능을 admin이 할 수 있게 해야 하는지
-- 로그인 유지 방식을 어떻게 처리할지: `from starlette.middleware.sessions import SessionMiddleware`을 사용할까?
 - Get My Info에서 정보를 얼마나 가려야 할지
 
 ---
@@ -113,7 +105,7 @@ x-api-secret: YOUR_SECRET_KEY
 - **Response**:
 ```json
 {
-  "id": 1,
+  "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
   "email": "user@example.com",
   "name": "홍길동",
   "phone": "010-1234-5678",
@@ -142,7 +134,7 @@ x-api-secret: YOUR_SECRET_KEY
 - **Response**:
 ```json
 {
-  "id": 1,
+  "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
   "email": "user@example.com",
   "name": "홍길동",
   "phone": "010-1234-5678",

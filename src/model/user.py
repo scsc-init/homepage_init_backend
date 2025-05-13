@@ -16,7 +16,7 @@ class UserStatus(str, Enum):
 class User(SQLModel, table=True):
     __tablename__ = "user"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: str = Field(default=None, primary_key=True)
 
     email: str = Field(nullable=False, unique=True)
     name: str = Field(nullable=False)

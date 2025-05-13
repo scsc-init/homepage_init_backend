@@ -1,13 +1,13 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from sqlmodel import select
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
-from ..auth.login import get_current_user
-from ..db.engine import SessionDep
-from ..model.user import User, UserRole, UserStatus
+from src.auth.login import get_current_user
+from src.db.engine import SessionDep
+from src.model.user import User, UserRole, UserStatus
+from src.util import sha256_hash, is_valid_phone, is_valid_student_id
 
 
 user_router = APIRouter()
@@ -15,7 +15,6 @@ user_router = APIRouter()
 
 
 class BodyCreateUser(BaseModel):
-    frontend_secret: str
     email: str
     name: str
     phone: str
@@ -24,7 +23,13 @@ class BodyCreateUser(BaseModel):
 
 @user_router.post('/user/create', tags=['user'], status_code=201)
 async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
+    if not is_valid_phone(body.phone):
+        raise HTTPException(422, detail="invalid phone number")
+    if not is_valid_student_id(body.student_id):
+        raise HTTPException(422, detail="invalid student_id")
+    
     user = User(
+        id=sha256_hash(body.email.lower()),
         email=body.email,
         name=body.name,
         phone=body.phone,
@@ -55,6 +60,11 @@ class BodyUpdateMyProfile(BaseModel):
 
 @user_router.post('/user/update', tags=['user'], status_code=204)
 async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    if not is_valid_phone(body.phone):
+        raise HTTPException(422, detail="invalid phone number")
+    if not is_valid_student_id(body.student_id):
+        raise HTTPException(422, detail="invalid student_id")
+    
     current_user.name = body.name
     current_user.phone = body.phone
     current_user.student_id = body.student_id
@@ -78,12 +88,11 @@ async def delete_my_profile(session: SessionDep, current_user: User = Depends(ge
 
 
 class BodyLogin(BaseModel):
-    frontend_secret: str
     email: str
 
 @user_router.post('/user/login', tags=['user'], status_code=204)
 async def login(body: BodyLogin, request: Request, session: SessionDep) -> None:
-    result = session.exec(select(User).where(User.email==body.email)).first()
+    result = session.get(User, sha256_hash(body.email.lower()))
     if result is None:
         raise HTTPException(404, detail="invalid email address")
     result.last_login = datetime.now(timezone.utc)
@@ -110,15 +119,19 @@ class BodyUpdateUser(BaseModel):
     status: Optional[UserStatus] = None
 
 @user_router.post('/executive/user/{id}', tags=['user'], status_code=204)
-async def update_user(id: int, body: BodyUpdateUser, session: SessionDep) -> None:
+async def update_user(id: str, body: BodyUpdateUser, session: SessionDep) -> None:
     user = session.get(User, id)
     if user is None:
         raise HTTPException(404, detail="no user exists")
     if body.name:
         user.name = body.name
     if body.phone:
+        if not is_valid_phone(body.phone):
+            raise HTTPException(422, detail="invalid phone number")
         user.phone = body.phone
     if body.student_id:
+        if not is_valid_student_id(body.student_id):
+            raise HTTPException(422, detail="invalid student_id")
         user.student_id = body.student_id
     if body.major_id:
         user.major_id = body.major_id
