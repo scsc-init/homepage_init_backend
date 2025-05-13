@@ -13,12 +13,29 @@ conda env create --file environment.yml
 conda activate scsc_init_backend
 ```
 
+db 파일을 생성합니다.
+```bash
+./script/init_db.sh YOUR_DB_FILENAME.db
+```
+
+(선택) 예시 데이터를 db에 추가합니다. 
+```bash
+./script/insert_majors.sh ./YOUR_DB_FILENAME.db ./docs/majors.csv
+./script/insert_sample_users.sh ./YOUR_DB_FILENAME.db
+```
+
+(선택) 예시 데이터가 잘 추가되었는지 확인합니다. 
+```bash
+sqlite3 ./YOUR_DB_FILENAME.db "select * from major;"
+sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
+```
+
 .env 파일을 작성합니다. .env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 
 
 ```env
 API_SECRET="some-secret-code"
 SESSION_SECRET="some-session-secret"
-SQLITE_FILE_NAME="dbname.db"
+SQLITE_FILE_NAME="YOUR_DB_FILENAME.db"
 ```
 
 | Key Name           | Description                                                      |
