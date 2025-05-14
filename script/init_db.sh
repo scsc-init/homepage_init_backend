@@ -60,6 +60,19 @@ BEGIN
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
+
+-- Create index on foreign key
+CREATE INDEX idx_user_major ON user(major_id);
+
+-- Prevent updates to major(id)
+CREATE TRIGGER prevent_major_id_update
+BEFORE UPDATE ON major
+FOR EACH ROW
+WHEN OLD.id != NEW.id
+BEGIN
+    SELECT RAISE(ABORT, 'Updating major.id is not allowed');
+END;
+
 EOF
 
 echo "Database initialized and schema created in '$DB_FILE'."

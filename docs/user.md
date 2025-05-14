@@ -58,22 +58,27 @@ CREATE TABLE major (
 );
 ```
 
-나중에 까먹을까봐 적어둠:
-- 외래 키 기본 비활성화: 앱에서 PRAGMA foreign_keys = ON; 실행 필요
-
-# API 구조
-
-## 공통
-
-모든 경로에는 header에 x-api-secret을 포함해야 함
-
-```http
-x-api-secret: YOUR_SECRET_KEY
+## SQL 관련
+외래키 사용 설정
+```sql
+PRAGMA foreign_keys = ON;
 ```
 
-- **Status Codes**:
-  - `401 Unauthorized` (인증 실패 시)
- 
+```sql
+CREATE INDEX idx_user_major ON user(major_id);
+```
+
+```sql
+CREATE TRIGGER prevent_major_id_update
+BEFORE UPDATE ON major
+FOR EACH ROW
+WHEN OLD.id != NEW.id
+BEGIN
+    SELECT RAISE(ABORT, 'Updating major.id is not allowed');
+END;
+```
+
+# API 구조
 
 ## 회원 관련 API(/api/user)
 
