@@ -9,6 +9,7 @@ def is_valid_phone(phone: str) -> bool:
 
 _current_year = datetime.now().year
 
+
 def is_valid_student_id(student_id: str) -> bool:
     """Validate student ID format: 9 digits, first 4 should be a plausible year."""
     match = re.fullmatch(r"^(\d{4})(\d{5})$", student_id)

@@ -1,17 +1,16 @@
+from datetime import datetime, timezone
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
-from src.auth.login import get_current_user
-from src.db.engine import SessionDep
-from src.model.user import User, UserRole, UserStatus
-from src.util import sha256_hash, is_valid_phone, is_valid_student_id
-
+from src.auth import get_current_user
+from src.db import SessionDep
+from src.model import User, UserRole, UserStatus
+from src.util import is_valid_phone, is_valid_student_id, sha256_hash
 
 user_router = APIRouter()
-
 
 
 class BodyCreateUser(BaseModel):
@@ -21,13 +20,14 @@ class BodyCreateUser(BaseModel):
     student_id: str
     major_id: int
 
+
 @user_router.post('/user/create', tags=['user'], status_code=201)
 async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
     if not is_valid_phone(body.phone):
         raise HTTPException(422, detail="invalid phone number")
     if not is_valid_student_id(body.student_id):
         raise HTTPException(422, detail="invalid student_id")
-    
+
     user = User(
         id=sha256_hash(body.email.lower()),
         email=body.email,
@@ -41,7 +41,8 @@ async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
         session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(status_code=409, detail=f"unique field already exists")
+        raise HTTPException(
+            status_code=409, detail=f"unique field already exists")
     session.refresh(user)
     return user
 
@@ -51,12 +52,12 @@ async def get_my_profile(current_user: User = Depends(get_current_user)) -> User
     return current_user
 
 
-
 class BodyUpdateMyProfile(BaseModel):
     name: str
     phone: str
     student_id: str
     major_id: int
+
 
 @user_router.post('/user/update', tags=['user'], status_code=204)
 async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
@@ -64,7 +65,7 @@ async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, curr
         raise HTTPException(422, detail="invalid phone number")
     if not is_valid_student_id(body.student_id):
         raise HTTPException(422, detail="invalid student_id")
-    
+
     current_user.name = body.name
     current_user.phone = body.phone
     current_user.student_id = body.student_id
@@ -74,14 +75,16 @@ async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, curr
         session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(status_code=409, detail=f"unique field already exists")
+        raise HTTPException(
+            status_code=409, detail=f"unique field already exists")
     return
 
 
 @user_router.post('/user/delete', tags=['user'], status_code=204)
 async def delete_my_profile(session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     if current_user.role != UserRole.user:
-        raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
+        raise HTTPException(
+            403, detail="user whose role is executive or above cannot delete their account")
     session.delete(current_user)
     session.commit()
     return
@@ -89,6 +92,7 @@ async def delete_my_profile(session: SessionDep, current_user: User = Depends(ge
 
 class BodyLogin(BaseModel):
     email: str
+
 
 @user_router.post('/user/login', tags=['user'], status_code=204)
 async def login(body: BodyLogin, request: Request, session: SessionDep) -> None:
@@ -118,6 +122,7 @@ class BodyUpdateUser(BaseModel):
     role: Optional[UserRole] = None
     status: Optional[UserStatus] = None
 
+
 @user_router.post('/executive/user/{id}', tags=['user'], status_code=204)
 async def update_user(id: str, body: BodyUpdateUser, session: SessionDep) -> None:
     user = session.get(User, id)
@@ -144,5 +149,6 @@ async def update_user(id: str, body: BodyUpdateUser, session: SessionDep) -> Non
         session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(status_code=409, detail=f"unique field already exists")
+        raise HTTPException(
+            status_code=409, detail=f"unique field already exists")
     return

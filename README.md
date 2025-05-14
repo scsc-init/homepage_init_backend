@@ -93,4 +93,4 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | ├── `/middleware/`  | 미들웨어 정의 및 처리 |
 | ├── `/model/`       | DB 테이블 정의 및 ORM 모델 |
 | └── `/routes/`      | API 라우터 모음 |
-| &nbsp;&nbsp;&nbsp;&nbsp;└── `root.py` | 루트 라우터 |
+| &nbsp;&nbsp;&nbsp;&nbsp;└── `__init__.py` | 루트 라우터 |

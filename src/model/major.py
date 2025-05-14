@@ -1,5 +1,7 @@
-from sqlmodel import SQLModel, Field, UniqueConstraint
 from typing import Optional
+
+from sqlmodel import Field, SQLModel, UniqueConstraint
+
 
 class Major(SQLModel, table=True):
     __tablename__ = "major"

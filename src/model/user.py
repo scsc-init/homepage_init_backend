@@ -1,17 +1,20 @@
-from sqlmodel import SQLModel, Field
-from typing import Optional
 from datetime import datetime, timezone
 from enum import Enum
+
+from sqlmodel import Field, SQLModel
+
 
 class UserRole(str, Enum):
     user = "user"
     executive = "executive"
     president = "president"
 
+
 class UserStatus(str, Enum):
     active = "active"
     pending = "pending"
     banned = "banned"
+
 
 class User(SQLModel, table=True):
     __tablename__ = "user"
@@ -26,8 +29,11 @@ class User(SQLModel, table=True):
     role: UserRole = Field(default=UserRole.user, nullable=False)
     status: UserStatus = Field(default=UserStatus.pending, nullable=False)
 
-    last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    last_login: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     major_id: int = Field(foreign_key="major.id", nullable=False)
