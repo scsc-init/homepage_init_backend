@@ -11,7 +11,7 @@ CSV_FILE="$2"
 
 # Check if the database file exists
 if [ ! -f "$DB_FILE" ]; then
-    echo "Error: Database file '$DB_FILE' does not exist."W
+    echo "Error: Database file '$DB_FILE' does not exist."
     exit 1
 fi
 

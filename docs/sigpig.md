@@ -1,5 +1,5 @@
 # SIG/PIG 관련 DB, API 명세서
-**최신개정일:** 2025-05-13
+**최신개정일:** 2025-05-14
 
 # DB 구조
 
@@ -105,21 +105,16 @@ END;
 - GET /api/sig/:id
 - GET /api/sigs
 - POST /api/sig/create
-- POST /api/sig/update/:id
-- POST /api/sig/delete/:id
-- POST /api/executive/sig/update/:id
-- POST /api/executive/sig/delete/:id
+- POST /api/sig/:id/update
+- POST /api/sig/:id/delete
+- POST /api/executive/sig/:id/update
+- POST /api/executive/sig/:id/delete
 
-## SIG 구성원 관련 API (/api/sig-member)
-
-- GET /api/sig-members/:sig_id
-- POST /api/sig-member/join/:sig_id/me
-- POST /api/sig-member/leave/:sig_id/me
-- POST /api/executive/sig-member/join/:sig_id
-- POST /api/executive/sig-member/leave/:sig_id
+- GET /api/sig/:id/members
+- POST /api/sig/:id/member/join/me
+- POST /api/sig/:id/member/leave/me
+- POST /api/executive/sig/:id/member/join
+- POST /api/executive/sig/:id/member/leave
 
 ## PIG 관련 API(/api/pig)
-`/api/sig`에서 `sig`를 `pig`로 바꾼다
-
-## PIG 구성원 관련 API (/api/pig-members)
 `/api/sig`에서 `sig`를 `pig`로 바꾼다
