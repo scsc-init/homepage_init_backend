@@ -35,14 +35,14 @@ sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
 ```env
 API_SECRET="some-secret-code"
 SESSION_SECRET="some-session-secret"
-SQLITE_FILE_NAME="YOUR_DB_FILENAME.db"
+SQLITE_FILENAME="YOUR_DB_FILENAME.db"
 ```
 
 | Key Name           | Description                                                      |
 |--------------------|------------------------------------------------------------------|
 | `API_SECRET`       | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
 | `SESSION_SECRET`   | 로그인 세션을 암호화하거나 검증하는 데 사용하는 비밀 키          |
-| `SQLITE_FILE_NAME` | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `SQLITE_FILENAME` | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
 
 실행합니다. `fastapi-cli`를 요구합니다.
 ```bash

@@ -2,29 +2,29 @@ name: scsc_init_backend
 channels:
   - defaults
 dependencies:
-  - _libgcc_mutex=0.1=main
-  - _openmp_mutex=5.1=1_gnu
-  - bzip2=1.0.8=h5eee18b_6
-  - ca-certificates=2025.2.25=h06a4308_0
-  - expat=2.7.1=h6a678d5_0
-  - ld_impl_linux-64=2.40=h12ee557_0
-  - libffi=3.4.4=h6a678d5_1
-  - libgcc-ng=11.2.0=h1234567_1
-  - libgomp=11.2.0=h1234567_1
-  - libstdcxx-ng=11.2.0=h1234567_1
-  - libuuid=1.41.5=h5eee18b_0
-  - ncurses=6.4=h6a678d5_0
-  - openssl=3.0.16=h5eee18b_0
-  - pip=25.1=pyhc872135_2
-  - python=3.12.9=h5148396_0
-  - readline=8.2=h5eee18b_0
-  - setuptools=78.1.1=py312h06a4308_0
-  - sqlite=3.45.3=h5eee18b_0
-  - tk=8.6.14=h39e8969_0
-  - tzdata=2025b=h04d1e81_0
-  - wheel=0.45.1=py312h06a4308_0
-  - xz=5.6.4=h5eee18b_1
-  - zlib=1.2.13=h5eee18b_1
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=5.1
+  - bzip2=1.0.8
+  - ca-certificates=2025.2.25
+  - expat=2.7.1
+  - ld_impl_linux-64=2.40
+  - libffi=3.4.4
+  - libgcc-ng=11.2.0
+  - libgomp=11.2.0
+  - libstdcxx-ng=11.2.0
+  - libuuid=1.41.5
+  - ncurses=6.4
+  - openssl=3.0.16
+  - pip=25.1
+  - python=3.12.9
+  - readline=8.2
+  - setuptools=78.1.1
+  - sqlite=3.45.3
+  - tk=8.6.14
+  - tzdata=2025b
+  - wheel=0.45.1
+  - xz=5.6.4
+  - zlib=1.2.13
   - pip:
       - annotated-types==0.7.0
       - anyio==4.9.0
@@ -47,6 +47,7 @@ dependencies:
       - mdurl==0.1.2
       - pydantic==2.11.4
       - pydantic-core==2.33.2
+      - pydantic-settings==2.9.1
       - pygments==2.19.1
       - python-dotenv==1.1.0
       - python-multipart==0.0.20
@@ -65,4 +66,3 @@ dependencies:
       - uvloop==0.21.0
       - watchfiles==1.0.5
       - websockets==15.0.1
-prefix: /home/tteok/miniconda3/envs/scsc_init_backend

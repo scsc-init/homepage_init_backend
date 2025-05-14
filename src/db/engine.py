@@ -3,9 +3,9 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import Session, create_engine
 
-from ..core.config import get_sqlite_file_name
+from src.core import get_settings
 
-sqlite_url = f"sqlite:///{get_sqlite_file_name()}"
+sqlite_url = f"sqlite:///{get_settings().sqlite_filename}"
 
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)

@@ -2,7 +2,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..core.config import check_api_secret
+from src.core import get_settings
 
 
 class APISecretMiddleware(BaseHTTPMiddleware):
@@ -12,6 +12,6 @@ class APISecretMiddleware(BaseHTTPMiddleware):
         x_api_secret = request.headers.get('x-api-secret')
         if x_api_secret is None:
             return JSONResponse({"detail": "No x-api-secret included"}, 401)
-        if not check_api_secret(x_api_secret):
+        if x_api_secret != get_settings().api_secret:
             return JSONResponse({"detail": "Invalid x-api-secret"}, 401)
         return await call_next(request)
