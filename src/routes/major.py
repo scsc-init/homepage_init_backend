@@ -8,7 +8,7 @@ from sqlmodel import select
 from src.db import SessionDep
 from src.model import Major
 
-major_router = APIRouter()
+major_router = APIRouter(tags=['major'])
 
 
 class BodyCreateMajor(BaseModel):
@@ -16,7 +16,7 @@ class BodyCreateMajor(BaseModel):
     major_name: str
 
 
-@major_router.post('/executive/major/create', tags=['major'], status_code=201)
+@major_router.post('/executive/major/create', status_code=201)
 async def create_major(body: BodyCreateMajor, session: SessionDep) -> Major:
     major = Major(college=body.college, major_name=body.major_name)
     session.add(major)
@@ -29,12 +29,12 @@ async def create_major(body: BodyCreateMajor, session: SessionDep) -> Major:
     return major
 
 
-@major_router.get('/majors', tags=['major'])
+@major_router.get('/majors')
 async def get_all_majors(session: SessionDep) -> Sequence[Major]:
     return session.exec(select(Major)).all()
 
 
-@major_router.get('/major/{id}', tags=['major'])
+@major_router.get('/major/{id}')
 async def get_major_by_id(id: int, session: SessionDep) -> Major:
     major = session.get(Major, id)
     if not major:
@@ -42,7 +42,7 @@ async def get_major_by_id(id: int, session: SessionDep) -> Major:
     return major
 
 
-@major_router.post('/executive/major/update/{id}', tags=['major'], status_code=204)
+@major_router.post('/executive/major/update/{id}', status_code=204)
 async def update_major(id: int, body: BodyCreateMajor, session: SessionDep) -> None:
     major = session.get(Major, id)
     if not major:
@@ -58,7 +58,7 @@ async def update_major(id: int, body: BodyCreateMajor, session: SessionDep) -> N
     return
 
 
-@major_router.post('/executive/major/delete/{id}', tags=['major'], status_code=204)
+@major_router.post('/executive/major/delete/{id}', status_code=204)
 async def delete_major(id: int, session: SessionDep) -> None:
     major = session.get(Major, id)
     if not major:

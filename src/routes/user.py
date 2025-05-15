@@ -10,7 +10,7 @@ from src.db import SessionDep
 from src.model import User, UserRole, UserStatus
 from src.util import is_valid_phone, is_valid_student_id, sha256_hash
 
-user_router = APIRouter()
+user_router = APIRouter(tags=['user'])
 
 
 class BodyCreateUser(BaseModel):
@@ -21,7 +21,7 @@ class BodyCreateUser(BaseModel):
     major_id: int
 
 
-@user_router.post('/user/create', tags=['user'], status_code=201)
+@user_router.post('/user/create', status_code=201)
 async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
     if not is_valid_phone(body.phone):
         raise HTTPException(422, detail="invalid phone number")
@@ -47,7 +47,7 @@ async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
     return user
 
 
-@user_router.get('/user/profile', tags=['user'])
+@user_router.get('/user/profile')
 async def get_my_profile(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
@@ -59,7 +59,7 @@ class BodyUpdateMyProfile(BaseModel):
     major_id: int
 
 
-@user_router.post('/user/update', tags=['user'], status_code=204)
+@user_router.post('/user/update', status_code=204)
 async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     if not is_valid_phone(body.phone):
         raise HTTPException(422, detail="invalid phone number")
@@ -80,7 +80,7 @@ async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, curr
     return
 
 
-@user_router.post('/user/delete', tags=['user'], status_code=204)
+@user_router.post('/user/delete', status_code=204)
 async def delete_my_profile(session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     if current_user.role != UserRole.user:
         raise HTTPException(
@@ -94,7 +94,7 @@ class BodyLogin(BaseModel):
     email: str
 
 
-@user_router.post('/user/login', tags=['user'], status_code=204)
+@user_router.post('/user/login', status_code=204)
 async def login(body: BodyLogin, request: Request, session: SessionDep) -> None:
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None:
@@ -106,7 +106,7 @@ async def login(body: BodyLogin, request: Request, session: SessionDep) -> None:
     return
 
 
-@user_router.post('/user/logout', tags=['user'], status_code=204)
+@user_router.post('/user/logout', status_code=204)
 async def logout(request: Request, current_user: User = Depends(get_current_user)) -> None:
     if request.session.get('user_id') != current_user.id:
         raise HTTPException(500, detail="Session user_id mismatch")
@@ -123,7 +123,7 @@ class BodyUpdateUser(BaseModel):
     status: Optional[UserStatus] = None
 
 
-@user_router.post('/executive/user/{id}', tags=['user'], status_code=204)
+@user_router.post('/executive/user/{id}', status_code=204)
 async def update_user(id: str, body: BodyUpdateUser, session: SessionDep) -> None:
     user = session.get(User, id)
     if user is None:
