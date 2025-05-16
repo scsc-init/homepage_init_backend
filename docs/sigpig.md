@@ -13,12 +13,12 @@ CREATE TABLE sig (
     status TEXT DEFAULT 'surveying' NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
-    UNIQUE (title, year, semester),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     owner TEXT NOT NULL,
+    UNIQUE (title, year, semester),
     FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
 );
 ```
@@ -35,6 +35,8 @@ CREATE TABLE sig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES sig(id) ON DELETE CASCADE
@@ -46,6 +48,8 @@ CREATE TABLE pig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES pig(id) ON DELETE CASCADE
@@ -108,6 +112,49 @@ END;
 
 ---
 
+## 🔹 Create SIG
+
+* **Method**: `POST`
+* **URL**: `/api/sig/create`
+* 로그인한 사용자가 owner가 됨
+* **Request Body** (JSON):
+
+```json
+{
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_src": "https://example.com/ai-sig",
+  "year": 2025,
+  "semester": 1
+}
+```
+
+* **Response**:
+
+```json
+{
+  "id": 1,
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_src": "https://example.com/ai-sig",
+  "status": "surveying",
+  "year": 2025,
+  "semester": 1,
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "owner": "hash_of_owner_user"
+}
+```
+
+* **Status Codes**:
+
+  * `201 Created`
+  * `401 Unauthorized`: 로그인 하지 않음
+  * `409 Conflict`: `title`, `year`, `semester` 중복
+  * `422 Unprocessable Content`: 필드 누락 또는 유효하지 않은 값
+
+---
+
 ## 🔹 Get SIG by ID
 
 * **Method**: `GET`
@@ -166,49 +213,6 @@ END;
 
 ---
 
-## 🔹 Create SIG
-
-* **Method**: `POST`
-* **URL**: `/api/sig/create`
-* 로그인한 사용자가 owner가 됨
-* **Request Body** (JSON):
-
-```json
-{
-  "title": "AI SIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_src": "https://example.com/ai-sig",
-  "year": 2025,
-  "semester": 1
-}
-```
-
-* **Response**:
-
-```json
-{
-  "id": 1,
-  "title": "AI SIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_src": "https://example.com/ai-sig",
-  "status": "surveying",
-  "year": 2025,
-  "semester": 1,
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user"
-}
-```
-
-* **Status Codes**:
-
-  * `201 Created`
-  * `401 Unauthorized`: 로그인 하지 않음
-  * `409 Conflict`: `title`, `year`, `semester` 중복
-  * `422 Unprocessable Content`: 필드 누락 또는 유효하지 않은 값
-
----
-
 ## 🔹 Update SIG (Owner Only)
 
 * **Method**: `POST`
@@ -231,6 +235,7 @@ END;
   * `401 Unauthorized`
   * `403 Forbidden`: 권한 없음
   * `404 Not Found`
+  * `409 Conflict`: `title`, `year`, `semester` 중복
   * `422 Unprocessable Content`
 
 ---
@@ -272,6 +277,7 @@ END;
   * `401 Unauthorized`
   * `403 Forbidden`
   * `404 Not Found`
+  * `409 Conflict`: `title`, `year`, `semester` 중복
 
 ---
 
@@ -298,6 +304,8 @@ END;
 ```json
 [
   {
+    "id": 1,
+    "ig_id": 1,
     "user_id": "hash_of_user"
   },
   ...
@@ -334,6 +342,7 @@ END;
   * `204 No Content`
   * `401 Unauthorized`
   * `404 Not Found`: 가입되어 있지 않음
+  * `409 Conflict`: 시그장 탈퇴 불가
 
 ---
 
@@ -354,11 +363,12 @@ END;
   * `204 No Content`
   * `401 Unauthorized`
   * `403 Forbidden`
+  * `404 Not Found`
   * `409 Conflict`
 
 ---
 
-## 🔹 Remove SIG Member (Executive)
+## 🔹 Leave SIG Member (Executive)
 
 * **Method**: `POST`
 * **URL**: `/api/executive/sig/:id/member/leave`
@@ -376,6 +386,7 @@ END;
   * `401 Unauthorized`
   * `403 Forbidden`
   * `404 Not Found`
+  * `409 Conflict`: 시그장 탈퇴 불가
 
 ---
 

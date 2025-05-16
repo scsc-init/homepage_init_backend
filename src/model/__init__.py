@@ -1,2 +1,6 @@
 from .major import Major
+from .pig import PIG, PIGStatus
+from .pig_member import PIGMember
+from .sig import SIG, SIGStatus
+from .sig_member import SIGMember
 from .user import User, UserRole, UserStatus

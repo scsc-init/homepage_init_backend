@@ -19,3 +19,11 @@ def is_valid_student_id(student_id: str) -> bool:
     year = int(match.group(1))
     # You can adjust this range as needed
     return 1946 <= year <= _current_year
+
+
+def is_valid_year(year: int):
+    return year >= 2025
+
+
+def is_valid_semester(semester: int):
+    return semester in (1, 2)
