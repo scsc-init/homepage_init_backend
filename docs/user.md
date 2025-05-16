@@ -191,6 +191,7 @@ END;
   - `204 No Content`
   - `401 Unauthorized`
   - `403 Forbidden` (관리자 계정은 자기 삭제 불가 등)
+  - `409 Conflict` : 외래 키 제약으로 인한 삭제 불가
 
 ---
 

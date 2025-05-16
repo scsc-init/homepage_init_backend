@@ -86,7 +86,12 @@ async def delete_my_profile(session: SessionDep, current_user: User = Depends(ge
         raise HTTPException(
             403, detail="user whose role is executive or above cannot delete their account")
     session.delete(current_user)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=409, detail=f"cannot delete user because of foreign key restriction")
     return
 
 
