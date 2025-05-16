@@ -1,5 +1,5 @@
 # SIG/PIG 관련 DB, API 명세서
-**최신개정일:** 2025-05-14
+**최신개정일:** 2025-05-16
 
 # DB 구조
 
@@ -102,19 +102,283 @@ END;
 
 ## SIG 관련 API(/api/sig)
 
-- GET /api/sig/:id
-- GET /api/sigs
-- POST /api/sig/create
-- POST /api/sig/:id/update
-- POST /api/sig/:id/delete
-- POST /api/executive/sig/:id/update
-- POST /api/executive/sig/:id/delete
+- 시그 정보를 관리하는 API
+- 시그장은 사용자 테이블과 외래 키로 연결됨
+- 시그 구성원은 시그 테이블, 사용자 테이블과 외래 키로 연결됨
 
-- GET /api/sig/:id/members
-- POST /api/sig/:id/member/join/me
-- POST /api/sig/:id/member/leave/me
-- POST /api/executive/sig/:id/member/join
-- POST /api/executive/sig/:id/member/leave
+---
+
+## 🔹 Get SIG by ID
+
+* **Method**: `GET`
+* **URL**: `/api/sig/:id`
+* **Response**:
+
+```json
+{
+  "id": 1,
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_src": "https://example.com/ai-sig",
+  "status": "active",
+  "year": 2025,
+  "semester": 1,
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "owner": "hash_of_owner_user"
+}
+```
+
+* **Status Codes**:
+
+  * `200 OK`
+  * `404 Not Found`: 해당 SIG가 존재하지 않음
+
+---
+
+## 🔹 Get All SIGs
+
+* **Method**: `GET`
+* **URL**: `/api/sigs`
+* **Response**:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "AI SIG",
+    "description": "인공지능을 연구하는 소모임입니다.",
+    "content_src": "https://example.com/ai-sig",
+    "status": "active",
+    "year": 2025,
+    "semester": 1,
+    "created_at": "2025-03-01T10:00:00Z",
+    "updated_at": "2025-04-01T12:00:00Z",
+    "owner": "hash_of_owner_user"
+  },
+  ...
+]
+```
+
+* **Status Codes**:
+
+  * `200 OK`
+
+---
+
+## 🔹 Create SIG
+
+* **Method**: `POST`
+* **URL**: `/api/sig/create`
+* 로그인한 사용자가 owner가 됨
+* **Request Body** (JSON):
+
+```json
+{
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_src": "https://example.com/ai-sig",
+  "year": 2025,
+  "semester": 1
+}
+```
+
+* **Response**:
+
+```json
+{
+  "id": 1,
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_src": "https://example.com/ai-sig",
+  "status": "surveying",
+  "year": 2025,
+  "semester": 1,
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "owner": "hash_of_owner_user"
+}
+```
+
+* **Status Codes**:
+
+  * `201 Created`
+  * `401 Unauthorized`: 로그인 하지 않음
+  * `409 Conflict`: `title`, `year`, `semester` 중복
+  * `422 Unprocessable Content`: 필드 누락 또는 유효하지 않은 값
+
+---
+
+## 🔹 Update SIG (Owner Only)
+
+* **Method**: `POST`
+* **URL**: `/api/sig/:id/update`
+* **Request Body** (JSON):
+
+```json
+{
+  "title": "AI SIG",
+  "description": "업데이트된 설명입니다.",
+  "content_src": "https://example.com/ai-sig-updated",
+  "year": 2025,
+  "semester": 1
+}
+```
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`: 권한 없음
+  * `404 Not Found`
+  * `422 Unprocessable Content`
+
+---
+
+## 🔹 Delete SIG (Owner Only)
+
+* **Method**: `POST`
+* **URL**: `/api/sig/:id/delete`
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `404 Not Found`
+
+---
+
+## 🔹 Update SIG (Executive)
+
+* **Method**: `POST`
+* **URL**: `/api/executive/sig/:id/update`
+* **Request Body**: 
+
+```json
+{
+  "title": "AI SIG",
+  "description": "업데이트된 설명입니다.",
+  "content_src": "https://example.com/ai-sig-updated",
+  "status": "recruiting",
+  "year": 2025,
+  "semester": 1
+}
+```
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `404 Not Found`
+
+---
+
+## 🔹 Delete SIG (Executive)
+
+* **Method**: `POST`
+* **URL**: `/api/executive/sig/:id/delete`
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `404 Not Found`
+
+---
+
+## 🔹 Get SIG Members
+
+* **Method**: `GET`
+* **URL**: `/api/sig/:id/members`
+* **Response**:
+
+```json
+[
+  {
+    "user_id": "hash_of_user"
+  },
+  ...
+]
+```
+
+* **Status Codes**:
+
+  * `200 OK`
+  * `404 Not Found`
+
+---
+
+## 🔹 Join SIG (Current User)
+
+* **Method**: `POST`
+* **URL**: `/api/sig/:id/member/join/me`
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `409 Conflict`: 이미 가입됨
+
+---
+
+## 🔹 Leave SIG (Current User)
+
+* **Method**: `POST`
+* **URL**: `/api/sig/:id/member/leave/me`
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `404 Not Found`: 가입되어 있지 않음
+
+---
+
+## 🔹 Join SIG (Executive)
+
+* **Method**: `POST`
+* **URL**: `/api/executive/sig/:id/member/join`
+* **Request Body**:
+
+```json
+{
+  "user_id": "hash_of_user"
+}
+```
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `409 Conflict`
+
+---
+
+## 🔹 Remove SIG Member (Executive)
+
+* **Method**: `POST`
+* **URL**: `/api/executive/sig/:id/member/leave`
+* **Request Body**:
+
+```json
+{
+  "user_id": "hash_of_user"
+}
+```
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `404 Not Found`
+
+---
+
 
 ## PIG 관련 API(/api/pig)
 `/api/sig`에서 `sig`를 `pig`로 바꾼다
