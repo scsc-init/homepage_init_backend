@@ -16,9 +16,6 @@ fi
 
 # Execute SQL commands using a here-document
 sqlite3 "$DB_FILE" <<EOF
--- Enable foreign key constraints
-PRAGMA foreign_keys = ON;
-
 -- Create 'major' table
 CREATE TABLE major (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,12 +79,12 @@ CREATE TABLE sig (
     status TEXT DEFAULT 'surveying' NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
-    UNIQUE (title, year, semester),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     owner TEXT NOT NULL,
+    UNIQUE (title, year, semester),
     FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
 );
 CREATE TABLE pig (
@@ -98,12 +95,12 @@ CREATE TABLE pig (
     status TEXT DEFAULT 'surveying' NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
-    UNIQUE (title, year, semester),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     owner TEXT NOT NULL,
+    UNIQUE (title, year, semester),
     FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
 );
 
@@ -112,6 +109,8 @@ CREATE TABLE sig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES sig(id) ON DELETE CASCADE
@@ -120,6 +119,8 @@ CREATE TABLE pig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES pig(id) ON DELETE CASCADE
