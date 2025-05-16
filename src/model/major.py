@@ -4,7 +4,7 @@ from sqlmodel import Field, SQLModel, UniqueConstraint
 
 
 class Major(SQLModel, table=True):
-    __tablename__ = "major"
+    __tablename__ = "major"  # type: ignore
     __table_args__ = (
         UniqueConstraint("college", "major_name", name="uq_college_major"),
     )
