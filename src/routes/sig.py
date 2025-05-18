@@ -174,7 +174,7 @@ async def get_sig_members(id: int, session: SessionDep) -> Sequence[SIGMember]:
     return session.exec(select(SIGMember).where(SIGMember.ig_id == id)).all()
 
 
-@sig_router.post('/sig/{id}/member/join/me', status_code=204)
+@sig_router.post('/sig/{id}/member/join', status_code=204)
 async def join_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
     sig = session.get(SIG, id)
     if not sig:
@@ -193,7 +193,7 @@ async def join_sig(id: int, session: SessionDep, current_user: User = Depends(ge
     return
 
 
-@sig_router.post('/sig/{id}/member/leave/me', status_code=204)
+@sig_router.post('/sig/{id}/member/leave', status_code=204)
 async def leave_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
     sig = session.get(SIG, id)
     if not sig:

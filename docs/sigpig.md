@@ -322,7 +322,7 @@ END;
 ## 🔹 Join SIG (Current User)
 
 * **Method**: `POST`
-* **URL**: `/api/sig/:id/member/join/me`
+* **URL**: `/api/sig/:id/member/join`
 
 * **Status Codes**:
 
@@ -335,7 +335,7 @@ END;
 ## 🔹 Leave SIG (Current User)
 
 * **Method**: `POST`
-* **URL**: `/api/sig/:id/member/leave/me`
+* **URL**: `/api/sig/:id/member/leave`
 
 * **Status Codes**:
 

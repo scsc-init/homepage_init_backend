@@ -174,7 +174,7 @@ async def get_pig_members(id: int, session: SessionDep) -> Sequence[PIGMember]:
     return session.exec(select(PIGMember).where(PIGMember.ig_id == id)).all()
 
 
-@pig_router.post('/pig/{id}/member/join/me', status_code=204)
+@pig_router.post('/pig/{id}/member/join', status_code=204)
 async def join_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
     pig = session.get(PIG, id)
     if not pig:
@@ -193,7 +193,7 @@ async def join_pig(id: int, session: SessionDep, current_user: User = Depends(ge
     return
 
 
-@pig_router.post('/pig/{id}/member/leave/me', status_code=204)
+@pig_router.post('/pig/{id}/member/leave', status_code=204)
 async def leave_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
     pig = session.get(PIG, id)
     if not pig:
