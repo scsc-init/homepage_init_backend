@@ -7,7 +7,7 @@ from sqlmodel import select
 
 from src.auth import get_current_user
 from src.db import SessionDep
-from src.model import SIG, SIGMember, SIGStatus, User
+from src.model import SIG, SIGMember, SIGStatus, User, UserRole
 from src.util import is_valid_semester, is_valid_year
 
 sig_router = APIRouter(tags=['sig'])
@@ -165,6 +165,29 @@ async def delete_sig(id: int, session: SessionDep) -> None:
     if not sig:
         raise HTTPException(status_code=404, detail="sig not found")
     session.delete(sig)
+    session.commit()
+    return
+
+
+class BodyHandoverSIG(BaseModel):
+    new_owner: str
+
+
+@sig_router.post('/sig/{id}/handover', status_code=204)
+async def handover_sig(id: int, body: BodyHandoverSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    sig = session.get(SIG, id)
+    if sig is None:
+        raise HTTPException(404, detail="no sig exists")
+    user = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(
+        SIGMember.user_id == body.new_owner)).first()
+    if not user:
+        raise HTTPException(
+            status_code=404, detail="new_owner should be a member of the sig")
+    if current_user.role < UserRole.executive and current_user.id != sig.owner:
+        raise HTTPException(
+            403, "handover can be executed only by executive or owner of the sig")
+    sig.owner = body.new_owner
+    session.add(sig)
     session.commit()
     return
 

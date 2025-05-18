@@ -15,6 +15,6 @@ class AssertPermissionMiddleware(BaseHTTPMiddleware):
                     current_user = get_current_user(request, session)
             except HTTPException as e:
                 return JSONResponse({"detail": e.detail}, e.status_code)
-            if current_user.role not in (UserRole.executive, UserRole.president):
+            if current_user.role < UserRole.executive:
                 return JSONResponse({"detail": "permission denied: at least executive role required"}, 403)
         return await call_next(request)

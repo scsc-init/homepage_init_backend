@@ -254,6 +254,28 @@ END;
 
 ---
 
+## 🔹 Transfer SIG Ownership(Owner / Executive)
+
+* **Method**: `POST`
+* **URL**: `/api/sig/:id/handover`
+* **Request Body** (JSON):
+
+```json
+{
+  "new_owner": "hash_of_new_owner"
+}
+```
+
+* **Status Codes**:
+
+  * `204 No Content`: 소유자 변경 성공
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `404 Not Found`: SIG 존재하지 않음 / 사용자 존재하지 않음
+  * `422 Unprocessable Content`
+
+---
+
 ## 🔹 Update SIG (Executive)
 
 * **Method**: `POST`
