@@ -71,8 +71,7 @@ async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, curr
     current_user.student_id = body.student_id
     current_user.major_id = body.major_id
     session.add(current_user)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(
@@ -83,15 +82,12 @@ async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, curr
 @user_router.post('/user/delete', status_code=204)
 async def delete_my_profile(session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     if current_user.role != UserRole.user:
-        raise HTTPException(
-            403, detail="user whose role is executive or above cannot delete their account")
+        raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
     session.delete(current_user)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(
-            status_code=409, detail=f"cannot delete user because of foreign key restriction")
+        raise HTTPException(409, detail=f"cannot delete user because of foreign key restriction")
     return
 
 
@@ -131,35 +127,24 @@ class BodyUpdateUser(BaseModel):
 @user_router.post('/executive/user/{id}', status_code=204)
 async def update_user(id: str, body: BodyUpdateUser, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     user = session.get(User, id)
-    if user is None:
-        raise HTTPException(404, detail="no user exists")
+    if user is None: raise HTTPException(404, detail="no user exists")
     if current_user.role <= user.role:
-        raise HTTPException(
-            403, detail="Permission denied. Cannot update user with a higher or equal role than yourself.")
-    if body.name:
-        user.name = body.name
+        raise HTTPException(403, detail="Permission denied. Cannot update user with a higher or equal role than yourself.")
+    if body.name: user.name = body.name
     if body.phone:
-        if not is_valid_phone(body.phone):
-            raise HTTPException(422, detail="invalid phone number")
+        if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
         user.phone = body.phone
     if body.student_id:
-        if not is_valid_student_id(body.student_id):
-            raise HTTPException(422, detail="invalid student_id")
+        if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
         user.student_id = body.student_id
-    if body.major_id:
-        user.major_id = body.major_id
+    if body.major_id: user.major_id = body.major_id
     if body.role:
-        if current_user.role < body.role:
-            raise HTTPException(
-                403, detail="Permission denied. Cannot assign role higher than yours.")
+        if current_user.role < body.role: raise HTTPException(403, detail="Permission denied. Cannot assign role higher than yours.")
         user.role = body.role
-    if body.status:
-        user.status = body.status
+    if body.status: user.status = body.status
     session.add(user)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(
-            status_code=409, detail=f"unique field already exists")
+        raise HTTPException(409, detail=f"unique field already exists")
     return
