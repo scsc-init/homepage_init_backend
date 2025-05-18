@@ -9,6 +9,23 @@ class UserRole(str, Enum):
     executive = "executive"
     president = "president"
 
+    def __lt__(self, other: "UserRole", tbl={user: 0, executive: 1, president: 2}) -> bool:
+        if isinstance(other, UserRole):
+            return tbl[self] < tbl[other]
+        return NotImplemented
+
+    def __le__(self, other: "UserRole"):
+        return self < other or self == other
+
+    def __ne__(self, other: "UserRole"):
+        return not self == other
+
+    def __gt__(self, other: "UserRole"):
+        return not (self < other or self == other)
+
+    def __ge__(self, other: "UserRole"):
+        return not self < other
+
 
 class UserStatus(str, Enum):
     active = "active"

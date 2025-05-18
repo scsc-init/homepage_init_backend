@@ -242,7 +242,7 @@ END;
 - **Status Codes**:
   - `204 No Content`
   - `401 Unauthorized` (로그인하지 않음)
-  - `403 Forbidden` (관리자(executive) 권한 없음)
+  - `403 Forbidden` (관리자(executive) 권한 없음, 권한 부족)
   - `404 Not Found` (id 사용자 계정 없음)
   - `409 Confilct` (UNIQUE 필드 중복)
 

@@ -129,10 +129,13 @@ class BodyUpdateUser(BaseModel):
 
 
 @user_router.post('/executive/user/{id}', status_code=204)
-async def update_user(id: str, body: BodyUpdateUser, session: SessionDep) -> None:
+async def update_user(id: str, body: BodyUpdateUser, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     user = session.get(User, id)
     if user is None:
         raise HTTPException(404, detail="no user exists")
+    if current_user.role <= user.role:
+        raise HTTPException(
+            403, detail="Permission denied. Cannot update user with a higher or equal role than yourself.")
     if body.name:
         user.name = body.name
     if body.phone:
@@ -146,6 +149,9 @@ async def update_user(id: str, body: BodyUpdateUser, session: SessionDep) -> Non
     if body.major_id:
         user.major_id = body.major_id
     if body.role:
+        if current_user.role < body.role:
+            raise HTTPException(
+                403, detail="Permission denied. Cannot assign role higher than yours.")
         user.role = body.role
     if body.status:
         user.status = body.status
