@@ -76,7 +76,7 @@ CREATE TABLE sig (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     content_src TEXT NOT NULL UNIQUE,
-    status TEXT DEFAULT 'surveying' NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
 
@@ -92,7 +92,7 @@ CREATE TABLE pig (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     content_src TEXT NOT NULL UNIQUE,
-    status TEXT DEFAULT 'surveying' NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
 
@@ -109,9 +109,10 @@ CREATE TABLE sig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id),
+    UNIQUE (ig_id, user_id, status),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES sig(id) ON DELETE CASCADE
 );
@@ -119,9 +120,10 @@ CREATE TABLE pig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id),
+    UNIQUE (ig_id, user_id, status),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES pig(id) ON DELETE CASCADE
 );
@@ -168,6 +170,43 @@ BEGIN
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
+
+-- SIG/PIG global status
+CREATE TABLE sig_global_status (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE pig_global_status (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER update_sig_global_status_updated_at
+AFTER UPDATE ON sig_global_status
+FOR EACH ROW
+WHEN 
+    OLD.status != NEW.status
+BEGIN
+    UPDATE sig_global_status
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER update_pig_global_status_updated_at
+AFTER UPDATE ON pig_global_status
+FOR EACH ROW
+WHEN 
+    OLD.status != NEW.status
+BEGIN
+    UPDATE pig_global_status
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
+END;
+
+INSERT INTO sig_global_status (id, status) VALUES (1, 'inactive');
+INSERT INTO pig_global_status (id, status) VALUES (1, 'inactive');
 
 EOF
 
