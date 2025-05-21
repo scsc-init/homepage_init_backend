@@ -20,11 +20,10 @@ class BodyCreateMajor(BaseModel):
 async def create_major(body: BodyCreateMajor, session: SessionDep) -> Major:
     major = Major(college=body.college, major_name=body.major_name)
     session.add(major)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(status_code=409, detail="major already exists")
+        raise HTTPException(409, detail="major already exists")
     session.refresh(major)
     return major
 
@@ -37,35 +36,30 @@ async def get_all_majors(session: SessionDep) -> Sequence[Major]:
 @major_router.get('/major/{id}')
 async def get_major_by_id(id: int, session: SessionDep) -> Major:
     major = session.get(Major, id)
-    if not major:
-        raise HTTPException(status_code=404, detail="major not found")
+    if not major: raise HTTPException(404, detail="major not found")
     return major
 
 
 @major_router.post('/executive/major/update/{id}', status_code=204)
 async def update_major(id: int, body: BodyCreateMajor, session: SessionDep) -> None:
     major = session.get(Major, id)
-    if not major:
-        raise HTTPException(status_code=404, detail="major not found")
+    if not major: raise HTTPException(404, detail="major not found")
     major.college = body.college
     major.major_name = body.major_name
     session.add(major)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(status_code=409, detail="major already exists")
+        raise HTTPException(409, detail="major already exists")
     return
 
 
 @major_router.post('/executive/major/delete/{id}', status_code=204)
 async def delete_major(id: int, session: SessionDep) -> None:
     major = session.get(Major, id)
-    if not major:
-        raise HTTPException(status_code=404, detail="major not found")
+    if not major: raise HTTPException(404, detail="major not found")
     session.delete(major)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(
