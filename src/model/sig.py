@@ -15,8 +15,7 @@ class SIGStatus(str, Enum):
 class SIG(SQLModel, table=True):
     __tablename__ = "sig"  # type: ignore
     __table_args__ = (
-        UniqueConstraint("title", "year", "semester",
-                         name="uq_title_year_semester"),
+        UniqueConstraint("title", "year", "semester", name="uq_title_year_semester"),
         CheckConstraint("year >= 2025", name="ck_year_min"),
         CheckConstraint("semester IN (1, 2)", name="ck_semester_valid"),
     )
@@ -27,16 +26,12 @@ class SIG(SQLModel, table=True):
     description: str = Field(nullable=False)
     content_src: str = Field(nullable=False, unique=True)
 
-    status: SIGStatus = Field(default=SIGStatus.surveying, nullable=False)
+    status: SIGStatus = Field(nullable=False)
 
     year: int = Field(nullable=False)
     semester: int = Field(nullable=False)
 
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     owner: str = Field(foreign_key="user.id", nullable=False)

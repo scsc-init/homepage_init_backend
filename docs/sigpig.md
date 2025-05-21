@@ -10,7 +10,7 @@ CREATE TABLE sig (
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     content_src TEXT NOT NULL UNIQUE,
-    status TEXT DEFAULT 'surveying' NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
 
@@ -35,9 +35,10 @@ CREATE TABLE sig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id),
+    UNIQUE (ig_id, user_id, status),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES sig(id) ON DELETE CASCADE
 );
@@ -48,11 +49,25 @@ CREATE TABLE pig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id),
+    UNIQUE (ig_id, user_id, status),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES pig(id) ON DELETE CASCADE
+);
+```
+
+## SIG/PIG Global Status
+```sql
+CREATE TABLE sig_global_status (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE pig_global_status (
+    ... -- same as sig
 );
 ```
 
@@ -97,6 +112,28 @@ WHEN
     OLD.owner != NEW.owner
 BEGIN
     UPDATE pig
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER update_sig_global_status_updated_at
+AFTER UPDATE ON sig_global_status
+FOR EACH ROW
+WHEN 
+    OLD.status != NEW.status
+BEGIN
+    UPDATE sig_global_status
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
+END;
+
+CREATE TRIGGER update_pig_global_status_updated_at
+AFTER UPDATE ON pig_global_status
+FOR EACH ROW
+WHEN 
+    OLD.status != NEW.status
+BEGIN
+    UPDATE pig_global_status
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
@@ -149,6 +186,7 @@ END;
 * **Status Codes**:
 
   * `201 Created`
+  * `400 Bad Request`: sig global status가 surveying이 아닐 때
   * `401 Unauthorized`: 로그인 하지 않음
   * `409 Conflict`: `title`, `year`, `semester` 중복
   * `422 Unprocessable Content`: 필드 누락 또는 유효하지 않은 값
@@ -349,6 +387,7 @@ END;
 * **Status Codes**:
 
   * `204 No Content`
+  * `400 Bad Request`: sig global status가 surveying/recruiting이 아닐 때
   * `401 Unauthorized`
   * `409 Conflict`: 이미 가입됨
 
@@ -412,6 +451,55 @@ END;
 
 ---
 
+## 🔹 Get Global SIG Status
+
+* **Method**: `GET`
+* **URL**: `/api/sig/global/status`
+
+* **Response Body**:
+
+```json
+{
+  "status": "active"
+}
+```
+
+* **Status Codes**:
+  * `200 OK` - 상태 변경 성공
+
+---
+
+## 🔹 Update Global SIG Status
+
+* **Method**: `POST`
+* **URL**: `/api/executive/sig/global/status`
+* **설명**: 임원이 전체 SIG의 상태를 일괄적으로 설정합니다
+
+* **Request Body**:
+
+```json
+{
+  "status": "active"
+}
+```
+status는 ('surveying', 'recruiting', 'active', 'inactive') 중 하나
+* **유효한 status 변경 방법**
+
+|기존 status|변경 status|
+|---|---|
+|inactive|surveying|
+|surveying|recruiting|
+|recruiting|active|
+|any|inactive|
+
+* **Status Codes**:
+
+  * `204 No Content` - 상태 변경 성공
+  * `400 Bad Request` - 유효하지 않은 `status` 변경
+  * `401 Unauthorized` - 인증 실패
+  * `403 Forbidden` - 권한 없음 (임원이 아닌 경우)
+
+---
 
 ## PIG 관련 API(/api/pig)
 `/api/sig`에서 `sig`를 `pig`로 바꾼다

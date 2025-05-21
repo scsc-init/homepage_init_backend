@@ -27,16 +27,12 @@ class PIG(SQLModel, table=True):
     description: str = Field(nullable=False)
     content_src: str = Field(nullable=False, unique=True)
 
-    status: PIGStatus = Field(default=PIGStatus.surveying, nullable=False)
+    status: PIGStatus = Field(nullable=False)
 
     year: int = Field(nullable=False)
     semester: int = Field(nullable=False)
 
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
-    )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
-    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     owner: str = Field(foreign_key="user.id", nullable=False)

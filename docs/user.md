@@ -59,11 +59,6 @@ CREATE TABLE major (
 ```
 
 ## SQL 관련
-외래키 사용 설정
-```sql
-PRAGMA foreign_keys = ON;
-```
-
 ```sql
 CREATE INDEX idx_user_major ON user(major_id);
 ```
@@ -102,8 +97,8 @@ END;
 {
   "email": "user@example.com",
   "name": "홍길동",
-  "phone": "010-1234-5678",
-  "student_id": "2023-12345",
+  "phone": "01012345678",
+  "student_id": "202312345",
   "major_id": 1
 }
 ```
@@ -113,8 +108,8 @@ END;
   "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
   "email": "user@example.com",
   "name": "홍길동",
-  "phone": "010-1234-5678",
-  "student_id": "2023-12345",
+  "phone": "01012345678",
+  "student_id": "202312345",
   "role": "user",
   "status": "pending",
   "major_id": 1,
@@ -142,8 +137,8 @@ END;
   "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
   "email": "user@example.com",
   "name": "홍길동",
-  "phone": "010-1234-5678",
-  "student_id": "2023-12345",
+  "phone": "01012345678",
+  "student_id": "202312345",
   "role": "user",
   "status": "active",
   "major_id": 1,
@@ -158,6 +153,72 @@ END;
 
 ---
 
+수정된 **API 문서**는 아래와 같습니다. 주어진 SQL 정의에 따라 사용자 데이터 형식 (`id`, `phone`, `student_id`, 등)을 반영하여 명확하게 정리했습니다.
+
+---
+
+## 🔹 Get Executives (임원 목록 조회)
+
+- **Method**: `GET`
+- **URL**: `/api/user/executives`
+- **설명**: 현재 등록된 임원(`executive`) 사용자들의 목록을 조회합니다.
+- **Response**:
+
+```json
+[
+  {
+    "id": "f81d4fae7dec11d0a76500a0c91e6bf6",
+    "email": "executive@example.com",
+    "name": "홍길동",
+    "phone": "01012345678",
+    "student_id": "202512345",
+    "role": "executive",
+    "status": "active",
+    "major_id": 1,
+    "last_login": "2025-05-01T09:00:00",
+    "created_at": "2025-04-01T12:00:00",
+    "updated_at": "2025-04-30T12:00:00"
+  }
+]
+```
+
+- **Status Codes**:
+  - `200 OK`
+  - `401 Unauthorized`
+
+---
+
+## 🔹 Get Presidents (회장 목록 조회)
+
+* **Method**: `GET`
+* **URL**: `/api/user/presidents`
+* **설명**: 현재 등록된 회장(`president`) 사용자들의 목록을 조회합니다.
+* **Response**:
+
+```json
+[
+  {
+    "id": "a1b2c3d4e5f67890abcd1234567890ef",
+    "email": "president@example.com",
+    "name": "이순신",
+    "phone": "01098765432",
+    "student_id": "202412345",
+    "role": "president",
+    "status": "active",
+    "major_id": 2,
+    "last_login": "2025-05-10T08:30:00",
+    "created_at": "2024-03-01T00:00:00",
+    "updated_at": "2025-02-28T23:59:59"
+  }
+]
+```
+
+- **Status Codes**:
+  - `200 OK`
+  - `401 Unauthorized`
+
+---
+
 ## 🔹 Update My Profile (내 정보 수정)
 
 - **Method**: `POST`  
@@ -167,8 +228,8 @@ END;
 ```json
 {
   "name": "김철수",
-  "phone": "010-5678-1234", 
-  "student_id": "2023-12345", 
+  "phone": "01056781234", 
+  "student_id": "202312345", 
   "major_id": 2
 }
 ```
