@@ -36,13 +36,17 @@ sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
 API_SECRET="some-secret-code"
 SESSION_SECRET="some-session-secret"
 SQLITE_FILENAME="YOUR_DB_FILENAME.db"
+IMAGE_DIR="/static/image/photo"
+IMAGE_MAX_SIZE=10000000
 ```
 
 | Key Name           | Description                                                      |
 |--------------------|------------------------------------------------------------------|
 | `API_SECRET`       | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
 | `SESSION_SECRET`   | 로그인 세션을 암호화하거나 검증하는 데 사용하는 비밀 키          |
-| `SQLITE_FILENAME` | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `SQLITE_FILENAME`  | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `IMAGE_DIR`        | 이미지 업로드 경로 |
+| `IMAGE_MAX_SIZE`   | 이미지 최대 용량(바이트) |
 
 실행합니다. `fastapi-cli`를 요구합니다.
 ```bash

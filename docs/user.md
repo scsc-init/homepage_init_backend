@@ -59,11 +59,6 @@ CREATE TABLE major (
 ```
 
 ## SQL 관련
-외래키 사용 설정
-```sql
-PRAGMA foreign_keys = ON;
-```
-
 ```sql
 CREATE INDEX idx_user_major ON user(major_id);
 ```
