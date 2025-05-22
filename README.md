@@ -4,7 +4,14 @@
 
 > 최종개정일: 2025-05-13  
 
-## 실행 방법
+## 실행 방법(with docker)
+
+linux, docker가 요구됩니다. 
+```bash
+docker-compose up --build
+```
+
+## 실행 방법(without docker)
 
 conda 환경을 설정 및 실행합니다. linux가 요구됩니다.
 
