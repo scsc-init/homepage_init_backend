@@ -60,7 +60,7 @@ CREATE INDEX idx_image_owner ON image(owner);
 * **Status Codes**:
   * `201 Created` - 업로드 성공
   * `400 Bad Request` - 파일 누락 또는 유효하지 않은 이미지
-  * `401 Unauthorized` - 인증 실패
+  * `401 Unauthorized` - 인증 실패 / 로그인 하지 않음
   * `413 Payload Too Large` - 파일 크기 제한 초과
 
 ---

@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     api_secret: str
     session_secret: str
     sqlite_filename: str
+    image_dir: str
+    image_max_size: int
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

@@ -208,6 +208,19 @@ END;
 INSERT INTO sig_global_status (id, status) VALUES (1, 'inactive');
 INSERT INTO pig_global_status (id, status) VALUES (1, 'inactive');
 
+-- Image metadata table
+CREATE TABLE image (
+    id TEXT PRIMARY KEY,
+    original_filename TEXT NOT NULL,
+    size INT NOT NULL,
+    mime_type TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    owner TEXT,
+    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_image_owner ON image(owner);
+
+
 EOF
 
 echo "Database initialized and schema created in '$DB_FILE'."
