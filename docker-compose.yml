@@ -1,0 +1,32 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - ./static/image/photo/:/app/static/image/photo/
+      - ./${SQLITE_FILENAME}:/app/${SQLITE_FILENAME}
+    depends_on:
+      - db_init
+
+  db_init:
+    image: python:3.12-slim
+    volumes:
+      - .:/app
+    working_dir: /app
+    env_file:
+      - .env
+    entrypoint: ["/bin/bash", "-c"]
+    command: >
+      "
+      if [ ! -f \${SQLITE_FILENAME} ]; then
+        echo 'Database not found. Initializing...';
+        chmod +x ./script/init_db.sh ./script/insert_majors.sh &&
+        ./script/init_db.sh \${SQLITE_FILENAME} &&
+        ./script/insert_majors.sh \${SQLITE_FILENAME} ./docs/majors.csv;
+      else
+        echo 'Database already exists. Skipping initialization.';
+      fi
+      "

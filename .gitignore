@@ -2,7 +2,9 @@
 *.env
 .vscode/
 *.pem
+static/image/photo/
 
+# private files
 ignoredir/
 
 # Byte-compiled / optimized / DLL files

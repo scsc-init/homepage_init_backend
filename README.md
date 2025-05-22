@@ -4,7 +4,34 @@
 
 > 최종개정일: 2025-05-13  
 
-## 실행 방법
+## .env 파일 형식
+
+.env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 
+
+```env
+API_SECRET="some-secret-code"
+SESSION_SECRET="some-session-secret"
+SQLITE_FILENAME="YOUR_DB_FILENAME.db"
+IMAGE_DIR="static/image/photo/"
+IMAGE_MAX_SIZE=10000000
+```
+
+| Key Name           | Description                                                      |
+|--------------------|------------------------------------------------------------------|
+| `API_SECRET`       | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
+| `SESSION_SECRET`   | 로그인 세션을 암호화하거나 검증하는 데 사용하는 비밀 키          |
+| `SQLITE_FILENAME`  | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `IMAGE_DIR`        | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
+| `IMAGE_MAX_SIZE`   | 이미지 최대 용량(바이트) |
+
+## 실행 방법(with docker)
+
+linux, docker가 요구됩니다. 
+```bash
+docker-compose up --build
+```
+
+## 실행 방법(without docker)
 
 conda 환경을 설정 및 실행합니다. linux가 요구됩니다.
 
@@ -29,24 +56,6 @@ db 파일을 생성합니다.
 sqlite3 ./YOUR_DB_FILENAME.db "select * from major;"
 sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
 ```
-
-.env 파일을 작성합니다. .env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 
-
-```env
-API_SECRET="some-secret-code"
-SESSION_SECRET="some-session-secret"
-SQLITE_FILENAME="YOUR_DB_FILENAME.db"
-IMAGE_DIR="/static/image/photo"
-IMAGE_MAX_SIZE=10000000
-```
-
-| Key Name           | Description                                                      |
-|--------------------|------------------------------------------------------------------|
-| `API_SECRET`       | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
-| `SESSION_SECRET`   | 로그인 세션을 암호화하거나 검증하는 데 사용하는 비밀 키          |
-| `SQLITE_FILENAME`  | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
-| `IMAGE_DIR`        | 이미지 업로드 경로 |
-| `IMAGE_MAX_SIZE`   | 이미지 최대 용량(바이트) |
 
 실행합니다. `fastapi-cli`를 요구합니다.
 ```bash
