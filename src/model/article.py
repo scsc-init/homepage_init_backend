@@ -1,0 +1,25 @@
+from datetime import datetime, timezone
+from enum import Enum
+from typing import Optional
+
+from sqlmodel import Field, SQLModel
+
+
+class Board(SQLModel):
+    __tablename__ = 'board'
+    id: int = Field(default=None, primary_key=True)
+    name: str = Field()
+    description: str = Field()
+    writing_permission_level: int = Field(default=0)
+    reading_permission_level: int = Field(default=0)
+
+
+class Article(SQLModel, table=True):
+    __tablename__ = "article"
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field()
+    content: str = Field()
+    author_id: str = Field(foreign_key="user.id")
+    board_id: int = Field(foreign_key="board.id")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
