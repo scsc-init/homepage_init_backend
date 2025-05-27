@@ -26,6 +26,9 @@ class UserRole(str, Enum):
     def __ge__(self, other: "UserRole"):
         return not self < other
 
+    def __int__(self) -> int:
+        return {UserRole.user: 0, UserRole.executive: 1, UserRole.president: 2}[self]
+
 
 class UserStatus(str, Enum):
     active = "active"
