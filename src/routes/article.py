@@ -31,7 +31,7 @@ async def createArticle(body: BodyCreateArticle, session: SessionDep, currentUse
             status_code=404,
             detail=f"Board {article.board_id} does not exist",
         )
-    if currentUser.role.user < board.writing_permission_level:
+    if int(currentUser.role) < board.writing_permission_level:
         raise HTTPException(
             status_code=403,
             detail="You are not allowed to write this article",
@@ -68,6 +68,7 @@ async def updateArticle(id: int, body: BodyUpdateArticle, session: SessionDep, c
     article.title = body.title
     article.content = body.content
     article.board_id = body.board_id
+    article.updated_at = datetime.now(timezone.utc)
     session.flush()
 
 
