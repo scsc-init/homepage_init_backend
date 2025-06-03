@@ -11,7 +11,7 @@
 ```env
 API_SECRET="some-secret-code"
 SESSION_SECRET="some-session-secret"
-SQLITE_FILENAME="YOUR_DB_FILENAME.db"
+SQLITE_FILENAME="db/YOUR_DB_FILENAME.db"
 IMAGE_DIR="static/image/photo/"
 IMAGE_MAX_SIZE=10000000
 FILE_DIR="download/"
