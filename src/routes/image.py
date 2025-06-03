@@ -15,7 +15,8 @@ image_router = APIRouter(tags=['image'])
 @image_router.post('/image/upload', status_code=201)
 async def upload_image(file: UploadFile, session: SessionDep, current_user: User = Depends(get_current_user)) -> FileMetadata:
     if file.content_type is None or not file.content_type.startswith("image"): raise HTTPException(400, detail="cannot upload non-image file")
-    if file.filename is None or (ext := get_file_extension(file.filename)) not in ('jpg', 'jpeg', 'png'): raise HTTPException(400, detail="cannot upload if the extension is not ('jpg', 'jpeg', 'png')")
+    ext_whitelist = ('jpg', 'jpeg', 'png')
+    if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
     content = await file.read()
     if len(content) > get_settings().image_max_size: raise HTTPException(413, detail=f"cannot upload image larger than {get_settings().image_max_size} bytes")
 

@@ -15,7 +15,7 @@ file_router = APIRouter(tags=['file'])
 @file_router.post('/file/upload', status_code=201)
 async def upload_file(file: UploadFile, session: SessionDep, current_user: User = Depends(get_current_user)) -> FileMetadata:
     if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
-    ext_whitelist = ('jpg', 'jpeg', 'png')
+    ext_whitelist = ('pdf', 'docx', 'pptx')
     if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
     content = await file.read()
     if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"cannot upload file larger than {get_settings().file_max_size} bytes")
