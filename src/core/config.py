@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     sqlite_filename: str
     image_dir: str
     image_max_size: int
+    file_dir: str
+    file_max_size: int
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 
