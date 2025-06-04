@@ -4,8 +4,8 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
-class Image(SQLModel, table=True):
-    __tablename__ = "image"  # type: ignore
+class FileMetadata(SQLModel, table=True):
+    __tablename__ = "file_metadata"  # type: ignore
 
     id: str = Field(primary_key=True)
 

@@ -49,6 +49,24 @@ async def get_my_profile(current_user: User = Depends(get_current_user)) -> User
     return current_user
 
 
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    major_id: int
+
+    model_config = {
+        "from_attributes": True  # enables reading from ORM objects
+    }
+
+
+@user_router.get('/user/{id}', response_model=UserResponse)
+async def get_user_by_id(id: str, session: SessionDep) -> UserResponse:
+    user = session.get(User, id)
+    if not user: raise HTTPException(404, detail="user not found")
+    return UserResponse.model_validate(user)
+
+
 @user_router.get('/user/executives')
 async def get_executives(session: SessionDep) -> Sequence[User]:
     return session.exec(select(User).where(User.role == UserRole.executive)).all()

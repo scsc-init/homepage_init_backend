@@ -7,6 +7,7 @@ from .user import user_router
 from .image import image_router
 from .article import articleRouter
 from .board import boardRouter
+from .file import file_router
 
 root_router = APIRouter()
 
@@ -17,4 +18,4 @@ root_router.include_router(pig_router, prefix='/api')
 root_router.include_router(image_router, prefix='/api')
 root_router.include_router(articleRouter, prefix='/api')
 root_router.include_router(boardRouter, prefix='/api')
-
+root_router.include_router(file_router, prefix='/api')
