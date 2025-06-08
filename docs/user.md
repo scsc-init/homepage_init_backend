@@ -80,11 +80,6 @@ END;
 - 회원 정보를 관리하는 API
 - 회원은 이메일, 이름, 전화번호, 전공 등을 포함하고 있으며, 전공은 `major` 테이블과 외래 키 관계로 연결됨
 
-논의점
-- Get All User 기능, Get User by ID 기능을 만들어야 하는지, 만든다면 권한이나 정보 보호는 어떻게 해야 하는지
-- Update, Delete User 기능을 admin이 할 수 있게 해야 하는지
-- Get My Info에서 정보를 얼마나 가려야 할지
-
 ---
 
 ## 🔹 Create User (회원 등록)
@@ -153,7 +148,24 @@ END;
 
 ---
 
-수정된 **API 문서**는 아래와 같습니다. 주어진 SQL 정의에 따라 사용자 데이터 형식 (`id`, `phone`, `student_id`, 등)을 반영하여 명확하게 정리했습니다.
+## 🔹 Get User by ID
+
+- **Method**: `GET`  
+- **URL**: `/api/user/:id`  
+- **설명**: ID로 사용자의 정보(이메일, 이름, 학과) 조회
+- **Response**:
+```json
+{
+  "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+  "email": "user@example.com",
+  "name": "홍길동",
+  "major_id": 1,
+}
+```
+- **Status Codes**:
+  - `200 OK`
+  - `401 Unauthorized` (인증 실패 시)
+  - `404 Not Found` (유효하지 않은 ID)
 
 ---
 
