@@ -43,36 +43,49 @@ class BodyUpdateArticle(BaseModel):
     content: str
     board_id: int
 
-@article_router.post('/update/{id}', status_code=204)
-async def update_article(id: int, body: BodyUpdateArticle, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+@article_router.post('/update/admin/{id}', status_code=204)
+async def update_article_by_admin(id: int, body: BodyUpdateArticle, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
-    # if currentUser.id != article.author_id:
-    #     raise HTTPException(
-    #         status_code=403,
-    #         detail="You are not the author of this article",
-    #     )
-    # TODO: Who can, What can?
+    if int(current_user.role) < article.writing_permission_level:
+        raise HTTPException(status_code=403, detail="You don't have permission to delete this article",)
     article.title = body.title
     article.content = body.content
     article.board_id = body.board_id
     article.updated_at = datetime.now(timezone.utc)
     session.flush()
 
+# @article_router.post('/update/author/{id}', status_code=204)
+# async def update_article_by_author(id: int, body: BodyUpdateArticle, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+#     article = session.get(Article, id)
+#     if not article: raise HTTPException(status_code=404, detail="Article not found",)
+#     if current_user.id != article.author_id:
+#         raise HTTPException(status_code=403, detail="You are not the author of this article",)
+#     article.title = body.title
+#     article.content = body.content
+#     article.board_id = body.board_id
+#     article.updated_at = datetime.now(timezone.utc)
+#     session.flush()
 
-@article_router.post('/delete/{id}', status_code=204)
-async def delete_article(id: int, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+
+@article_router.post('/delete/admin/{id}', status_code=204)
+async def delete_article_by_admin(id: int, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
-    # if current_user.id != article.author_id:
-    #     raise HTTPException(
-    #         status_code=403,
-    #         detail="You are not the author of this article",
-    #     )
-    # TODO: Who can, What can?
+    if int(current_user.role) < article.writing_permission_level:
+        raise HTTPException(status_code=403, detail="You don't have permission to delete this article",)
+    # TODO: Which permission is needed
     session.delete(article)
     session.flush()
 
+@article_router.post('/delete/author/{id}', status_code=204)
+async def delete_article_by_author(id: int, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    article = session.get(Article, id)
+    if not article: raise HTTPException(status_code=404, detail="Article not found",)
+    if current_user.id != article.author_id:
+        raise HTTPException(status_code=403, detail="You are not the author of this article",)
+    session.delete(article)
+    session.flush()
 
 @article_router.get('/{id}')
 async def get_article_by_id(id: int, session: SessionDep) -> Article:
