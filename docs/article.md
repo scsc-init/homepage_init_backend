@@ -11,7 +11,7 @@ CREATE TABLE "board" (
 	"description"	TEXT,
 	"writing_permission_level"	INTEGER DEFAULT 0,
 	"reading_permission_level"	INTEGER DEFAULT 0,
-	PRIMARY KEY("id")
+	PRIMARY KEY("id" AUTOINCREMENT)
 );
 ```
 
