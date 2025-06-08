@@ -226,7 +226,7 @@ CREATE TABLE "comment" (
   - `409 Conflict` (중복 데이터 삽입)
 ---
 
-## 🔹 Get Article List
+## 🔹 Get Article List (게시글 목록 조희)
 
 - **Method**: `GET`
 - **URL**: `/api/article/list/{board_id}`
