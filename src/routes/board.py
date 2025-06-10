@@ -36,6 +36,19 @@ async def create_board(body: BodyCreateBoard, session: SessionDep) -> Board:
     return board
 
 
+@board_router.get('/board/{id}')
+async def get_board_by_id(id: int, session: SessionDep) -> Board:
+    board = session.get(Board, id)
+    if not board: raise HTTPException(404, detail="Board not found")
+    return board
+
+
+@board_router.get('/boards')
+async def get_board_list(session: SessionDep) -> Sequence[Board]:
+    boards = session.exec(select(Board))
+    return boards.all()
+
+
 class BodyUpdateArticle(BaseModel):
     name: str
     description: str
@@ -71,16 +84,3 @@ async def delete_board(id: int, session: SessionDep) -> None:
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="Cannot delete user because of foreign key restriction")
-
-
-@board_router.get('/board/{id}')
-async def get_board_by_id(id: int, session: SessionDep) -> Board:
-    board = session.get(Board, id)
-    if not board: raise HTTPException(404, detail="Board not found")
-    return board
-
-
-@board_router.get('/boards')
-async def get_board_list(session: SessionDep) -> Sequence[Board]:
-    boards = session.exec(select(Board))
-    return boards.all()
