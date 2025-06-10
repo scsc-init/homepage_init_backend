@@ -81,7 +81,7 @@ async def update_article_by_author(id: int, body: BodyUpdateArticle, session: Se
 
 
 @article_router.post('/executive/article/update/{id}', status_code=204)
-async def update_article_by_admin(id: int, body: BodyUpdateArticle, session: SessionDep) -> None:
+async def update_article_by_executive(id: int, body: BodyUpdateArticle, session: SessionDep) -> None:
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     board = session.get(Board, body.board_id)
@@ -107,7 +107,7 @@ async def delete_article_by_author(id: int, session: SessionDep, current_user: U
 
 
 @article_router.post('/executive/article/delete/{id}', status_code=204)
-async def delete_article_by_admin(id: int, session: SessionDep) -> None:
+async def delete_article_by_executive(id: int, session: SessionDep) -> None:
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     # TODO: Which permission is needed

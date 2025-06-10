@@ -356,7 +356,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Delete Article by Admin (관리자에 의한 게시글 삭제)
+## 🔹 Delete Article by Executive (관리자에 의한 게시글 삭제)
 
 - **Method**: `POST`
 - **URL**: `/api/executive/article/delete/:id`
