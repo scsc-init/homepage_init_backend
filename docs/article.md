@@ -231,7 +231,7 @@ CREATE TABLE "comment" (
 ## 🔹 Get Article List (게시글 목록 조희)
 
 - **Method**: `GET`
-- **URL**: `/api/article/list/{board_id}`
+- **URL**: `/api/articles/:board_id`
 - **설명**: 게시글 목록 조회, 모든 게시판의 글의 경우 `board_id`=0
 - **Response**:
 ```json
@@ -249,6 +249,7 @@ CREATE TABLE "comment" (
 ```
 - **Status Codes**:
   - `200 OK`
+  - `404 Not Found` (게시판이 존재하지 않음)
 
 ---
 
@@ -278,7 +279,7 @@ CREATE TABLE "comment" (
 ## 🔹 Update Article (게시글 수정)
 
 - **Method**: `POST`
-- **URL**: `/api/article/update/author/:id`
+- **URL**: `/api/article/update/:id`
 - **설명**: 게시글 수정
 - **Request Body** (JSON):
 ```json
@@ -308,10 +309,57 @@ CREATE TABLE "comment" (
   
 ---
 
+## 🔹 Update Article by Executive (관리자에 의한 게시글 수정)
+
+- **Method**: `POST`
+- **URL**: `/api/executive/article/update/:id`
+- **설명**: 게시글 수정
+- **Request Body** (JSON):
+```json
+{
+  "title": "안녕하세요",
+  "content": "## Hello?",
+  "board_id": 1
+}
+```
+- **Response**:
+```json
+{
+  "id": 1,
+  "title": "안녕하세요",
+  "content": "## Hello?",
+  "board_id": 1,
+  "author_id": "",
+  "created_at": "2025-04-01T12:00:00",
+  "updated_at": "2025-04-01T12:00:00"
+}
+```
+- **Status Codes**:
+  - `204 No Content`
+  - `401 Unauthorized` 
+  - `403 Forbidden` 
+  - `404 Not Found` (게시판이나 게시글이 존재하지 않음)
+  
+---
+
+## 🔹 Delete Article (작성자에 의한 게시글 삭제)
+
+- **Method**: `POST`
+- **URL**: `/api/article/delete/:id`
+- **설명**: 작성자에 의한 게시글 삭제
+
+- **Status Codes**:
+  - `204 No Content`
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (게시글의 작성자가 아님)
+  - `404 Not Found` (게시글이 존재하지 않음)
+
+---
+
 ## 🔹 Delete Article by Admin (관리자에 의한 게시글 삭제)
 
 - **Method**: `POST`
-- **URL**: `/api/article/delete/admin/:id`
+- **URL**: `/api/executive/article/delete/:id`
 - **설명**: 관리자에 의한 게시글 삭제
 
 - **Status Codes**:
@@ -321,15 +369,3 @@ CREATE TABLE "comment" (
   - `404 Not Found` (게시글이 존재하지 않음)
 
 ---
-
-## 🔹 Delete Article (작성자에 의한 게시글 삭제)
-
-- **Method**: `POST`
-- **URL**: `/api/article/delete/author/:id`
-- **설명**: 작성자에 의한 게시글 삭제
-
-- **Status Codes**:
-  - `204 No Content`
-  - `401 Unauthorized` (로그인하지 않음)
-  - `403 Forbidden` (게시글의 작성자가 아님)
-  - `404 Not Found` (게시글이 존재하지 않음)
