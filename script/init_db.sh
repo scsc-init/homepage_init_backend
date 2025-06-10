@@ -220,6 +220,44 @@ CREATE TABLE file_metadata (
 );
 CREATE INDEX idx_file_metadata_owner ON file_metadata(owner);
 
+-- Board, Article, Comment table
+CREATE TABLE "board" (
+	"id"	INTEGER,
+	"name"	TEXT,
+	"description"	TEXT,
+	"writing_permission_level"	INTEGER DEFAULT 0,
+	"reading_permission_level"	INTEGER DEFAULT 0,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+
+CREATE TABLE "article" (
+	"id"	INTEGER,
+	"title"	TEXT,
+	"content"	TEXT,
+	"author_id"	TEXT,
+	"board_id"	INTEGER,
+	"created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE SET NULL,
+	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "comment" (
+	"id"	INTEGER,
+	"content"	TEXT,
+	"author_id"	TEXT,
+	"board_id"	INTEGER,
+	"post_id"	INTEGER,
+	"parent_id"	INTEGER,
+	"created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY("author_id") REFERENCES "user"("id"),
+	FOREIGN KEY("board_id") REFERENCES "board"("id"),
+	FOREIGN KEY("post_id") REFERENCES "article"("id"),
+	FOREIGN KEY("parent_id") REFERENCES "comment"("id")
+);
 
 EOF
 

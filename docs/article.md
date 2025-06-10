@@ -11,6 +11,8 @@ CREATE TABLE "board" (
 	"description"	TEXT,
 	"writing_permission_level"	INTEGER DEFAULT 0,
 	"reading_permission_level"	INTEGER DEFAULT 0,
+  "created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 ```
@@ -29,7 +31,7 @@ CREATE TABLE "article" (
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE SET NULL,
 	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
-)
+);
 ```
 
 
@@ -39,7 +41,7 @@ CREATE TABLE "comment" (
 	"id"	INTEGER,
 	"content"	TEXT,
 	"author_id"	TEXT,
-  	"board_id"	INTEGER,
+	"board_id"	INTEGER,
 	"post_id"	INTEGER,
 	"parent_id"	INTEGER,
 	"created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -47,9 +49,9 @@ CREATE TABLE "comment" (
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("author_id") REFERENCES "user"("id"),
 	FOREIGN KEY("board_id") REFERENCES "board"("id"),
-  	FOREIGN KEY("post_id") REFERENCES "article"("id"),
+	FOREIGN KEY("post_id") REFERENCES "article"("id"),
 	FOREIGN KEY("parent_id") REFERENCES "comment"("id")
-)
+);
 ```
 
 # API 구조
@@ -68,12 +70,12 @@ CREATE TABLE "comment" (
 ## 🔹 Create Board (게시판 생성)
 
 - **Method**: `POST`  
-- **URL**: `/api/board/create`
+- **URL**: `/api/executive/board/create`
 - **설명**: 게시판 생성
 - **Request Body**:
 ```json
 {
-  "title": "자유 게시판",
+  "name": "자유 게시판",
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0
@@ -83,7 +85,7 @@ CREATE TABLE "comment" (
 ```json
 {
   "id": 1,
-  "title": "자유 게시판",
+  "name": "자유 게시판",
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0,
@@ -103,13 +105,13 @@ CREATE TABLE "comment" (
 ## 🔹 Get Board (게시판 조회)
 
 - **Method**: `GET`  
-- **URL**: `/api/board/{id}`  
+- **URL**: `/api/board/:id`  
 - **설명**: 게시판 정보 조회
 - **Response**:
 ```json
 {
   "id": 1,
-  "title": "자유 게시판",
+  "name": "자유 게시판",
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0,
@@ -127,7 +129,7 @@ CREATE TABLE "comment" (
 ## 🔹 Get Board List (게시판 목록 조회)
 
 - **Method**: `GET`
-- **URL**: `/api/board/list`
+- **URL**: `/api/boards`
 - **설명**: 게시판 목록 조회
 - **Response**:
 
@@ -135,7 +137,7 @@ CREATE TABLE "comment" (
 [
   {
   "id": 1,
-  "title": "자유 게시판",
+  "name": "자유 게시판",
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0,
@@ -154,12 +156,12 @@ CREATE TABLE "comment" (
 ## 🔹 Update Board (게시판 정보 수정)
 
 - **Method**: `POST`  
-- **URL**: `/api/board/update/{id}`  
+- **URL**: `/api/executive/board/update/:id`  
 - **설명**: 게시판 정보 수정  
 - **Request Body**:
 ```json
 {
-  "title": "자유 게시판",
+  "name": "자유 게시판",
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0
@@ -176,7 +178,7 @@ CREATE TABLE "comment" (
 ## 🔹 Delete Board (게시판 삭제)
 
 - **Method**: `POST`  
-- **URL**: `/api/board/delete/{id}`  
+- **URL**: `/api/executive/board/delete/:id`  
 - **설명**: 게시판 삭제  
 
 - **Status Codes**:
@@ -253,7 +255,7 @@ CREATE TABLE "comment" (
 ## 🔹 Get Article by ID (ID로 게시글 조회)
 
 - **Method**: `GET`
-- **URL**: `/api/article/{id}`
+- **URL**: `/api/article/:id`
 - **설명**: 해당 ID의 게시글 조회
 - **Response**:
 ```json
@@ -276,7 +278,7 @@ CREATE TABLE "comment" (
 ## 🔹 Update Article (게시글 수정)
 
 - **Method**: `POST`
-- **URL**: `/api/article/update/author/{id}`
+- **URL**: `/api/article/update/author/:id`
 - **설명**: 게시글 수정
 - **Request Body** (JSON):
 ```json
@@ -309,7 +311,7 @@ CREATE TABLE "comment" (
 ## 🔹 Delete Article by Admin (관리자에 의한 게시글 삭제)
 
 - **Method**: `POST`
-- **URL**: `/api/article/delete/admin/{id}`
+- **URL**: `/api/article/delete/admin/:id`
 - **설명**: 관리자에 의한 게시글 삭제
 
 - **Status Codes**:
@@ -323,7 +325,7 @@ CREATE TABLE "comment" (
 ## 🔹 Delete Article (작성자에 의한 게시글 삭제)
 
 - **Method**: `POST`
-- **URL**: `/api/article/delete/author/{id}`
+- **URL**: `/api/article/delete/author/:id`
 - **설명**: 작성자에 의한 게시글 삭제
 
 - **Status Codes**:
