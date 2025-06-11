@@ -1,12 +1,11 @@
 from datetime import datetime, timezone
-from enum import Enum
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
 
-class Board(SQLModel):
-    __tablename__ = 'board'
+class Board(SQLModel, table=True):
+    __tablename__ = 'board'  # type: ignore
     id: int = Field(default=None, primary_key=True)
     name: str = Field()
     description: str = Field()
@@ -17,7 +16,7 @@ class Board(SQLModel):
 
 
 class Article(SQLModel, table=True):
-    __tablename__ = "article"
+    __tablename__ = "article"  # type: ignore
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field()
     content: str = Field()
