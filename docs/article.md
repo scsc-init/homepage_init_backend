@@ -15,7 +15,10 @@ CREATE TABLE "board" (
 	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
+
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
 ```
+- sig, pig 홍보글을 저장하는 board를 추가함. 
 
 
 ## 게시글 DB

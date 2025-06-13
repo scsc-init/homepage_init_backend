@@ -25,7 +25,7 @@ class PIG(SQLModel, table=True):
 
     title: str = Field(nullable=False)
     description: str = Field(nullable=False)
-    content_src: str = Field(nullable=False, unique=True)
+    content_id: Optional[int] = Field(foreign_key="article.id", unique=True)
 
     status: PIGStatus = Field(nullable=False)
 

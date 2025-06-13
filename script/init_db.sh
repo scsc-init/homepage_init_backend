@@ -75,7 +75,7 @@ CREATE TABLE sig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_src TEXT NOT NULL UNIQUE,
+    content_id INTEGER UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
@@ -85,13 +85,14 @@ CREATE TABLE sig (
 
     owner TEXT NOT NULL,
     UNIQUE (title, year, semester),
-    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
+    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
+    FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE SET NULL
 );
 CREATE TABLE pig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_src TEXT NOT NULL UNIQUE,
+    content_id INTEGER UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
@@ -101,7 +102,8 @@ CREATE TABLE pig (
 
     owner TEXT NOT NULL,
     UNIQUE (title, year, semester),
-    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
+    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
+    FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE SET NULL
 );
 
 -- Create SIG/PIG member table
@@ -143,7 +145,7 @@ FOR EACH ROW
 WHEN 
     OLD.title != NEW.title OR
     OLD.description != NEW.description OR
-    OLD.content_src != NEW.content_src OR
+    OLD.content_id != NEW.content_id OR
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
@@ -160,7 +162,7 @@ FOR EACH ROW
 WHEN 
     OLD.title != NEW.title OR
     OLD.description != NEW.description OR
-    OLD.content_src != NEW.content_src OR
+    OLD.content_id != NEW.content_id OR
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
@@ -227,8 +229,11 @@ CREATE TABLE "board" (
 	"description"	TEXT,
 	"writing_permission_level"	INTEGER DEFAULT 0,
 	"reading_permission_level"	INTEGER DEFAULT 0,
+    "created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
 
 CREATE TABLE "article" (
 	"id"	INTEGER,

@@ -9,7 +9,7 @@ CREATE TABLE sig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_src TEXT NOT NULL UNIQUE,
+    content_id INTEGER UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
@@ -19,7 +19,8 @@ CREATE TABLE sig (
 
     owner TEXT NOT NULL,
     UNIQUE (title, year, semester),
-    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
+    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
+    FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE SET NULL
 );
 ```
 
@@ -88,7 +89,7 @@ FOR EACH ROW
 WHEN 
     OLD.title != NEW.title OR
     OLD.description != NEW.description OR
-    OLD.content_src != NEW.content_src OR
+    OLD.content_id != NEW.content_id OR
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
@@ -105,7 +106,7 @@ FOR EACH ROW
 WHEN 
     OLD.title != NEW.title OR
     OLD.description != NEW.description OR
-    OLD.content_src != NEW.content_src OR
+    OLD.content_id != NEW.content_id OR
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
@@ -160,7 +161,7 @@ END;
 {
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
-  "content_src": "https://example.com/ai-sig",
+  "content": "## 안녕하세요",
   "year": 2025,
   "semester": 1
 }
@@ -173,7 +174,7 @@ END;
   "id": 1,
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
-  "content_src": "https://example.com/ai-sig",
+  "content_id": 1,
   "status": "surveying",
   "year": 2025,
   "semester": 1,
@@ -204,7 +205,7 @@ END;
   "id": 1,
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
-  "content_src": "https://example.com/ai-sig",
+  "content_id": 1,
   "status": "active",
   "year": 2025,
   "semester": 1,
@@ -233,7 +234,7 @@ END;
     "id": 1,
     "title": "AI SIG",
     "description": "인공지능을 연구하는 소모임입니다.",
-    "content_src": "https://example.com/ai-sig",
+    "content_id": 1,
     "status": "active",
     "year": 2025,
     "semester": 1,
@@ -261,11 +262,14 @@ END;
 {
   "title": "AI SIG",
   "description": "업데이트된 설명입니다.",
-  "content_src": "https://example.com/ai-sig-updated",
+  "content": "### 안녕하세요",
   "year": 2025,
   "semester": 1
 }
 ```
+
+- 일부만 포함하여 요청을 보내도 된다
+- content가 포함된다면, 새로운 article을 생성하여 content_id가 바뀐다
 
 * **Status Codes**:
 
@@ -324,12 +328,15 @@ END;
 {
   "title": "AI SIG",
   "description": "업데이트된 설명입니다.",
-  "content_src": "https://example.com/ai-sig-updated",
+  "content": "### 안녕하세요",
   "status": "recruiting",
   "year": 2025,
   "semester": 1
 }
 ```
+
+- 일부만 포함하여 요청을 보내도 된다
+- content가 포함된다면, 새로운 article을 생성하여 content_id가 바뀐다
 
 * **Status Codes**:
 
