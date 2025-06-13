@@ -103,6 +103,9 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | `/environment.yml`  | Conda 환경 설정 파일 |
 | `/.env`             | 환경 변수 설정 파일 |
 | `/docs/`            | API 문서 등 프로젝트 관련 문서 |
+| `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
+| `/static/image/photo/` | 업로드된 이미지 보관 폴더 |
+| `/download/`        | 업로드된 이미지 외 파일 보관 폴더 |
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
 | ├── `/auth/`        | 로그인 및 인증 관련 로직 |
 | ├── `/core/`        | 환경 변수 등 프로젝트 전역 설정 로직 |
