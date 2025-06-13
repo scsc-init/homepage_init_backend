@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Sequence
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -8,51 +8,16 @@ from sqlmodel import select
 from src.auth import get_current_user
 from src.db import SessionDep
 from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus, User, UserRole
-from src.util import is_valid_semester, is_valid_year
 from src.util import get_sig_global_status
+from src.controller import create_sig_controller, BodyCreateSIG, update_sig_controller, BodyUpdateSIG
+
 
 sig_router = APIRouter(tags=['sig'])
 
 
-class BodyCreateSIG(BaseModel):
-    title: str
-    description: str
-    content_src: str
-    year: int
-    semester: int
-
-
 @sig_router.post('/sig/create', status_code=201)
 async def create_sig(body: BodyCreateSIG, session: SessionDep, current_user: User = Depends(get_current_user), sig_global_status: SIGGlobalStatus = Depends(get_sig_global_status)) -> SIG:
-    if sig_global_status.status != SIGStatus.surveying: raise HTTPException(400, "cannot create sig when sig global status is not surveying")
-    if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
-    if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
-
-    sig = SIG(
-        title=body.title,
-        description=body.description,
-        content_src=body.content_src,
-        year=body.year,
-        semester=body.semester,
-        owner=current_user.id,
-        status=SIGStatus.surveying
-    )
-    session.add(sig)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="unique field already exists")
-    session.refresh(sig)
-    if sig.id is None: raise HTTPException(503, detail="sig primary key does not exist")
-    sig_member = SIGMember(
-        ig_id=sig.id,
-        user_id=current_user.id,
-        status=sig.status
-    )
-    session.add(sig_member)
-    session.commit()
-    session.refresh(sig)
-    return sig
+    return await create_sig_controller(session, body, current_user.id, sig_global_status)
 
 
 @sig_router.get('/sig/{id}')
@@ -67,34 +32,9 @@ async def get_all_sigs(session: SessionDep) -> Sequence[SIG]:
     return session.exec(select(SIG)).all()
 
 
-class BodyUpdateMySIG(BaseModel):
-    title: str
-    description: str
-    content_src: str
-    year: int
-    semester: int
-
-
 @sig_router.post('/sig/{id}/update', status_code=204)
-async def update_my_sig(id: int, body: BodyUpdateMySIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
-    sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
-    if sig.owner != current_user.id: raise HTTPException(
-        status_code=403, detail="cannot update sig of other")
-    if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
-    if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
-
-    sig.title = body.title
-    sig.description = body.description
-    sig.content_src = body.content_src
-    sig.year = body.year
-    sig.semester = body.semester
-    session.add(sig)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="unique field already exists")
-    return
+async def update_my_sig(id: int, body: BodyUpdateSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    await update_sig_controller(session, id, body, current_user.id, False)
 
 
 @sig_router.post('/sig/{id}/delete', status_code=204)
@@ -107,39 +47,9 @@ async def delete_my_sig(id: int, session: SessionDep, current_user: User = Depen
     return
 
 
-class BodyUpdateSIG(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    content_src: Optional[str] = None
-    status: Optional[SIGStatus] = None
-    year: Optional[int] = None
-    semester: Optional[int] = None
-
-
 @sig_router.post('/executive/sig/{id}/update', status_code=204)
-async def update_sig(id: int, body: BodyUpdateSIG, session: SessionDep) -> None:
-    sig = session.get(SIG, id)
-    if sig is None: raise HTTPException(404, detail="no sig exists")
-    if body.title:
-        sig.title = body.title
-    if body.description:
-        sig.description = body.description
-    if body.content_src:
-        sig.content_src = body.content_src
-    if body.status:
-        sig.status = body.status
-    if body.year:
-        if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
-        sig.year = body.year
-    if body.semester:
-        if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
-        sig.semester = body.semester
-    session.add(sig)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="unique field already exists")
-    return
+async def update_sig(id: int, body: BodyUpdateSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    await update_sig_controller(session, id, body, current_user.id, True)
 
 
 @sig_router.post('/executive/sig/{id}/delete', status_code=204)

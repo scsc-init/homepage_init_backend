@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     image_max_size: int
     file_dir: str
     file_max_size: int
+    highest_role_level: int
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

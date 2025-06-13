@@ -16,6 +16,7 @@ IMAGE_DIR="static/image/photo/"
 IMAGE_MAX_SIZE=10000000
 FILE_DIR="download/"
 FILE_MAX_SIZE=10000000
+HIGHEST_ROLE_LEVEL=1000
 ```
 
 | Key Name           | Description                                                      |
@@ -27,6 +28,7 @@ FILE_MAX_SIZE=10000000
 | `IMAGE_MAX_SIZE`   | 이미지 최대 용량(바이트) |
 | `FILE_DIR`        | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`   | 파일 최대 용량(바이트) |
+| `HIGHEST_ROLE_LEVEL`   | 최고 권한 수준. 벡엔드 내부에서 권한에 무관하게 실행할 때 사용된다. |
 
 ## 실행 방법(with docker)
 
@@ -103,6 +105,9 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | `/environment.yml`  | Conda 환경 설정 파일 |
 | `/.env`             | 환경 변수 설정 파일 |
 | `/docs/`            | API 문서 등 프로젝트 관련 문서 |
+| `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
+| `/static/image/photo/` | 업로드된 이미지 보관 폴더 |
+| `/download/`        | 업로드된 이미지 외 파일 보관 폴더 |
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
 | ├── `/auth/`        | 로그인 및 인증 관련 로직 |
 | ├── `/core/`        | 환경 변수 등 프로젝트 전역 설정 로직 |

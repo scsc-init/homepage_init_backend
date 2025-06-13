@@ -7,38 +7,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.auth import get_current_user
+from src.controller import create_article_controller, BodyCreateArticle
 from src.db import SessionDep
-from src.model import Article, User, Board
+from src.model import Article, Board, User
 
 article_router = APIRouter(tags=['article'])
 
 
-class BodyCreateArticle(BaseModel):
-    title: str
-    content: str
-    board_id: int
-
-
 @article_router.post('/article/create', status_code=201)
 async def create_article(body: BodyCreateArticle, session: SessionDep, current_user: User = Depends(get_current_user)) -> Article:
-    board = session.get(Board, body.board_id)
-    if not board:
-        raise HTTPException(status_code=404, detail=f"Board {body.board_id} does not exist",)
-    if int(current_user.role) < board.writing_permission_level:
-        raise HTTPException(status_code=403, detail="You are not allowed to write this article",)
-    article = Article(
-        title=body.title,
-        content=body.content,
-        author_id=current_user.id,
-        board_id=body.board_id,
-    )
-    session.add(article)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(status_code=409, detail="unique field already exists")
-    session.refresh(article)
-    return article
+    return await create_article_controller(session, body, current_user.id, int(current_user.role))
 
 
 @article_router.get('/articles/{board_id}')

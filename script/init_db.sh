@@ -75,7 +75,7 @@ CREATE TABLE sig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_src TEXT NOT NULL UNIQUE,
+    content_id INTEGER UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
@@ -85,13 +85,14 @@ CREATE TABLE sig (
 
     owner TEXT NOT NULL,
     UNIQUE (title, year, semester),
-    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
+    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
+    FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE RESTRICT
 );
 CREATE TABLE pig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_src TEXT NOT NULL UNIQUE,
+    content_id INTEGER UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
@@ -101,7 +102,8 @@ CREATE TABLE pig (
 
     owner TEXT NOT NULL,
     UNIQUE (title, year, semester),
-    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT
+    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
+    FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE RESTRICT
 );
 
 -- Create SIG/PIG member table
@@ -143,7 +145,7 @@ FOR EACH ROW
 WHEN 
     OLD.title != NEW.title OR
     OLD.description != NEW.description OR
-    OLD.content_src != NEW.content_src OR
+    OLD.content_id != NEW.content_id OR
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
@@ -160,7 +162,7 @@ FOR EACH ROW
 WHEN 
     OLD.title != NEW.title OR
     OLD.description != NEW.description OR
-    OLD.content_src != NEW.content_src OR
+    OLD.content_id != NEW.content_id OR
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
@@ -223,35 +225,38 @@ CREATE INDEX idx_file_metadata_owner ON file_metadata(owner);
 -- Board, Article, Comment table
 CREATE TABLE "board" (
 	"id"	INTEGER,
-	"name"	TEXT,
-	"description"	TEXT,
-	"writing_permission_level"	INTEGER DEFAULT 0,
-	"reading_permission_level"	INTEGER DEFAULT 0,
+	"name"	TEXT NOT NULL,
+	"description"	TEXT NOT NULL,
+	"writing_permission_level"	INTEGER NOT NULL DEFAULT 0,
+	"reading_permission_level"	INTEGER NOT NULL DEFAULT 0,
+    "created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
 
 CREATE TABLE "article" (
 	"id"	INTEGER,
-	"title"	TEXT,
-	"content"	TEXT,
-	"author_id"	TEXT,
-	"board_id"	INTEGER,
-	"created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"title"	TEXT NOT NULL,
+	"content"	TEXT NOT NULL,
+	"author_id"	TEXT NOT NULL,
+	"board_id"	INTEGER NOT NULL,
+	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE SET NULL,
+	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
 	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "comment" (
 	"id"	INTEGER,
-	"content"	TEXT,
-	"author_id"	TEXT,
-	"board_id"	INTEGER,
-	"post_id"	INTEGER,
-	"parent_id"	INTEGER,
-	"created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"content"	TEXT NOT NULL,
+	"author_id"	TEXT NOT NULL,
+	"board_id"	INTEGER NOT NULL,
+	"post_id"	INTEGER NOT NULL,
+	"parent_id"	INTEGER NOT NULL,
+	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("author_id") REFERENCES "user"("id"),
 	FOREIGN KEY("board_id") REFERENCES "board"("id"),

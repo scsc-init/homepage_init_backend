@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
@@ -17,7 +16,7 @@ class Board(SQLModel, table=True):
 
 class Article(SQLModel, table=True):
     __tablename__ = "article"  # type: ignore
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     title: str = Field()
     content: str = Field()
     author_id: str = Field(foreign_key="user.id")
