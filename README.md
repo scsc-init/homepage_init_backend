@@ -16,6 +16,7 @@ IMAGE_DIR="static/image/photo/"
 IMAGE_MAX_SIZE=10000000
 FILE_DIR="download/"
 FILE_MAX_SIZE=10000000
+HIGHEST_ROLE_LEVEL=1000
 ```
 
 | Key Name           | Description                                                      |
@@ -27,6 +28,7 @@ FILE_MAX_SIZE=10000000
 | `IMAGE_MAX_SIZE`   | 이미지 최대 용량(바이트) |
 | `FILE_DIR`        | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`   | 파일 최대 용량(바이트) |
+| `HIGHEST_ROLE_LEVEL`   | 최고 권한 수준. 벡엔드 내부에서 권한에 무관하게 실행할 때 사용된다. |
 
 ## 실행 방법(with docker)
 

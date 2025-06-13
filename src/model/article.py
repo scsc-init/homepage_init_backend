@@ -20,7 +20,7 @@ class Article(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field()
     content: str = Field()
-    author_id: Optional[str] = Field(nullable=True, foreign_key="user.id")
+    author_id: str = Field(foreign_key="user.id")
     board_id: int = Field(foreign_key="board.id")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -17,7 +17,7 @@ sig_router = APIRouter(tags=['sig'])
 
 @sig_router.post('/sig/create', status_code=201)
 async def create_sig(body: BodyCreateSIG, session: SessionDep, current_user: User = Depends(get_current_user), sig_global_status: SIGGlobalStatus = Depends(get_sig_global_status)) -> SIG:
-    return await create_sig_controller(body, session, current_user, sig_global_status)
+    return await create_sig_controller(session, body, current_user.id, sig_global_status)
 
 
 @sig_router.get('/sig/{id}')
@@ -34,7 +34,7 @@ async def get_all_sigs(session: SessionDep) -> Sequence[SIG]:
 
 @sig_router.post('/sig/{id}/update', status_code=204)
 async def update_my_sig(id: int, body: BodyUpdateSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
-    await update_sig_controller(id, body, session, current_user)
+    await update_sig_controller(session, id, body, current_user.id, False)
 
 
 @sig_router.post('/sig/{id}/delete', status_code=204)
@@ -48,8 +48,8 @@ async def delete_my_sig(id: int, session: SessionDep, current_user: User = Depen
 
 
 @sig_router.post('/executive/sig/{id}/update', status_code=204)
-async def update_sig(id: int, body: BodyUpdateSIG, session: SessionDep) -> None:
-    await update_sig_controller(id, body, session, None)
+async def update_sig(id: int, body: BodyUpdateSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    await update_sig_controller(session, id, body, current_user.id, True)
 
 
 @sig_router.post('/executive/sig/{id}/delete', status_code=204)

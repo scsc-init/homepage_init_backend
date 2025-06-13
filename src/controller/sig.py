@@ -1,10 +1,12 @@
 from typing import Optional
+
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
+from src.core import get_settings
 from src.db import SessionDep
-from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus, User
+from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus
 from src.util import is_valid_semester, is_valid_year
 
 from .article import BodyCreateArticle, create_article_controller
@@ -18,15 +20,16 @@ class BodyCreateSIG(BaseModel):
     semester: int
 
 
-async def create_sig_controller(body: BodyCreateSIG, session: SessionDep, current_user: User, sig_global_status: SIGGlobalStatus) -> SIG:
+async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_id: str, sig_global_status: SIGGlobalStatus) -> SIG:
     if sig_global_status.status != SIGStatus.surveying: raise HTTPException(400, "cannot create sig when sig global status is not surveying")
     if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
     if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
 
     sig_article = await create_article_controller(
+        session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
-        session=session,
-        current_user=None
+        user_id,
+        get_settings().highest_role_level
     )
 
     sig = SIG(
@@ -35,7 +38,7 @@ async def create_sig_controller(body: BodyCreateSIG, session: SessionDep, curren
         content_id=sig_article.id,
         year=body.year,
         semester=body.semester,
-        owner=current_user.id,
+        owner=user_id,
         status=SIGStatus.surveying
     )
     session.add(sig)
@@ -48,7 +51,7 @@ async def create_sig_controller(body: BodyCreateSIG, session: SessionDep, curren
     if sig.id is None: raise HTTPException(503, detail="sig primary key does not exist")
     sig_member = SIGMember(
         ig_id=sig.id,
-        user_id=current_user.id,
+        user_id=user_id,
         status=sig.status
     )
     session.add(sig_member)
@@ -66,17 +69,10 @@ class BodyUpdateSIG(BaseModel):
     semester: Optional[int] = None
 
 
-async def update_sig_controller(id: int, body: BodyUpdateSIG, session: SessionDep, current_user: Optional[User]) -> None:
-    """
-    If current_user is None: role level will be treated as executive.
-
-    The controller can raise HTTPException.
-    """
-
+async def update_sig_controller(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
-    if current_user and sig.owner != current_user.id: raise HTTPException(
-        status_code=403, detail="cannot update sig of other")
+    if not is_executive and sig.owner != user_id: raise HTTPException(status_code=403, detail="cannot update sig of other")
     if body.year and not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
     if body.semester and not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
 
@@ -84,13 +80,14 @@ async def update_sig_controller(id: int, body: BodyUpdateSIG, session: SessionDe
     if body.description: sig.description = body.description
     if body.content:
         sig_article = await create_article_controller(
+            session,
             BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
-            session=session,
-            current_user=None
+            user_id,
+            get_settings().highest_role_level
         )
         sig.content_id = sig_article.id
     if body.status:
-        if current_user: raise HTTPException(403, detail="Only executive and above can update status")
+        if not is_executive: raise HTTPException(403, detail="Only executive and above can update status")
         sig.status = body.status
     if body.year: sig.year = body.year
     if body.semester: sig.semester = body.semester

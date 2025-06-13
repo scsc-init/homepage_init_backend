@@ -7,12 +7,12 @@
 ```sql
 CREATE TABLE "board" (
 	"id"	INTEGER,
-	"name"	TEXT,
-	"description"	TEXT,
-	"writing_permission_level"	INTEGER DEFAULT 0,
-	"reading_permission_level"	INTEGER DEFAULT 0,
-  "created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"name"	TEXT NOT NULL,
+	"description"	TEXT NOT NULL,
+	"writing_permission_level"	INTEGER NOT NULL DEFAULT 0,
+	"reading_permission_level"	INTEGER NOT NULL DEFAULT 0,
+  "created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 
@@ -25,14 +25,14 @@ INSERT INTO board (id, name, description, writing_permission_level, reading_perm
 ```sql
 CREATE TABLE "article" (
 	"id"	INTEGER,
-	"title"	TEXT,
-	"content"	TEXT,
-	"author_id"	TEXT,
-	"board_id"	INTEGER,
-	"created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"title"	TEXT NOT NULL,
+	"content"	TEXT NOT NULL,
+	"author_id"	TEXT NOT NULL,
+	"board_id"	INTEGER NOT NULL,
+	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE SET NULL,
+	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
 	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
 );
 ```
@@ -42,13 +42,13 @@ CREATE TABLE "article" (
 ```sql
 CREATE TABLE "comment" (
 	"id"	INTEGER,
-	"content"	TEXT,
-	"author_id"	TEXT,
-	"board_id"	INTEGER,
-	"post_id"	INTEGER,
-	"parent_id"	INTEGER,
-	"created_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+	"content"	TEXT NOT NULL,
+	"author_id"	TEXT NOT NULL,
+	"board_id"	INTEGER NOT NULL,
+	"post_id"	INTEGER NOT NULL,
+	"parent_id"	INTEGER NOT NULL,
+	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("author_id") REFERENCES "user"("id"),
 	FOREIGN KEY("board_id") REFERENCES "board"("id"),

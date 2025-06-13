@@ -17,7 +17,7 @@ pig_router = APIRouter(tags=['pig'])
 
 @pig_router.post('/pig/create', status_code=201)
 async def create_pig(body: BodyCreatePIG, session: SessionDep, current_user: User = Depends(get_current_user), pig_global_status: PIGGlobalStatus = Depends(get_pig_global_status)) -> PIG:
-    return await create_pig_controller(body, session, current_user, pig_global_status)
+    return await create_pig_controller(session, body, current_user.id, pig_global_status)
 
 
 @pig_router.get('/pig/{id}')
@@ -34,7 +34,7 @@ async def get_all_pigs(session: SessionDep) -> Sequence[PIG]:
 
 @pig_router.post('/pig/{id}/update', status_code=204)
 async def update_my_pig(id: int, body: BodyUpdatePIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
-    await update_pig_controller(id, body, session, current_user)
+    await update_pig_controller(session, id, body, current_user.id, False)
 
 
 @pig_router.post('/pig/{id}/delete', status_code=204)
@@ -48,8 +48,8 @@ async def delete_my_pig(id: int, session: SessionDep, current_user: User = Depen
 
 
 @pig_router.post('/executive/pig/{id}/update', status_code=204)
-async def update_pig(id: int, body: BodyUpdatePIG, session: SessionDep) -> None:
-    await update_pig_controller(id, body, session, None)
+async def update_pig(id: int, body: BodyUpdatePIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    await update_pig_controller(session, id, body, current_user.id, True)
 
 
 @pig_router.post('/executive/pig/{id}/delete', status_code=204)

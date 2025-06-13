@@ -9,7 +9,7 @@ CREATE TABLE sig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_id INTEGER UNIQUE,
+    content_id INTEGER NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
@@ -20,7 +20,7 @@ CREATE TABLE sig (
     owner TEXT NOT NULL,
     UNIQUE (title, year, semester),
     FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
-    FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE SET NULL
+    FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE RESTRICT
 );
 ```
 
