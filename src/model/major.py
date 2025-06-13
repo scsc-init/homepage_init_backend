@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlmodel import Field, SQLModel, UniqueConstraint
 
 
@@ -9,6 +7,6 @@ class Major(SQLModel, table=True):
         UniqueConstraint("college", "major_name", name="uq_college_major"),
     )
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)
     college: str = Field(nullable=False)
     major_name: str = Field(nullable=False)
