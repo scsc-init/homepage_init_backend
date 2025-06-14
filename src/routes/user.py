@@ -7,42 +7,18 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.auth import get_current_user
+from src.controller import create_user_controller, BodyCreateUser
 from src.db import SessionDep
 from src.model import User, UserStatus
 from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
 
+
 user_router = APIRouter(tags=['user'])
-
-
-class BodyCreateUser(BaseModel):
-    email: str
-    name: str
-    phone: str
-    student_id: str
-    major_id: int
 
 
 @user_router.post('/user/create', status_code=201)
 async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
-    if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
-    if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
-    user = User(
-        id=sha256_hash(body.email.lower()),
-        email=body.email,
-        name=body.name,
-        phone=body.phone,
-        student_id=body.student_id,
-        role=get_user_role_level('newcomer'),
-        major_id=body.major_id
-    )
-    session.add(user)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(
-            status_code=409, detail="unique field already exists")
-    session.refresh(user)
-    return user
+    return await create_user_controller(session, body)
 
 
 @user_router.get('/user/profile')
