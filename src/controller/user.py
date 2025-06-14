@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.db import SessionDep
-from src.model import User
+from src.model import User, UserStatus
 from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
 
 
@@ -35,3 +35,13 @@ async def create_user_controller(session: SessionDep, body: BodyCreateUser) -> U
             status_code=409, detail="unique field already exists")
     session.refresh(user)
     return user
+
+
+async def enroll_user_controller(session: SessionDep, user_id: str) -> None:
+    user = session.get(User, user_id)
+    if not user: raise HTTPException(404, detail="user not found")
+    if user.status != UserStatus.pending: raise HTTPException(400, detail="Only user with pending status can enroll")
+    user.status = UserStatus.active
+    session.add(user)
+    session.commit()
+    return

@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.auth import get_current_user
-from src.controller import create_user_controller, BodyCreateUser
+from src.controller import create_user_controller, BodyCreateUser, enroll_user_controller
 from src.db import SessionDep
 from src.model import User, UserStatus
 from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
@@ -19,6 +19,11 @@ user_router = APIRouter(tags=['user'])
 @user_router.post('/user/create', status_code=201)
 async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
     return await create_user_controller(session, body)
+
+
+@user_router.post('/user/enroll', status_code=204)
+async def enroll_user(session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    return await enroll_user_controller(session, current_user.id)
 
 
 @user_router.get('/user/profile')
