@@ -1,14 +1,8 @@
 from datetime import datetime, timezone
-from enum import Enum
 
 from sqlmodel import CheckConstraint, Field, SQLModel, UniqueConstraint
 
-
-class SIGStatus(str, Enum):
-    surveying = "surveying"
-    recruiting = "recruiting"
-    active = "active"
-    inactive = "inactive"
+from .scsc_global_status import SCSCStatus
 
 
 class SIG(SQLModel, table=True):
@@ -25,7 +19,7 @@ class SIG(SQLModel, table=True):
     description: str = Field(nullable=False)
     content_id: int = Field(foreign_key="article.id", unique=True)
 
-    status: SIGStatus = Field(nullable=False)
+    status: SCSCStatus = Field(nullable=False)
 
     year: int = Field(nullable=False)
     semester: int = Field(nullable=False)
@@ -46,6 +40,6 @@ class SIGMember(SQLModel, table=True):
 
     ig_id: int = Field(foreign_key="sig.id", nullable=False)
     user_id: str = Field(foreign_key="user.id", nullable=False)
-    status: SIGStatus = Field(nullable=False)
+    status: SCSCStatus = Field(nullable=False)
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

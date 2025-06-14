@@ -1,5 +1,5 @@
 # 회원 관련 DB, API 명세서
-**최신개정일:** 2025-05-13
+**최신개정일:** 2025-06-14
 
 # DB 구조
 
@@ -11,7 +11,7 @@ CREATE TABLE user (
     name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
-    role TEXT DEFAULT 'user' NOT NULL CHECK (role IN ('user', 'executive', 'president')),
+    role INTEGER NOT NULL,
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'banned')),
 
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -19,7 +19,8 @@ CREATE TABLE user (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     major_id INTEGER NOT NULL,
-    FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT
+    FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT,
+    FOREIGN KEY (role) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 ```
 - id는 email의 hash 사용. hash는 sha256을 사용. 
@@ -61,6 +62,7 @@ CREATE TABLE major (
 ## SQL 관련
 ```sql
 CREATE INDEX idx_user_major ON user(major_id);
+CREATE INDEX idx_user_role ON user(role);
 ```
 
 ```sql
@@ -121,6 +123,19 @@ END;
 
 ---
 
+## 🔹 Enroll User (사용자 등록)
+
+* **Method**: `POST`
+* **URL**: `/api/user/enroll`
+* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
+* **Status Codes**:
+  * `204 No Content`: 사용자가 성공적으로 `active` 상태로 등록되었습니다.
+  * `400 Bad Request`: 현재 로그인된 사용자의 상태가 `pending`이 아닌 경우
+  * `401 Unauthorized`: 로그인하지 않았거나 유효한 인증 정보가 없습니다.
+  * `404 Not Found`: (이 경우는 내부적으로 발생할 가능성이 매우 낮지만, 만약 `current_user.id`에 해당하는 사용자를 데이터베이스에서 찾을 수 없을 때 반환될 수 있습니다.)
+
+---
+
 ## 🔹 Get My Profile (내 정보 조회)
 
 - **Method**: `GET`  
@@ -169,12 +184,18 @@ END;
 
 ---
 
-## 🔹 Get Executives (임원 목록 조회)
+## 🔹 Get Users by Role (임원 목록 조회)
 
-- **Method**: `GET`
-- **URL**: `/api/user/executives`
-- **설명**: 현재 등록된 임원(`executive`) 사용자들의 목록을 조회합니다.
-- **Response**:
+* **Method**: `GET`
+* **URL**: `/api/users`
+* **Description**: 임원 이상의 권한에 대해 해당 권한의 사용자를 조회한다. 
+* **Query Parameters**:
+    * `user_role`: (Required) Specifies the role of the users to retrieve.
+        * Allowed values: `executive`, `president`
+* **Example Request**:
+    * To get executives: `/api/users?user_role=executive`
+    * To get presidents: `/api/users?user_role=president`
+* **Response**:
 
 ```json
 [
@@ -194,40 +215,10 @@ END;
 ]
 ```
 
-- **Status Codes**:
-  - `200 OK`
-  - `401 Unauthorized`
-
----
-
-## 🔹 Get Presidents (회장 목록 조회)
-
-* **Method**: `GET`
-* **URL**: `/api/user/presidents`
-* **설명**: 현재 등록된 회장(`president`) 사용자들의 목록을 조회합니다.
-* **Response**:
-
-```json
-[
-  {
-    "id": "a1b2c3d4e5f67890abcd1234567890ef",
-    "email": "president@example.com",
-    "name": "이순신",
-    "phone": "01098765432",
-    "student_id": "202412345",
-    "role": "president",
-    "status": "active",
-    "major_id": 2,
-    "last_login": "2025-05-10T08:30:00",
-    "created_at": "2024-03-01T00:00:00",
-    "updated_at": "2025-02-28T23:59:59"
-  }
-]
-```
-
-- **Status Codes**:
-  - `200 OK`
-  - `401 Unauthorized`
+* **Status Codes**:
+    * `200 OK`
+    * `400 Bad Request`: If the `role` query parameter is invalid.
+    * `401 Unauthorized`
 
 ---
 
@@ -302,22 +293,38 @@ END;
 
 ## 🔹 Change User (관리자 기능)
 
-- **Method**: `POST`  
-- **URL**: `/api/executive/user/:id`  
-- **설명**: 관리자(executive)가 회원 정보 변경  
+- **Method**: `POST`  
+- **URL**: `/api/executive/user/:id`  
+- **설명**: 관리자(`executive`)가 특정 회원의 정보를 변경합니다.
+- **Path Parameters**:
+    - `id` (string, required): 변경할 사용자 계정의 고유 ID.
 - **Request Body**:
+    * 모든 필드는 선택 사항입니다. 제공된 필드만 업데이트됩니다.
+    * `status` 필드의 가능한 값은 `active`, `pending`, `banned` 등 User 테이블 정의에서 `status`의 check 부분에 있는 값입니다. 
+
 ```json
 {
-  "status": "banned"
+  "name": "새로운 이름",
+  "phone": "01099998888",
+  "student_id": "202654321",
+  "major_id": 3,
+  "role": "executive",
+  "status": "active"
 }
 ```
 
 - **Status Codes**:
-  - `204 No Content`
-  - `401 Unauthorized` (로그인하지 않음)
-  - `403 Forbidden` (관리자(executive) 권한 없음, 권한 부족)
-  - `404 Not Found` (id 사용자 계정 없음)
-  - `409 Confilct` (UNIQUE 필드 중복)
+  - `204 No Content`: 사용자 정보가 성공적으로 변경되었습니다.
+  - `401 Unauthorized`: 로그인하지 않았거나 유효한 인증 정보가 없습니다.
+  - `403 Forbidden`:
+      - 관리자(`executive`) 권한이 없거나,
+      - 자신보다 높거나 같은 등급의 역할을 가진 사용자의 정보를 변경하려는 경우,
+      - 자신보다 높은 등급의 역할을 사용자에게 부여하려는 경우.
+  - `404 Not Found`: 제공된 `id`에 해당하는 사용자 계정을 찾을 수 없습니다.
+  - `409 Conflict`: `phone` 또는 `student_id`와 같은 UNIQUE 필드 값이 이미 존재합니다.
+  - `422 Unprocessable Entity`:
+      - `phone` 번호 형식이 유효하지 않은 경우.
+      - `student_id` 형식이 유효하지 않은 경우.
 
 ---
 

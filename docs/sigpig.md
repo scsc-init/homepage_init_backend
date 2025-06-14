@@ -1,5 +1,5 @@
 # SIG/PIG 관련 DB, API 명세서
-**최신개정일:** 2025-05-16
+**최신개정일:** 2025-06-14
 
 # DB 구조
 
@@ -59,19 +59,6 @@ CREATE TABLE pig_member (
 );
 ```
 
-## SIG/PIG Global Status
-```sql
-CREATE TABLE sig_global_status (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE pig_global_status (
-    ... -- same as sig
-);
-```
-
 ## SQL 관련
 ```sql
 CREATE INDEX idx_sig_owner ON sig(owner);
@@ -117,27 +104,6 @@ BEGIN
     WHERE id = OLD.id;
 END;
 
-CREATE TRIGGER update_sig_global_status_updated_at
-AFTER UPDATE ON sig_global_status
-FOR EACH ROW
-WHEN 
-    OLD.status != NEW.status
-BEGIN
-    UPDATE sig_global_status
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
-END;
-
-CREATE TRIGGER update_pig_global_status_updated_at
-AFTER UPDATE ON pig_global_status
-FOR EACH ROW
-WHEN 
-    OLD.status != NEW.status
-BEGIN
-    UPDATE pig_global_status
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
-END;
 ```
 
 # API 구조
@@ -455,56 +421,6 @@ END;
   * `403 Forbidden`
   * `404 Not Found`
   * `409 Conflict`: 시그장 탈퇴 불가
-
----
-
-## 🔹 Get Global SIG Status
-
-* **Method**: `GET`
-* **URL**: `/api/sig/global/status`
-
-* **Response Body**:
-
-```json
-{
-  "status": "active"
-}
-```
-
-* **Status Codes**:
-  * `200 OK` - 상태 변경 성공
-
----
-
-## 🔹 Update Global SIG Status
-
-* **Method**: `POST`
-* **URL**: `/api/executive/sig/global/status`
-* **설명**: 임원이 전체 SIG의 상태를 일괄적으로 설정합니다
-
-* **Request Body**:
-
-```json
-{
-  "status": "active"
-}
-```
-status는 ('surveying', 'recruiting', 'active', 'inactive') 중 하나
-* **유효한 status 변경 방법**
-
-|기존 status|변경 status|
-|---|---|
-|inactive|surveying|
-|surveying|recruiting|
-|recruiting|active|
-|any|inactive|
-
-* **Status Codes**:
-
-  * `204 No Content` - 상태 변경 성공
-  * `400 Bad Request` - 유효하지 않은 `status` 변경
-  * `401 Unauthorized` - 인증 실패
-  * `403 Forbidden` - 권한 없음 (임원이 아닌 경우)
 
 ---
 

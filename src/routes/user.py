@@ -7,41 +7,23 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.auth import get_current_user
+from src.controller import create_user_controller, BodyCreateUser, enroll_user_controller
 from src.db import SessionDep
-from src.model import User, UserRole, UserStatus
-from src.util import is_valid_phone, is_valid_student_id, sha256_hash
+from src.model import User, UserStatus
+from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
+
 
 user_router = APIRouter(tags=['user'])
 
 
-class BodyCreateUser(BaseModel):
-    email: str
-    name: str
-    phone: str
-    student_id: str
-    major_id: int
-
-
 @user_router.post('/user/create', status_code=201)
 async def create_user(body: BodyCreateUser, session: SessionDep) -> User:
-    if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
-    if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
-    user = User(
-        id=sha256_hash(body.email.lower()),
-        email=body.email,
-        name=body.name,
-        phone=body.phone,
-        student_id=body.student_id,
-        major_id=body.major_id
-    )
-    session.add(user)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(
-            status_code=409, detail="unique field already exists")
-    session.refresh(user)
-    return user
+    return await create_user_controller(session, body)
+
+
+@user_router.post('/user/enroll', status_code=204)
+async def enroll_user(session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+    return await enroll_user_controller(session, current_user.id)
 
 
 @user_router.get('/user/profile')
@@ -67,14 +49,12 @@ async def get_user_by_id(id: str, session: SessionDep) -> UserResponse:
     return UserResponse.model_validate(user)
 
 
-@user_router.get('/user/executives')
-async def get_executives(session: SessionDep) -> Sequence[User]:
-    return session.exec(select(User).where(User.role == UserRole.executive)).all()
-
-
-@user_router.get('/user/presidents')
-async def get_presidents(session: SessionDep) -> Sequence[User]:
-    return session.exec(select(User).where(User.role == UserRole.president)).all()
+@user_router.get('/users')
+async def get_executives(user_role: str, session: SessionDep) -> Sequence[User]:
+    level = get_user_role_level(user_role)
+    if level < get_user_role_level('executive'):
+        raise HTTPException(400, detail="Cannot get users without executive or higher role")
+    return session.exec(select(User).where(User.role == level)).all()
 
 
 class BodyUpdateMyProfile(BaseModel):
@@ -102,7 +82,7 @@ async def update_my_profile(body: BodyUpdateMyProfile, session: SessionDep, curr
 
 @user_router.post('/user/delete', status_code=204)
 async def delete_my_profile(session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
-    if current_user.role != UserRole.user: raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
+    if current_user.role >= get_user_role_level('executive'): raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
     session.delete(current_user)
     try: session.commit()
     except IntegrityError:
@@ -138,7 +118,7 @@ class BodyUpdateUser(BaseModel):
     phone: Optional[str] = None
     student_id: Optional[str] = None
     major_id: Optional[int] = None
-    role: Optional[UserRole] = None
+    role: Optional[str] = None
     status: Optional[UserStatus] = None
 
 
@@ -149,8 +129,9 @@ async def update_user(id: str, body: BodyUpdateUser, session: SessionDep, curren
 
     if current_user.role <= user.role: raise HTTPException(403, detail="Cannot update user with a higher or equal role than yourself")
     if body.role:
-        if current_user.role < body.role: raise HTTPException(403, detail="Cannot assign role higher than yours")
-        user.role = body.role
+        level = get_user_role_level(body.role)
+        if current_user.role < level: raise HTTPException(403, detail="Cannot assign role higher than yours")
+        user.role = level
 
     if body.phone:
         if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")

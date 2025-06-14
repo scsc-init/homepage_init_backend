@@ -1,5 +1,5 @@
 # 게시글 관련 DB, API 명세서
-**최신개정일:** 2025-05-28
+**최신개정일:** 2025-06-14
 
 # DB 구조
 
@@ -13,7 +13,9 @@ CREATE TABLE "board" (
 	"reading_permission_level"	INTEGER NOT NULL DEFAULT 0,
   "created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT)
+	PRIMARY KEY("id" AUTOINCREMENT),
+  FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
+  FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 
 INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
