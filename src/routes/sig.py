@@ -7,8 +7,8 @@ from sqlmodel import select
 
 from src.auth import get_current_user
 from src.db import SessionDep
-from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus, User, UserRole
-from src.util import get_sig_global_status
+from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus, User
+from src.util import get_sig_global_status, get_user_role_level
 from src.controller import create_sig_controller, BodyCreateSIG, update_sig_controller, BodyUpdateSIG
 
 
@@ -73,7 +73,7 @@ async def handover_sig(id: int, body: BodyHandoverSIG, session: SessionDep, curr
         SIGMember.user_id == body.new_owner)).first()
     if not user: raise HTTPException(
         status_code=404, detail="new_owner should be a member of the sig")
-    if current_user.role < UserRole.executive and current_user.id != sig.owner: raise HTTPException(403, "handover can be executed only by executive or owner of the sig")
+    if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner: raise HTTPException(403, "handover can be executed only by executive or owner of the sig")
     sig.owner = body.new_owner
     session.add(sig)
     session.commit()

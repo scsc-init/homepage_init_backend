@@ -8,8 +8,8 @@ class Board(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     name: str = Field()
     description: str = Field()
-    writing_permission_level: int = Field(default=0)
-    reading_permission_level: int = Field(default=0)
+    writing_permission_level: int = Field(foreign_key="user_role.level", default=0)
+    reading_permission_level: int = Field(foreign_key="user_role.level", default=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

@@ -16,7 +16,7 @@ article_router = APIRouter(tags=['article'])
 
 @article_router.post('/article/create', status_code=201)
 async def create_article(body: BodyCreateArticle, session: SessionDep, current_user: User = Depends(get_current_user)) -> Article:
-    return await create_article_controller(session, body, current_user.id, int(current_user.role))
+    return await create_article_controller(session, body, current_user.id, current_user.role)
 
 
 @article_router.get('/articles/{board_id}')

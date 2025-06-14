@@ -16,6 +16,13 @@ fi
 
 # Execute SQL commands using a here-document
 sqlite3 "$DB_FILE" <<EOF
+-- Create 'user_role' table
+CREATE TABLE user_role (
+    level INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    kor_name TEXT NOT NULL UNIQUE
+);
+
 -- Create 'major' table
 CREATE TABLE major (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,13 +38,14 @@ CREATE TABLE user (
     name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
-    role TEXT DEFAULT 'user' NOT NULL CHECK (role IN ('user', 'executive', 'president')),
+    role INTEGER NOT NULL,
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'banned')),
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     major_id INTEGER NOT NULL,
-    FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT
+    FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT,
+    FOREIGN KEY (role) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 
 -- Create trigger to update 'updated_at'
@@ -60,6 +68,7 @@ END;
 
 -- Create index on foreign key
 CREATE INDEX idx_user_major ON user(major_id);
+CREATE INDEX idx_user_role ON user(role);
 
 -- Prevent updates to major(id)
 CREATE TRIGGER prevent_major_id_update
@@ -231,7 +240,9 @@ CREATE TABLE "board" (
 	"reading_permission_level"	INTEGER NOT NULL DEFAULT 0,
     "created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT)
+	PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
+	FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
 

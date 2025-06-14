@@ -4,10 +4,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
-from src.core import get_settings
 from src.db import SessionDep
 from src.model import PIG, PIGGlobalStatus, PIGMember, PIGStatus
-from src.util import is_valid_semester, is_valid_year
+from src.util import is_valid_semester, is_valid_year, get_user_role_level
 
 from .article import BodyCreateArticle, create_article_controller
 
@@ -29,7 +28,7 @@ async def create_pig_controller(session: SessionDep, body: BodyCreatePIG, user_i
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
-        get_settings().highest_role_level
+        get_user_role_level('highest')
     )
 
     pig = PIG(
@@ -83,7 +82,7 @@ async def update_pig_controller(session: SessionDep, id: int, body: BodyUpdatePI
             session,
             BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
             user_id,
-            get_settings().highest_role_level
+            get_user_role_level('highest')
         )
         pig.content_id = pig_article.id
     if body.status:

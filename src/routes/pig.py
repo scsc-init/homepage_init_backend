@@ -7,8 +7,8 @@ from sqlmodel import select
 
 from src.auth import get_current_user
 from src.db import SessionDep
-from src.model import PIG, PIGGlobalStatus, PIGMember, PIGStatus, User, UserRole
-from src.util import get_pig_global_status
+from src.model import PIG, PIGGlobalStatus, PIGMember, PIGStatus, User
+from src.util import get_pig_global_status, get_user_role_level
 from src.controller import create_pig_controller, BodyCreatePIG, update_pig_controller, BodyUpdatePIG
 
 
@@ -73,7 +73,7 @@ async def handover_pig(id: int, body: BodyHandoverPIG, session: SessionDep, curr
         PIGMember.user_id == body.new_owner)).first()
     if not user: raise HTTPException(
         status_code=404, detail="new_owner should be a member of the pig")
-    if current_user.role < UserRole.executive and current_user.id != pig.owner: raise HTTPException(403, "handover can be executed only by executive or owner of the pig")
+    if current_user.role < get_user_role_level('executive') and current_user.id != pig.owner: raise HTTPException(403, "handover can be executed only by executive or owner of the pig")
     pig.owner = body.new_owner
     session.add(pig)
     session.commit()

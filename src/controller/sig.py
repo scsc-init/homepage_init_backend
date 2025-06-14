@@ -4,10 +4,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
-from src.core import get_settings
 from src.db import SessionDep
 from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus
-from src.util import is_valid_semester, is_valid_year
+from src.util import is_valid_semester, is_valid_year, get_user_role_level
 
 from .article import BodyCreateArticle, create_article_controller
 
@@ -29,7 +28,7 @@ async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_i
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
-        get_settings().highest_role_level
+        get_user_role_level('highest')
     )
 
     sig = SIG(
@@ -83,7 +82,7 @@ async def update_sig_controller(session: SessionDep, id: int, body: BodyUpdateSI
             session,
             BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
             user_id,
-            get_settings().highest_role_level
+            get_user_role_level('highest')
         )
         sig.content_id = sig_article.id
     if body.status:
