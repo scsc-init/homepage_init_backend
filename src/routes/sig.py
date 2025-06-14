@@ -7,8 +7,8 @@ from sqlmodel import select
 
 from src.auth import get_current_user
 from src.db import SessionDep
-from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus, User
-from src.util import get_sig_global_status, get_user_role_level
+from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus, User
+from src.util import get_scsc_global_status, get_user_role_level
 from src.controller import create_sig_controller, BodyCreateSIG, update_sig_controller, BodyUpdateSIG
 
 
@@ -16,8 +16,8 @@ sig_router = APIRouter(tags=['sig'])
 
 
 @sig_router.post('/sig/create', status_code=201)
-async def create_sig(body: BodyCreateSIG, session: SessionDep, current_user: User = Depends(get_current_user), sig_global_status: SIGGlobalStatus = Depends(get_sig_global_status)) -> SIG:
-    return await create_sig_controller(session, body, current_user.id, sig_global_status)
+async def create_sig(body: BodyCreateSIG, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)) -> SIG:
+    return await create_sig_controller(session, body, current_user.id, scsc_global_status)
 
 
 @sig_router.get('/sig/{id}')
@@ -89,7 +89,7 @@ async def get_sig_members(id: int, session: SessionDep) -> Sequence[SIGMember]:
 async def join_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
-    if sig.status not in (SIGStatus.surveying, SIGStatus.recruiting): raise HTTPException(400, "cannot join to sig when sig status is not surveying/recruiting")
+    if sig.status not in (SCSCStatus.surveying, SCSCStatus.recruiting): raise HTTPException(400, "cannot join to sig when sig status is not surveying/recruiting")
     sig_member = SIGMember(
         ig_id=id,
         user_id=current_user.id,
@@ -104,11 +104,11 @@ async def join_sig(id: int, session: SessionDep, current_user: User = Depends(ge
 
 
 @sig_router.post('/sig/{id}/member/leave', status_code=204)
-async def leave_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user), sig_global_status: SIGGlobalStatus = Depends(get_sig_global_status)):
+async def leave_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)):
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     if sig.owner == current_user.id: raise HTTPException(409, detail="sig owner cannot leave the sig")
-    sig_member = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id).where(SIGMember.status == sig_global_status.status)).first()
+    sig_member = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id).where(SIGMember.status == scsc_global_status.status)).first()
     if not sig_member: raise HTTPException(404, detail="sig member not found")
     session.delete(sig_member)
     session.commit()
@@ -153,49 +153,5 @@ async def executive_leave_sig(id: int, body: BodyExecutiveLeaveSIG, session: Ses
     if not sig_members: raise HTTPException(404, detail="sig member not found")
     for member in sig_members:
         session.delete(member)
-    session.commit()
-    return
-
-
-@sig_router.get('/sig/global/status')
-async def _get_sig_global_status(sig_global_status: SIGGlobalStatus = Depends(get_sig_global_status)):
-    return {'status': sig_global_status.status}
-
-
-class BodyUpdateSIGGlobalStatus(BaseModel):
-    status: SIGStatus
-
-
-_valid_sig_global_status_update = (
-    (SIGStatus.inactive, SIGStatus.surveying),
-    (SIGStatus.surveying, SIGStatus.recruiting),
-    (SIGStatus.recruiting, SIGStatus.active),
-    (SIGStatus.surveying, SIGStatus.inactive),
-    (SIGStatus.recruiting, SIGStatus.inactive),
-    (SIGStatus.active, SIGStatus.inactive),
-)
-
-
-def _check_valid_sig_global_status_update(old_status: SIGStatus, new_status: SIGStatus) -> bool:
-    for valid_update in _valid_sig_global_status_update:
-        if (old_status, new_status) == valid_update: return True
-    return False
-
-
-@sig_router.post('/executive/sig/global/status', status_code=204)
-async def update_sig_global_status(body: BodyUpdateSIGGlobalStatus, session: SessionDep, sig_global_status: SIGGlobalStatus = Depends(get_sig_global_status)):
-    if not _check_valid_sig_global_status_update(sig_global_status.status, body.status): raise HTTPException(400, "invalid sig global status update")
-    if body.status == SIGStatus.inactive:
-        sigs = session.exec(select(SIG).where(SIG.status != SIGStatus.inactive)).all()
-        for sig in sigs:
-            sig.status = SIGStatus.inactive
-            session.add(sig)
-    elif body.status in (SIGStatus.recruiting, SIGStatus.active):
-        sigs = session.exec(select(SIG).where(SIG.status == sig_global_status.status)).all()
-        for sig in sigs:
-            sig.status = body.status
-            session.add(sig)
-    sig_global_status.status = body.status
-    session.add(sig_global_status)
     session.commit()
     return

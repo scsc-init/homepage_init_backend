@@ -21,8 +21,6 @@ PRAGMA foreign_keys = ON;
 
 
 ## 권한 DB
-
-## 권한 DB
 ```sql
 CREATE TABLE user_role (
     level INTEGER PRIMARY KEY,
@@ -45,6 +43,30 @@ CREATE TABLE user_role (
 1. (500, 'executive', '운영진'): 
 1. (600, 'president', '회장'): 
 1. (1000, 'highest', '최고권한'): 가장 높은 권한으로 SIG/PIG 홍보 글이 저장되는 `board`(id==1)의 쓰기 권한에 사용된다. 
+
+
+## SCSC 전역 상태 DB
+```sql
+CREATE TABLE scsc_global_status (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## SQL 관련
+```sql
+CREATE TRIGGER update_scsc_global_status_updated_at
+AFTER UPDATE ON scsc_global_status
+FOR EACH ROW
+WHEN 
+    OLD.status != NEW.status
+BEGIN
+    UPDATE scsc_global_status
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
+END;
+```
 
 
 ## 파일 메타데이터 DB

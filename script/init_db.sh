@@ -182,42 +182,25 @@ BEGIN
     WHERE id = OLD.id;
 END;
 
--- SIG/PIG global status
-CREATE TABLE sig_global_status (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE pig_global_status (
+-- SCSC global status
+CREATE TABLE scsc_global_status (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER update_sig_global_status_updated_at
-AFTER UPDATE ON sig_global_status
+CREATE TRIGGER update_scsc_global_status_updated_at
+AFTER UPDATE ON scsc_global_status
 FOR EACH ROW
 WHEN 
     OLD.status != NEW.status
 BEGIN
-    UPDATE sig_global_status
+    UPDATE scsc_global_status
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
 
-CREATE TRIGGER update_pig_global_status_updated_at
-AFTER UPDATE ON pig_global_status
-FOR EACH ROW
-WHEN 
-    OLD.status != NEW.status
-BEGIN
-    UPDATE pig_global_status
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
-END;
-
-INSERT INTO sig_global_status (id, status) VALUES (1, 'inactive');
-INSERT INTO pig_global_status (id, status) VALUES (1, 'inactive');
+INSERT INTO scsc_global_status (id, status) VALUES (1, 'inactive');
 
 -- File metadata table
 CREATE TABLE file_metadata (
