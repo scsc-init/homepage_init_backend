@@ -4,32 +4,6 @@ from enum import Enum
 from sqlmodel import Field, SQLModel
 
 
-# class UserRole(str, Enum):
-#     user = "user"
-#     executive = "executive"
-#     president = "president"
-
-#     def __lt__(self, other: "UserRole", tbl={user: 0, executive: 1, president: 2}) -> bool:
-#         if isinstance(other, UserRole):
-#             return tbl[self] < tbl[other]
-#         return NotImplemented
-
-#     def __le__(self, other: "UserRole"):
-#         return self < other or self == other
-
-#     def __ne__(self, other: "UserRole"):
-#         return not self == other
-
-#     def __gt__(self, other: "UserRole"):
-#         return not (self < other or self == other)
-
-#     def __ge__(self, other: "UserRole"):
-#         return not self < other
-
-#     def __int__(self) -> int:
-#         return {UserRole.user: 0, UserRole.executive: 1, UserRole.president: 2}[self]
-
-
 class UserStatus(str, Enum):
     active = "active"
     pending = "pending"
