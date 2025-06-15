@@ -4,7 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.auth import get_current_user
 from src.db import SessionLocal
-from src.model import UserRole
+from src.util import get_user_role_level
 
 
 class AssertPermissionMiddleware(BaseHTTPMiddleware):
@@ -15,6 +15,6 @@ class AssertPermissionMiddleware(BaseHTTPMiddleware):
                     current_user = get_current_user(request, session)
             except HTTPException as e:
                 return JSONResponse({"detail": e.detail}, e.status_code)
-            if current_user.role < UserRole.executive:
+            if current_user.role < get_user_role_level('executive'):
                 return JSONResponse({"detail": "permission denied: at least executive role required"}, 403)
         return await call_next(request)

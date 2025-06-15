@@ -7,8 +7,8 @@ from sqlmodel import select
 
 from src.auth import get_current_user
 from src.db import SessionDep
-from src.model import PIG, PIGGlobalStatus, PIGMember, PIGStatus, User, UserRole
-from src.util import get_pig_global_status
+from src.model import PIG, SCSCGlobalStatus, PIGMember, SCSCStatus, User
+from src.util import get_scsc_global_status, get_user_role_level
 from src.controller import create_pig_controller, BodyCreatePIG, update_pig_controller, BodyUpdatePIG
 
 
@@ -16,8 +16,8 @@ pig_router = APIRouter(tags=['pig'])
 
 
 @pig_router.post('/pig/create', status_code=201)
-async def create_pig(body: BodyCreatePIG, session: SessionDep, current_user: User = Depends(get_current_user), pig_global_status: PIGGlobalStatus = Depends(get_pig_global_status)) -> PIG:
-    return await create_pig_controller(session, body, current_user.id, pig_global_status)
+async def create_pig(body: BodyCreatePIG, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)) -> PIG:
+    return await create_pig_controller(session, body, current_user.id, scsc_global_status)
 
 
 @pig_router.get('/pig/{id}')
@@ -73,7 +73,7 @@ async def handover_pig(id: int, body: BodyHandoverPIG, session: SessionDep, curr
         PIGMember.user_id == body.new_owner)).first()
     if not user: raise HTTPException(
         status_code=404, detail="new_owner should be a member of the pig")
-    if current_user.role < UserRole.executive and current_user.id != pig.owner: raise HTTPException(403, "handover can be executed only by executive or owner of the pig")
+    if current_user.role < get_user_role_level('executive') and current_user.id != pig.owner: raise HTTPException(403, "handover can be executed only by executive or owner of the pig")
     pig.owner = body.new_owner
     session.add(pig)
     session.commit()
@@ -89,7 +89,7 @@ async def get_pig_members(id: int, session: SessionDep) -> Sequence[PIGMember]:
 async def join_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
-    if pig.status not in (PIGStatus.surveying, PIGStatus.recruiting): raise HTTPException(400, "cannot join to pig when pig status is not surveying/recruiting")
+    if pig.status not in (SCSCStatus.surveying, SCSCStatus.recruiting): raise HTTPException(400, "cannot join to pig when pig status is not surveying/recruiting")
     pig_member = PIGMember(
         ig_id=id,
         user_id=current_user.id,
@@ -104,11 +104,11 @@ async def join_pig(id: int, session: SessionDep, current_user: User = Depends(ge
 
 
 @pig_router.post('/pig/{id}/member/leave', status_code=204)
-async def leave_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user), pig_global_status: PIGGlobalStatus = Depends(get_pig_global_status)):
+async def leave_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)):
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     if pig.owner == current_user.id: raise HTTPException(409, detail="pig owner cannot leave the pig")
-    pig_member = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(PIGMember.user_id == current_user.id).where(PIGMember.status == pig_global_status.status)).first()
+    pig_member = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(PIGMember.user_id == current_user.id).where(PIGMember.status == scsc_global_status.status)).first()
     if not pig_member: raise HTTPException(404, detail="pig member not found")
     session.delete(pig_member)
     session.commit()
@@ -153,49 +153,5 @@ async def executive_leave_pig(id: int, body: BodyExecutiveLeavePIG, session: Ses
     if not pig_members: raise HTTPException(404, detail="pig member not found")
     for member in pig_members:
         session.delete(member)
-    session.commit()
-    return
-
-
-@pig_router.get('/pig/global/status')
-async def _get_pig_global_status(pig_global_status: PIGGlobalStatus = Depends(get_pig_global_status)):
-    return {'status': pig_global_status.status}
-
-
-class BodyUpdatePIGGlobalStatus(BaseModel):
-    status: PIGStatus
-
-
-_valid_pig_global_status_update = (
-    (PIGStatus.inactive, PIGStatus.surveying),
-    (PIGStatus.surveying, PIGStatus.recruiting),
-    (PIGStatus.recruiting, PIGStatus.active),
-    (PIGStatus.surveying, PIGStatus.inactive),
-    (PIGStatus.recruiting, PIGStatus.inactive),
-    (PIGStatus.active, PIGStatus.inactive),
-)
-
-
-def _check_valid_pig_global_status_update(old_status: PIGStatus, new_status: PIGStatus) -> bool:
-    for valid_update in _valid_pig_global_status_update:
-        if (old_status, new_status) == valid_update: return True
-    return False
-
-
-@pig_router.post('/executive/pig/global/status', status_code=204)
-async def update_pig_global_status(body: BodyUpdatePIGGlobalStatus, session: SessionDep, pig_global_status: PIGGlobalStatus = Depends(get_pig_global_status)):
-    if not _check_valid_pig_global_status_update(pig_global_status.status, body.status): raise HTTPException(400, "invalid pig global status update")
-    if body.status == PIGStatus.inactive:
-        pigs = session.exec(select(PIG).where(PIG.status != PIGStatus.inactive)).all()
-        for pig in pigs:
-            pig.status = PIGStatus.inactive
-            session.add(pig)
-    elif body.status in (PIGStatus.recruiting, PIGStatus.active):
-        pigs = session.exec(select(PIG).where(PIG.status == pig_global_status.status)).all()
-        for pig in pigs:
-            pig.status = body.status
-            session.add(pig)
-    pig_global_status.status = body.status
-    session.add(pig_global_status)
     session.commit()
     return

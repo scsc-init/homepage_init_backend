@@ -4,10 +4,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
-from src.core import get_settings
 from src.db import SessionDep
-from src.model import PIG, PIGGlobalStatus, PIGMember, PIGStatus
-from src.util import is_valid_semester, is_valid_year
+from src.model import PIG, SCSCGlobalStatus, PIGMember, SCSCStatus
+from src.util import is_valid_semester, is_valid_year, get_user_role_level
 
 from .article import BodyCreateArticle, create_article_controller
 
@@ -20,8 +19,8 @@ class BodyCreatePIG(BaseModel):
     semester: int
 
 
-async def create_pig_controller(session: SessionDep, body: BodyCreatePIG, user_id: str, pig_global_status: PIGGlobalStatus) -> PIG:
-    if pig_global_status.status != PIGStatus.surveying: raise HTTPException(400, "cannot create pig when pig global status is not surveying")
+async def create_pig_controller(session: SessionDep, body: BodyCreatePIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> PIG:
+    if scsc_global_status.status != SCSCStatus.surveying: raise HTTPException(400, "cannot create pig when pig global status is not surveying")
     if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
     if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
 
@@ -29,7 +28,7 @@ async def create_pig_controller(session: SessionDep, body: BodyCreatePIG, user_i
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
-        get_settings().highest_role_level
+        get_user_role_level('highest')
     )
 
     pig = PIG(
@@ -39,7 +38,7 @@ async def create_pig_controller(session: SessionDep, body: BodyCreatePIG, user_i
         year=body.year,
         semester=body.semester,
         owner=user_id,
-        status=PIGStatus.surveying
+        status=SCSCStatus.surveying
     )
     session.add(pig)
     try: session.commit()
@@ -64,7 +63,7 @@ class BodyUpdatePIG(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     content: Optional[str] = None
-    status: Optional[PIGStatus] = None
+    status: Optional[SCSCStatus] = None
     year: Optional[int] = None
     semester: Optional[int] = None
 
@@ -83,7 +82,7 @@ async def update_pig_controller(session: SessionDep, id: int, body: BodyUpdatePI
             session,
             BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
             user_id,
-            get_settings().highest_role_level
+            get_user_role_level('highest')
         )
         pig.content_id = pig_article.id
     if body.status:

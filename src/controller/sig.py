@@ -4,10 +4,9 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
-from src.core import get_settings
 from src.db import SessionDep
-from src.model import SIG, SIGGlobalStatus, SIGMember, SIGStatus
-from src.util import is_valid_semester, is_valid_year
+from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus
+from src.util import is_valid_semester, is_valid_year, get_user_role_level
 
 from .article import BodyCreateArticle, create_article_controller
 
@@ -20,8 +19,8 @@ class BodyCreateSIG(BaseModel):
     semester: int
 
 
-async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_id: str, sig_global_status: SIGGlobalStatus) -> SIG:
-    if sig_global_status.status != SIGStatus.surveying: raise HTTPException(400, "cannot create sig when sig global status is not surveying")
+async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> SIG:
+    if scsc_global_status.status != SCSCStatus.surveying: raise HTTPException(400, "cannot create sig when sig global status is not surveying")
     if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
     if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
 
@@ -29,7 +28,7 @@ async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_i
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
-        get_settings().highest_role_level
+        get_user_role_level('highest')
     )
 
     sig = SIG(
@@ -39,7 +38,7 @@ async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_i
         year=body.year,
         semester=body.semester,
         owner=user_id,
-        status=SIGStatus.surveying
+        status=SCSCStatus.surveying
     )
     session.add(sig)
     try: session.commit()
@@ -64,7 +63,7 @@ class BodyUpdateSIG(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     content: Optional[str] = None
-    status: Optional[SIGStatus] = None
+    status: Optional[SCSCStatus] = None
     year: Optional[int] = None
     semester: Optional[int] = None
 
@@ -83,7 +82,7 @@ async def update_sig_controller(session: SessionDep, id: int, body: BodyUpdateSI
             session,
             BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
             user_id,
-            get_settings().highest_role_level
+            get_user_role_level('highest')
         )
         sig.content_id = sig_article.id
     if body.status:

@@ -1,16 +1,22 @@
 from datetime import datetime, timezone
+from enum import Enum
 
 from sqlmodel import CheckConstraint, Field, SQLModel
 
-from .pig import PIGStatus
+
+class SCSCStatus(str, Enum):
+    surveying = "surveying"
+    recruiting = "recruiting"
+    active = "active"
+    inactive = "inactive"
 
 
-class PIGGlobalStatus(SQLModel, table=True):
-    __tablename__ = "pig_global_status"  # type: ignore
+class SCSCGlobalStatus(SQLModel, table=True):
+    __tablename__ = "scsc_global_status"  # type: ignore
     __table_args__ = (
         CheckConstraint("id = 1", name="ck_id_valid"),
     )
 
     id: int = Field(default=None, primary_key=True)
-    status: PIGStatus = Field(default=None, nullable=False)
+    status: SCSCStatus = Field(default=None, nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

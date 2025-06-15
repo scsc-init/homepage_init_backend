@@ -16,6 +16,13 @@ fi
 
 # Execute SQL commands using a here-document
 sqlite3 "$DB_FILE" <<EOF
+-- Create 'user_role' table
+CREATE TABLE user_role (
+    level INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    kor_name TEXT NOT NULL UNIQUE
+);
+
 -- Create 'major' table
 CREATE TABLE major (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,13 +38,14 @@ CREATE TABLE user (
     name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
-    role TEXT DEFAULT 'user' NOT NULL CHECK (role IN ('user', 'executive', 'president')),
+    role INTEGER NOT NULL,
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'banned')),
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     major_id INTEGER NOT NULL,
-    FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT
+    FOREIGN KEY (major_id) REFERENCES major(id) ON DELETE RESTRICT,
+    FOREIGN KEY (role) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 
 -- Create trigger to update 'updated_at'
@@ -60,6 +68,7 @@ END;
 
 -- Create index on foreign key
 CREATE INDEX idx_user_major ON user(major_id);
+CREATE INDEX idx_user_role ON user(role);
 
 -- Prevent updates to major(id)
 CREATE TRIGGER prevent_major_id_update
@@ -173,42 +182,25 @@ BEGIN
     WHERE id = OLD.id;
 END;
 
--- SIG/PIG global status
-CREATE TABLE sig_global_status (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE pig_global_status (
+-- SCSC global status
+CREATE TABLE scsc_global_status (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TRIGGER update_sig_global_status_updated_at
-AFTER UPDATE ON sig_global_status
+CREATE TRIGGER update_scsc_global_status_updated_at
+AFTER UPDATE ON scsc_global_status
 FOR EACH ROW
 WHEN 
     OLD.status != NEW.status
 BEGIN
-    UPDATE sig_global_status
+    UPDATE scsc_global_status
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
 
-CREATE TRIGGER update_pig_global_status_updated_at
-AFTER UPDATE ON pig_global_status
-FOR EACH ROW
-WHEN 
-    OLD.status != NEW.status
-BEGIN
-    UPDATE pig_global_status
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
-END;
-
-INSERT INTO sig_global_status (id, status) VALUES (1, 'inactive');
-INSERT INTO pig_global_status (id, status) VALUES (1, 'inactive');
+INSERT INTO scsc_global_status (id, status) VALUES (1, 'inactive');
 
 -- File metadata table
 CREATE TABLE file_metadata (
@@ -231,7 +223,9 @@ CREATE TABLE "board" (
 	"reading_permission_level"	INTEGER NOT NULL DEFAULT 0,
     "created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT)
+	PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
+	FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
 

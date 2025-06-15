@@ -1,3 +1,6 @@
+# 백엔드 공통 DB, API 명세서
+**최신개정일:** 2025-06-14
+
 # API 구조
 
 ## 공통
@@ -17,6 +20,55 @@ x-api-secret: YOUR_SECRET_KEY
 
 ```sql
 PRAGMA foreign_keys = ON;
+```
+
+
+## 권한 DB
+```sql
+CREATE TABLE user_role (
+    level INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    kor_name TEXT NOT NULL UNIQUE
+);
+```
+다음의 라우터에서 사용된다
+- [./user.md](./user.md) 및 user의 권한을 사용하는 부분
+- [./article.md](./article.md)
+- 라우터에서 권한을 query, body에 포함한다면 권한의 `name`을 입력한다. 유효하지 않은 `name`을 전달하면 400 상태 코드를 반환한다. 
+
+다음의 권한이 존재한다. 권한에 대한 CRUD 기능은 존재하지 않고 DB 초기화 시 [./script/insert_user_roles.sh](./script/insert_user_roles.sh)에서 권한을 추가한다. 
+- 총 8가지 권한이 존재한다. 권한의 서열은 나중에 나열된 항목이 높다. 
+1. (0, 'lowest', '최저권한'): 가장 낮은 권한으로 `article.md`의 `board`에서 사용된다. 
+1. (100, 'dormant', '휴회원'): 
+1. (200, 'newcomer', '준회원'): 
+1. (300, 'member', '정회원'): 
+1. (400, 'oldboy', '졸업생'): 
+1. (500, 'executive', '운영진'): 
+1. (600, 'president', '회장'): 
+1. (1000, 'highest', '최고권한'): 가장 높은 권한으로 SIG/PIG 홍보 글이 저장되는 `board`(id==1)의 쓰기 권한에 사용된다. 
+
+
+## SCSC 전역 상태 DB
+```sql
+CREATE TABLE scsc_global_status (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## SQL 관련
+```sql
+CREATE TRIGGER update_scsc_global_status_updated_at
+AFTER UPDATE ON scsc_global_status
+FOR EACH ROW
+WHEN 
+    OLD.status != NEW.status
+BEGIN
+    UPDATE scsc_global_status
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
+END;
 ```
 
 
