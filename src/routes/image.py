@@ -1,19 +1,19 @@
 from os import path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
-from src.auth import get_current_user
 from src.core import get_settings
 from src.db import SessionDep
-from src.model import FileMetadata, User
-from src.util import create_uuid, get_file_extension
+from src.model import FileMetadata
+from src.util import create_uuid, get_file_extension, get_user
 
 image_router = APIRouter(tags=['image'])
 
 
 @image_router.post('/image/upload', status_code=201)
-async def upload_image(file: UploadFile, session: SessionDep, current_user: User = Depends(get_current_user)) -> FileMetadata:
+async def upload_image(session: SessionDep, request: Request, file: UploadFile) -> FileMetadata:
+    current_user = get_user(request)
     if file.content_type is None or not file.content_type.startswith("image"): raise HTTPException(400, detail="cannot upload non-image file")
     ext_whitelist = ('jpg', 'jpeg', 'png')
     if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")

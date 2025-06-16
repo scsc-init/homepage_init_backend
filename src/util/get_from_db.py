@@ -1,6 +1,7 @@
 from functools import lru_cache
+from typing import Annotated
 
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
 from sqlmodel import select
 
 from src.db import SessionDep, SessionLocal
@@ -34,7 +35,10 @@ def get_user_role_level(role_name: str) -> int:
         if session: session.close()
 
 
-def get_scsc_global_status(session: SessionDep) -> SCSCGlobalStatus:
+def _get_scsc_global_status(session: SessionDep) -> SCSCGlobalStatus:
     status = session.get(SCSCGlobalStatus, 1)
     if status is None: raise HTTPException(503, detail="scsc global status does not exist")
     return status
+
+
+SCSCGlobalStatusDep = Annotated[SCSCGlobalStatus, Depends(_get_scsc_global_status)]

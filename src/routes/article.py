@@ -1,21 +1,22 @@
 from datetime import datetime, timezone
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.auth import get_current_user
-from src.controller import create_article_controller, BodyCreateArticle
+from src.controller import BodyCreateArticle, create_article_controller
 from src.db import SessionDep
-from src.model import Article, Board, User
+from src.model import Article, Board
+from src.util import get_user
 
 article_router = APIRouter(tags=['article'])
 
 
 @article_router.post('/article/create', status_code=201)
-async def create_article(body: BodyCreateArticle, session: SessionDep, current_user: User = Depends(get_current_user)) -> Article:
+async def create_article(session: SessionDep, request: Request, body: BodyCreateArticle) -> Article:
+    current_user = get_user(request)
     return await create_article_controller(session, body, current_user.id, current_user.role)
 
 
@@ -41,7 +42,8 @@ class BodyUpdateArticle(BaseModel):
 
 
 @article_router.post('/article/update/{id}', status_code=204)
-async def update_article_by_author(id: int, body: BodyUpdateArticle, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def update_article_by_author(id: int, session: SessionDep, request: Request, body: BodyUpdateArticle) -> None:
+    current_user = get_user(request)
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     if current_user.id != article.author_id:
@@ -59,7 +61,7 @@ async def update_article_by_author(id: int, body: BodyUpdateArticle, session: Se
 
 
 @article_router.post('/executive/article/update/{id}', status_code=204)
-async def update_article_by_executive(id: int, body: BodyUpdateArticle, session: SessionDep) -> None:
+async def update_article_by_executive(id: int, session: SessionDep, body: BodyUpdateArticle) -> None:
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     board = session.get(Board, body.board_id)
@@ -75,7 +77,8 @@ async def update_article_by_executive(id: int, body: BodyUpdateArticle, session:
 
 
 @article_router.post('/article/delete/{id}', status_code=204)
-async def delete_article_by_author(id: int, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def delete_article_by_author(id: int, session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     if current_user.id != article.author_id:

@@ -17,7 +17,7 @@ class BodyCreateMajor(BaseModel):
 
 
 @major_router.post('/executive/major/create', status_code=201)
-async def create_major(body: BodyCreateMajor, session: SessionDep) -> Major:
+async def create_major(session: SessionDep, body: BodyCreateMajor) -> Major:
     major = Major(college=body.college, major_name=body.major_name)
     session.add(major)
     try: session.commit()
@@ -41,7 +41,7 @@ async def get_major_by_id(id: int, session: SessionDep) -> Major:
 
 
 @major_router.post('/executive/major/update/{id}', status_code=204)
-async def update_major(id: int, body: BodyCreateMajor, session: SessionDep) -> None:
+async def update_major(id: int, session: SessionDep, body: BodyCreateMajor) -> None:
     major = session.get(Major, id)
     if not major: raise HTTPException(404, detail="major not found")
     major.college = body.college
