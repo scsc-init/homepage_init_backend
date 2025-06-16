@@ -1,17 +1,18 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+import jwt
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.auth import get_current_user
-from src.controller import create_user_controller, BodyCreateUser, enroll_user_controller
+from src.controller import BodyCreateUser, create_user_controller, enroll_user_controller
+from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserStatus
-from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
-
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash
 
 user_router = APIRouter(tags=['user'])
 
@@ -95,22 +96,24 @@ class BodyLogin(BaseModel):
     email: str
 
 
-@user_router.post('/user/login', status_code=204)
-async def login(body: BodyLogin, request: Request, session: SessionDep) -> None:
+class ResponseLogin(BaseModel):
+    jwt: str
+
+
+@user_router.post('/user/login')
+async def login(body: BodyLogin, session: SessionDep) -> ResponseLogin:
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None: raise HTTPException(404, detail="invalid email address")
     result.last_login = datetime.now(timezone.utc)
     session.add(result)
     session.commit()
-    request.session['user_id'] = result.id
-    return
 
-
-@user_router.post('/user/logout', status_code=204)
-async def logout(request: Request, current_user: User = Depends(get_current_user)) -> None:
-    if request.session.get('user_id') != current_user.id: raise HTTPException(500, detail="Session user_id mismatch")
-    del request.session['user_id']
-    return
+    payload = {
+        "user_id": result.id,
+        "exp": datetime.now(timezone.utc) + timedelta(seconds=get_settings().jwt_valid_seconds)
+    }
+    encoded_jwt = jwt.encode(payload, get_settings().jwt_secret, "HS256")
+    return ResponseLogin(jwt=encoded_jwt)
 
 
 class BodyUpdateUser(BaseModel):
