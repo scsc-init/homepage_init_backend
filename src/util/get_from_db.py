@@ -3,8 +3,8 @@ from functools import lru_cache
 from fastapi import HTTPException
 from sqlmodel import select
 
-from src.db import SessionLocal
-from src.model import UserRole
+from src.db import SessionDep, SessionLocal
+from src.model import SCSCGlobalStatus, UserRole
 
 
 @lru_cache
@@ -32,3 +32,9 @@ def get_user_role_level(role_name: str) -> int:
 
     finally:
         if session: session.close()
+
+
+def get_scsc_global_status(session: SessionDep) -> SCSCGlobalStatus:
+    status = session.get(SCSCGlobalStatus, 1)
+    if status is None: raise HTTPException(503, detail="scsc global status does not exist")
+    return status
