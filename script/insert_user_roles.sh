@@ -23,8 +23,7 @@ VALUES
   (300, 'member', '정회원'),
   (400, 'oldboy', '졸업생'),
   (500, 'executive', '운영진'),
-  (600, 'president', '회장'),
-  (1000, 'highest', '최고권한');
+  (1000, 'president', '회장');
 EOF
 
 echo "✅ User roles inserted successfully into '$DB_FILE'."

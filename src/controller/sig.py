@@ -28,7 +28,7 @@ async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_i
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
-        get_user_role_level('highest')
+        get_user_role_level('president')
     )
 
     sig = SIG(
@@ -82,7 +82,7 @@ async def update_sig_controller(session: SessionDep, id: int, body: BodyUpdateSI
             session,
             BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
             user_id,
-            get_user_role_level('highest')
+            get_user_role_level('president')
         )
         sig.content_id = sig_article.id
     if body.status:

@@ -28,7 +28,7 @@ async def create_pig_controller(session: SessionDep, body: BodyCreatePIG, user_i
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
-        get_user_role_level('highest')
+        get_user_role_level('president')
     )
 
     pig = PIG(
@@ -82,7 +82,7 @@ async def update_pig_controller(session: SessionDep, id: int, body: BodyUpdatePI
             session,
             BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
             user_id,
-            get_user_role_level('highest')
+            get_user_role_level('president')
         )
         pig.content_id = pig_article.id
     if body.status:
