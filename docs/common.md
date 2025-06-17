@@ -44,8 +44,7 @@ CREATE TABLE user_role (
 1. (300, 'member', '정회원'): 
 1. (400, 'oldboy', '졸업생'): 
 1. (500, 'executive', '운영진'): 
-1. (600, 'president', '회장'): 
-1. (1000, 'highest', '최고권한'): 가장 높은 권한으로 SIG/PIG 홍보 글이 저장되는 `board`(id==1)의 쓰기 권한에 사용된다. 
+1. (1000, 'president', '회장'): 가장 높은 권한으로 SIG/PIG 홍보 글이 저장되는 `board`(id==1)의 쓰기 권한에 사용된다. 
 
 
 ## SCSC 전역 상태 DB

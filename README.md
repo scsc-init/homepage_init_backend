@@ -10,7 +10,8 @@
 
 ```env
 API_SECRET="some-secret-code"
-SESSION_SECRET="some-session-secret"
+JWT_SECRET="some-session-secret"
+JWT_VALID_SECONDS=3600
 SQLITE_FILENAME="db/YOUR_DB_FILENAME.db"
 IMAGE_DIR="static/image/photo/"
 IMAGE_MAX_SIZE=10000000
@@ -21,7 +22,8 @@ FILE_MAX_SIZE=10000000
 | Key Name           | Description                                                      |
 |--------------------|------------------------------------------------------------------|
 | `API_SECRET`       | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
-| `SESSION_SECRET`   | 로그인 세션을 암호화하거나 검증하는 데 사용하는 비밀 키          |
+| `JWT_SECRET`       | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
+| `JWT_VALID_SECONDS` | 로그인 관련 JWT 유효 시간(초)          |
 | `SQLITE_FILENAME`  | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
 | `IMAGE_DIR`        | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `IMAGE_MAX_SIZE`   | 이미지 최대 용량(바이트) |

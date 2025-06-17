@@ -5,7 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     api_secret: str
-    session_secret: str
+    jwt_secret: str
+    jwt_valid_seconds: int
     sqlite_filename: str
     image_dir: str
     image_max_size: int

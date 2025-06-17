@@ -1,22 +1,21 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.auth import get_current_user
+from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_controller, update_pig_controller
 from src.db import SessionDep
-from src.model import PIG, SCSCGlobalStatus, PIGMember, SCSCStatus, User
-from src.util import get_scsc_global_status, get_user_role_level
-from src.controller import create_pig_controller, BodyCreatePIG, update_pig_controller, BodyUpdatePIG
-
+from src.model import PIG, PIGMember, SCSCStatus, User
+from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
 
 pig_router = APIRouter(tags=['pig'])
 
 
 @pig_router.post('/pig/create', status_code=201)
-async def create_pig(body: BodyCreatePIG, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)) -> PIG:
+async def create_pig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreatePIG) -> PIG:
+    current_user = get_user(request)
     return await create_pig_controller(session, body, current_user.id, scsc_global_status)
 
 
@@ -33,12 +32,14 @@ async def get_all_pigs(session: SessionDep) -> Sequence[PIG]:
 
 
 @pig_router.post('/pig/{id}/update', status_code=204)
-async def update_my_pig(id: int, body: BodyUpdatePIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def update_my_pig(id: int, session: SessionDep, request: Request, body: BodyUpdatePIG) -> None:
+    current_user = get_user(request)
     await update_pig_controller(session, id, body, current_user.id, False)
 
 
 @pig_router.post('/pig/{id}/delete', status_code=204)
-async def delete_my_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     if pig.owner != current_user.id: raise HTTPException(403, detail="cannot delete pig of other")
@@ -48,7 +49,8 @@ async def delete_my_pig(id: int, session: SessionDep, current_user: User = Depen
 
 
 @pig_router.post('/executive/pig/{id}/update', status_code=204)
-async def update_pig(id: int, body: BodyUpdatePIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def update_pig(id: int, session: SessionDep, request: Request, body: BodyUpdatePIG) -> None:
+    current_user = get_user(request)
     await update_pig_controller(session, id, body, current_user.id, True)
 
 
@@ -66,7 +68,8 @@ class BodyHandoverPIG(BaseModel):
 
 
 @pig_router.post('/pig/{id}/handover', status_code=204)
-async def handover_pig(id: int, body: BodyHandoverPIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def handover_pig(id: int, session: SessionDep, request: Request, body: BodyHandoverPIG) -> None:
+    current_user = get_user(request)
     pig = session.get(PIG, id)
     if pig is None: raise HTTPException(404, detail="no pig exists")
     user = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(
@@ -86,7 +89,8 @@ async def get_pig_members(id: int, session: SessionDep) -> Sequence[PIGMember]:
 
 
 @pig_router.post('/pig/{id}/member/join', status_code=204)
-async def join_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
+async def join_pig(id: int, session: SessionDep, request: Request):
+    current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     if pig.status not in (SCSCStatus.surveying, SCSCStatus.recruiting): raise HTTPException(400, "cannot join to pig when pig status is not surveying/recruiting")
@@ -104,7 +108,8 @@ async def join_pig(id: int, session: SessionDep, current_user: User = Depends(ge
 
 
 @pig_router.post('/pig/{id}/member/leave', status_code=204)
-async def leave_pig(id: int, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)):
+async def leave_pig(id: int, session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request):
+    current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     if pig.owner == current_user.id: raise HTTPException(409, detail="pig owner cannot leave the pig")
@@ -120,7 +125,7 @@ class BodyExecutiveJoinPIG(BaseModel):
 
 
 @pig_router.post('/executive/pig/{id}/member/join', status_code=204)
-async def executive_join_pig(id: int, body: BodyExecutiveJoinPIG, session: SessionDep):
+async def executive_join_pig(id: int, session: SessionDep, body: BodyExecutiveJoinPIG):
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     user = session.get(User, body.user_id)
@@ -143,7 +148,7 @@ class BodyExecutiveLeavePIG(BaseModel):
 
 
 @pig_router.post('/executive/pig/{id}/member/leave', status_code=204)
-async def executive_leave_pig(id: int, body: BodyExecutiveLeavePIG, session: SessionDep):
+async def executive_leave_pig(id: int, session: SessionDep, body: BodyExecutiveLeavePIG):
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     user = session.get(User, body.user_id)

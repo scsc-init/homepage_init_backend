@@ -20,7 +20,7 @@ class BodyCreateBoard(BaseModel):
 
 
 @board_router.post('/executive/board/create', status_code=201)
-async def create_board(body: BodyCreateBoard, session: SessionDep) -> Board:
+async def create_board(session: SessionDep, body: BodyCreateBoard) -> Board:
     board = Board(
         name=body.name,
         description=body.description,
@@ -57,7 +57,7 @@ class BodyUpdateArticle(BaseModel):
 
 
 @board_router.post('/executive/board/update/{id}', status_code=204)
-async def update_board(id: int, body: BodyUpdateArticle, session: SessionDep) -> None:
+async def update_board(id: int, session: SessionDep, body: BodyUpdateArticle) -> None:
     board = session.get(Board, id)
     if not board:
         raise HTTPException(status_code=404, detail="Board not found",)

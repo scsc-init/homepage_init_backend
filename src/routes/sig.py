@@ -1,22 +1,21 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.auth import get_current_user
+from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_controller, update_sig_controller
 from src.db import SessionDep
-from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus, User
-from src.util import get_scsc_global_status, get_user_role_level
-from src.controller import create_sig_controller, BodyCreateSIG, update_sig_controller, BodyUpdateSIG
-
+from src.model import SIG, SIGMember, SCSCStatus, User
+from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
 
 sig_router = APIRouter(tags=['sig'])
 
 
 @sig_router.post('/sig/create', status_code=201)
-async def create_sig(body: BodyCreateSIG, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)) -> SIG:
+async def create_sig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreateSIG) -> SIG:
+    current_user = get_user(request)
     return await create_sig_controller(session, body, current_user.id, scsc_global_status)
 
 
@@ -33,12 +32,14 @@ async def get_all_sigs(session: SessionDep) -> Sequence[SIG]:
 
 
 @sig_router.post('/sig/{id}/update', status_code=204)
-async def update_my_sig(id: int, body: BodyUpdateSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def update_my_sig(id: int, session: SessionDep, request: Request, body: BodyUpdateSIG) -> None:
+    current_user = get_user(request)
     await update_sig_controller(session, id, body, current_user.id, False)
 
 
 @sig_router.post('/sig/{id}/delete', status_code=204)
-async def delete_my_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     if sig.owner != current_user.id: raise HTTPException(403, detail="cannot delete sig of other")
@@ -48,7 +49,8 @@ async def delete_my_sig(id: int, session: SessionDep, current_user: User = Depen
 
 
 @sig_router.post('/executive/sig/{id}/update', status_code=204)
-async def update_sig(id: int, body: BodyUpdateSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def update_sig(id: int, session: SessionDep, request: Request, body: BodyUpdateSIG) -> None:
+    current_user = get_user(request)
     await update_sig_controller(session, id, body, current_user.id, True)
 
 
@@ -66,7 +68,8 @@ class BodyHandoverSIG(BaseModel):
 
 
 @sig_router.post('/sig/{id}/handover', status_code=204)
-async def handover_sig(id: int, body: BodyHandoverSIG, session: SessionDep, current_user: User = Depends(get_current_user)) -> None:
+async def handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
+    current_user = get_user(request)
     sig = session.get(SIG, id)
     if sig is None: raise HTTPException(404, detail="no sig exists")
     user = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(
@@ -86,7 +89,8 @@ async def get_sig_members(id: int, session: SessionDep) -> Sequence[SIGMember]:
 
 
 @sig_router.post('/sig/{id}/member/join', status_code=204)
-async def join_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user)):
+async def join_sig(id: int, session: SessionDep, request: Request):
+    current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     if sig.status not in (SCSCStatus.surveying, SCSCStatus.recruiting): raise HTTPException(400, "cannot join to sig when sig status is not surveying/recruiting")
@@ -104,7 +108,8 @@ async def join_sig(id: int, session: SessionDep, current_user: User = Depends(ge
 
 
 @sig_router.post('/sig/{id}/member/leave', status_code=204)
-async def leave_sig(id: int, session: SessionDep, current_user: User = Depends(get_current_user), scsc_global_status: SCSCGlobalStatus = Depends(get_scsc_global_status)):
+async def leave_sig(id: int, session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request):
+    current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     if sig.owner == current_user.id: raise HTTPException(409, detail="sig owner cannot leave the sig")
@@ -120,7 +125,7 @@ class BodyExecutiveJoinSIG(BaseModel):
 
 
 @sig_router.post('/executive/sig/{id}/member/join', status_code=204)
-async def executive_join_sig(id: int, body: BodyExecutiveJoinSIG, session: SessionDep):
+async def executive_join_sig(id: int, session: SessionDep, body: BodyExecutiveJoinSIG):
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     user = session.get(User, body.user_id)
@@ -143,7 +148,7 @@ class BodyExecutiveLeaveSIG(BaseModel):
 
 
 @sig_router.post('/executive/sig/{id}/member/leave', status_code=204)
-async def executive_leave_sig(id: int, body: BodyExecutiveLeaveSIG, session: SessionDep):
+async def executive_leave_sig(id: int, session: SessionDep, body: BodyExecutiveLeaveSIG):
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     user = session.get(User, body.user_id)

@@ -271,23 +271,18 @@ END;
 }
 ```
 
+- **Request Body**:
+```json
+{
+  "jwt":"some-encoded-jwt"
+}
+```
+
 - **Status Codes**:
-  - `204 No Content` (기존 유저 로그인)
+  - `200 OK` (기존 유저 로그인)
   - `404 Not Found` (유효하지 않은 email)
 
 > ⚙ `last_login`은 이 시점에서 자동 업데이트.  
-
----
-
-## 🔹 Logout
-
-- **Method**: `POST`  
-- **URL**: `/api/user/logout`  
-- **설명**: 로그아웃
-
-- **Status Codes**:
-  - `204 No Content` 
-  - `401 Unauthorized` (로그인 하지 않음)
 
 ---
 
