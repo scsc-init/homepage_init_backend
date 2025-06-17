@@ -27,6 +27,9 @@ FILE_MAX_SIZE=10000000
 | `IMAGE_MAX_SIZE`   | 이미지 최대 용량(바이트) |
 | `FILE_DIR`        | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`   | 파일 최대 용량(바이트) |
+| `OPENBANK_CLIENT_ID`  |  금융결제원 오픈 API 개발자사이트 > 마이페이지 > API Key 관리 > API Key 기본정보 > Client ID |
+| `OPENBANK_CLIENT_SECRET`  | 금융결제원 오픈 API 개발자사이트 > 마이페이지 > API Key 관리 > API Key 기본정보 > Client Secret |
+| `OPENBANK_USERCODE`  |  금융결제원 오픈 API 개발자사이트 > 마이페이지 > 회원정보 관리 > 이용기관코드 |
 
 ## 실행 방법(with docker)
 

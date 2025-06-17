@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     image_max_size: int
     file_dir: str
     file_max_size: int
+    openbank_client_id: str
+    openbank_client_secret: str
+    openbank_usercode: str
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

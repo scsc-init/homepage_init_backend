@@ -5,3 +5,4 @@ from .scsc_global_status import SCSCStatus, SCSCGlobalStatus
 from .pig import PIG, PIGMember
 from .sig import SIG, SIGMember
 from .user import User, UserRole, UserStatus
+from .bank import BankingAccountDetails

@@ -9,6 +9,7 @@ from .article import article_router
 from .board import board_router
 from .file import file_router
 from .scsc import scsc_router
+from .bank import bank_router
 
 root_router = APIRouter()
 
@@ -21,3 +22,4 @@ root_router.include_router(article_router, prefix='/api')
 root_router.include_router(board_router, prefix='/api')
 root_router.include_router(file_router, prefix='/api')
 root_router.include_router(scsc_router, prefix='/api')
+root_router.include_router(bank_router) # no prefix due to redirection logic
