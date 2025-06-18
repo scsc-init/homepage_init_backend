@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.db import SessionDep
-from src.model import User, UserStatus
+from src.model import User, UserStatus, OldboyApplicant
 from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
 
 
@@ -42,6 +42,22 @@ async def enroll_user_controller(session: SessionDep, user_id: str) -> None:
     if not user: raise HTTPException(404, detail="user not found")
     if user.status != UserStatus.pending: raise HTTPException(400, detail="Only user with pending status can enroll")
     user.status = UserStatus.active
+    session.add(user)
+    session.commit()
+    return
+
+
+async def process_oldboy_applicant_controller(session: SessionDep, user_id: str) -> None:
+    oldboy_applicant = session.get(OldboyApplicant, user_id)
+    if not oldboy_applicant: raise HTTPException(404, detail="oldboy_applicant not found")
+
+    user = session.get(User, user_id)
+    if not user: raise HTTPException(503, detail="user does not exist")
+    if user.role == get_user_role_level('oldboy'): raise HTTPException(503, detail="user is already oldboy")
+
+    oldboy_applicant.processed = True
+    session.add(oldboy_applicant)
+    user.role = get_user_role_level('oldboy')
     session.add(user)
     session.commit()
     return

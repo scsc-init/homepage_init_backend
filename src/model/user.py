@@ -42,6 +42,6 @@ class OldboyApplicant(SQLModel, table=True):
     __tablename__ = "oldboy_applicant"  # type: ignore
 
     id: str = Field(foreign_key="user.id", primary_key=True)
-    proceeded: bool = Field(default=False, nullable=False)
+    processed: bool = Field(default=False, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

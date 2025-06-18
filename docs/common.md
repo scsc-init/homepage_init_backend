@@ -33,6 +33,9 @@ x-jwt: USER_JWT
 ### 라우터 함수 매개변수 순서
 라우터 함수의 매개변수는 path parameter -> dependency(`SessionDep`, `SCSCGlobalStatusDep`, etc.) -> request -> query parameter -> body -> form data 순으로 작성한다. 
 
+### 컨트롤러 함수 매개변수 순서
+컨트롤러 함수의 매개변수는 session을 맨 앞에 작성한다. 
+
 ### `.env` 로딩
 `/src/core/config.py`에서 `.env`의 변수를 지정하고 `get_settings`를 통해 다른 코드에서 불러온다. 
 
@@ -61,7 +64,7 @@ CREATE TABLE user_role (
 - 라우터에서 권한을 query, body에 포함한다면 권한의 `name`을 입력한다. 유효하지 않은 `name`을 전달하면 400 상태 코드를 반환한다. 
 
 다음의 권한이 존재한다. 권한에 대한 CRUD 기능은 존재하지 않고 DB 초기화 시 [./script/insert_user_roles.sh](./script/insert_user_roles.sh)에서 권한을 추가한다. 
-- 총 8가지 권한이 존재한다. 권한의 서열은 나중에 나열된 항목이 높다. 
+- 총 7가지 권한이 존재한다. 권한의 서열은 나중에 나열된 항목이 높다. 
 1. (0, 'lowest', '최저권한'): 가장 낮은 권한으로 `article.md`의 `board`에서 사용된다. 
 1. (100, 'dormant', '휴회원'): 
 1. (200, 'newcomer', '준회원'): 
