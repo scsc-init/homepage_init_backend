@@ -1,11 +1,13 @@
 # 백엔드 공통 DB, API 명세서
-**최신개정일:** 2025-06-14
+**최신개정일:** 2025-06-18
 
 # API 구조
 
 ## 공통
 
-모든 경로에는 header에 x-api-secret을 포함해야 함
+### 인증 관련
+
+모든 경로에는 header에 `x-api-secret`을 포함해야 한다. 
 
 ```http
 x-api-secret: YOUR_SECRET_KEY
@@ -13,6 +15,26 @@ x-api-secret: YOUR_SECRET_KEY
 
 - **Status Codes**:
   - `401 Unauthorized` (인증 실패 시)
+
+### 로그인 관련
+
+사용자 정보가 필요한 경로에는 header에 `x-jwt`를 포함해야 한다. 이 값은 `/api/user/login`의 응답에서 얻는다. 
+
+
+```http
+x-jwt: USER_JWT
+```
+
+- **Status Codes**:
+  - `401 Unauthorized` (인증 실패 시)
+
+## 코딩 스타일
+
+### 라우터 함수 매개변수 순서
+라우터 함수의 매개변수는 path parameter -> dependency(`SessionDep`, `SCSCGlobalStatusDep`, etc.) -> request -> query parameter -> body -> form data 순으로 작성한다. 
+
+### `.env` 로딩
+`/src/core/config.py`에서 `.env`의 변수를 지정하고 `get_settings`를 통해 다른 코드에서 불러온다. 
 
 # SQL 관련
 
@@ -22,6 +44,8 @@ x-api-secret: YOUR_SECRET_KEY
 PRAGMA foreign_keys = ON;
 ```
 
+## 테이블 생성
+db 파일이 없을 때 `/docker-compose.yml`에 작성된 명령어에 따라 `/script/init_db.sh`, `/script/insert_user_roles.sh`, `/script/insert_majors.sh`를 순차적으로 실행하여 db 파일을 초기화한다. 모든 테이블은 `/script/init_db.sh`에서 생성되어야 한다. 
 
 ## 권한 DB
 ```sql

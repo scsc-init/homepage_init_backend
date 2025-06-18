@@ -2,7 +2,7 @@
 
 2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
 
-> 최종개정일: 2025-05-13  
+> 최종개정일: 2025-06-18  
 
 ## .env 파일 형식
 
@@ -32,7 +32,7 @@ FILE_MAX_SIZE=10000000
 
 ## 실행 방법(with docker)
 
-linux, docker가 요구됩니다. 
+linux, docker가 요구됩니다. docker compose 2.25.0 이상이 필요합니다. 
 ```bash
 docker-compose up --build
 ```
@@ -105,11 +105,13 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | `/environment.yml`  | Conda 환경 설정 파일 |
 | `/.env`             | 환경 변수 설정 파일 |
 | `/docs/`            | API 문서 등 프로젝트 관련 문서 |
+| ├── `/common.md`    | 여러 라우터에서 사용되거나 중요한 로직 관련 문서 |
+| ├── `/majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
 | `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
 | `/static/image/photo/` | 업로드된 이미지 보관 폴더 |
 | `/download/`        | 업로드된 이미지 외 파일 보관 폴더 |
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
-| ├── `/auth/`        | 로그인 및 인증 관련 로직 |
+| ├── `/controller/`  | 여러 테이블을 조작하는 중요 로직 |
 | ├── `/core/`        | 환경 변수 등 프로젝트 전역 설정 로직 |
 | ├── `/db/`          | SQLite3 DB 연결 및 설정 관련 코드 |
 | ├── `/middleware/`  | 미들웨어 정의 및 처리 |
