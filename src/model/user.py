@@ -13,8 +13,7 @@ class UserStatus(str, Enum):
 class UserRole(SQLModel, table=True):
     __tablename__ = "user_role"  # type: ignore
 
-    level: int = Field(default=None, primary_key=True)
-
+    level: int = Field(primary_key=True)
     name: str = Field(nullable=False, unique=True)
     kor_name: str = Field(nullable=False, unique=True)
 
@@ -22,7 +21,7 @@ class UserRole(SQLModel, table=True):
 class User(SQLModel, table=True):
     __tablename__ = "user"  # type: ignore
 
-    id: str = Field(default=None, primary_key=True)
+    id: str = Field(primary_key=True)
 
     email: str = Field(nullable=False, unique=True)
     name: str = Field(nullable=False)
@@ -37,3 +36,12 @@ class User(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     major_id: int = Field(foreign_key="major.id", nullable=False)
+
+
+class OldboyApplicant(SQLModel, table=True):
+    __tablename__ = "oldboy_applicant"  # type: ignore
+
+    id: str = Field(foreign_key="user.id", primary_key=True)
+    proceeded: bool = Field(default=False, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
