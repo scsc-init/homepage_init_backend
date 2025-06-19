@@ -9,16 +9,6 @@ from src.model import User
 
 class UserAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if not get_settings().user_check:  # for development
-            try:
-                session = SessionLocal()
-                user = session.get(User, "12350b93cae7322f29d409e12a998a598c703780c5f00c99ddf372c38817e4f4")  # exec@example.com
-                if user: request.state.user = user
-                else: request.state.user = None
-            finally:
-                if session: session.close()
-            return await call_next(request)
-
         encoded_jwt = request.headers.get('x-jwt')
         if encoded_jwt is None:
             request.state.user = None

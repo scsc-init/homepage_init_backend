@@ -1,10 +1,9 @@
-from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.db import SessionDep
-from src.model import User, UserStatus, OldboyApplicant, StandbyReqTbl
+from src.model import User, UserStatus, StandbyReqTbl
 from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
 
 

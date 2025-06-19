@@ -7,7 +7,7 @@
 
 ---
 
-## Upload File (파일 업로드)
+## 🔹 Upload File (파일 업로드)
 
 * **Method**: `POST`
 * **URL**: `/api/file/upload`
@@ -42,7 +42,7 @@
 
 ---
 
-## Download File (파일 다운로드)
+## 🔹 Download File (파일 다운로드)
 
 * **Method**: `GET`
 * **URL**: `/api/file/download/:id`

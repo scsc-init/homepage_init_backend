@@ -10,7 +10,7 @@ from sqlmodel import select
 from src.controller import BodyCreateUser, create_user, enroll_user, register_oldboy_applicant, process_oldboy_applicant, reactivate_oldboy
 from src.core import get_settings
 from src.db import SessionDep
-from src.model import User, UserStatus, OldboyApplicant, StandbyReqTbl
+from src.model import User, UserStatus, StandbyReqTbl
 from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user
 
 user_router = APIRouter(tags=['user'])
@@ -168,7 +168,6 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
     if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
     ext_whitelist = ('csv')
     if file.filename is None or get_file_extension(file.filename) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
-
     try:
         deposit_array = await process_standby_user('utf-8', file)
     except UnicodeDecodeError:
@@ -198,7 +197,6 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                 raise HTTPException(400, f"Insufficient funds from {deposit}")
             elif deposit[0] > get_settings().enrollment_fee:
                 raise HTTPException(400, f"Oversufficient funds from {deposit}")
-
             stby_user = matching_users[0]
             if stby_user.is_checked: return
             user = session.get(User, stby_user.standby_user_id)
@@ -208,7 +206,6 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
             session.add(user)
             session.add(stby_user)
             session.commit()
-
         elif len(matching_users) == 0:
             matching_users_error: list[User] = []
             if deposit[2][-2:].isdigit():
