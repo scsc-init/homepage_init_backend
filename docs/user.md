@@ -75,19 +75,6 @@ BEGIN
 END;
 ```
 
-## standby request DB
-```sql
-CREATE TABLE standby_req_tbl (
-    standby_user_id TEXT PRIMARY KEY,
-    user_name TEXT NOT NULL,
-    deposit_name TEXT NOT NULL,
-    request_time TEXT NOT NULL,
-    is_checked BOOLEAN NOT NULL DEFAULT 0
-);
-```
-- `deposit_name`은 입금자명으로, "이름"+"전화번호 뒤 2자리"로 설정한다.
-
-
 # API 구조
 
 ## 회원 관련 API(/api/user)
@@ -450,53 +437,3 @@ CREATE TABLE standby_req_tbl (
   - `404 Not Found`: 해당 ID 없음
 
 ---
-
-## 🔹 Get Standby Request List
-- **Method**: `GET`
-- **URL**: `/api/executive/user/standby/list`
-- **Response**:
-```json
-[
-    {
-        "deposit_name": "Alice Kim78",
-        "is_checked": false,
-        "user_name": "Alice Kim",
-        "standby_user_id": "b36a83701f1c3191e19722d6f90274bc1b5501fe69ebf33313e440fe4b0fe210",
-        "request_time": "NONE"
-    },
-    {
-        "deposit_name": "Bob Lee88",
-        "is_checked": true,
-        "user_name": "Bob Lee",
-        "standby_user_id": "15e4c3b1b3006382a22241ea66d679c107bc9b15cf8e6a25b64f46ac559c50c9",
-        "request_time": "2025.06.02 08:33:28"
-    }
-]
-```
-- **Status Codes**:
-  - `200 OK`
-  - `401 Unauthorized` (로그인하지 않음)
-  - `403 Forbidden` (관리자(executive) 권한 없음)
-
----
-
-## 🔹 Process Standby Request List with File
-
-- **Method**: `POST`
-- **URL**: `/api/executive/user/standby/process`
-- **Request**:
-  - **Content-Type**: `form-data`
-  - **Form Fields**:
-
-    | 필드명  | 타입   | 필수 여부 | 설명                    |
-    | ---- | ---- | ----- | --------------------- |
-    | file | File | ✅     | 업로드할 파일 (csv(UTF-8 or EUC-KR)) |
-
-- **Status Codes**:
-  - `204 No Content`: 성공
-  - `400 Bad Request`: 파일 누락 또는 유효하지 않은 파일 또는 기타 인코딩 문제 또는 입금 내역 오류
-  - `401 Unauthorized` (로그인하지 않음)
-  - `403 Forbidden` (관리자(executive) 권한 없음)
-  - `409 Conflict` (중복 데이터 삽입)
-  - `413 Content Too Large`: 파일 업로드 최대 크기 초과
-  - `422 Unprocessable Content`: 파일 누락 또는 필드명 오류
