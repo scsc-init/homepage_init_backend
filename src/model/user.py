@@ -7,6 +7,7 @@ from sqlmodel import Field, SQLModel
 class UserStatus(str, Enum):
     active = "active"
     pending = "pending"
+    standby = "standby"
     banned = "banned"
 
 
@@ -37,3 +38,14 @@ class User(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     major_id: int = Field(foreign_key="major.id", nullable=False)
+
+
+class StandbyReqTbl(SQLModel, table=True):
+    __tablename__ = "standby_req_tbl"  # type: ignore
+    
+    standby_user_id: str = Field(default=None, primary_key=True)
+    
+    user_name: str = Field(nullable=False)
+    deposit_name: str = Field(nullable=False)
+    request_time: str = Field(default='NONE', nullable=False)
+    is_checked: bool = Field(default=False, nullable=False)

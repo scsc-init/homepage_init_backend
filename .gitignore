@@ -2,6 +2,7 @@
 *.env
 .vscode/
 *.pem
+./script/insert_sample_users.sh
 
 # user uploaded files
 static/image/photo/

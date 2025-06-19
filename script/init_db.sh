@@ -39,7 +39,7 @@ CREATE TABLE user (
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
     role INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'banned')),
+    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -256,6 +256,15 @@ CREATE TABLE "comment" (
 	FOREIGN KEY("board_id") REFERENCES "board"("id"),
 	FOREIGN KEY("post_id") REFERENCES "article"("id"),
 	FOREIGN KEY("parent_id") REFERENCES "comment"("id")
+);
+
+-- Create standby request table
+CREATE TABLE standby_req_tbl (
+    standby_user_id TEXT PRIMARY KEY,
+    user_name TEXT NOT NULL,
+    deposit_name TEXT NOT NULL,
+    request_time TEXT NOT NULL,
+    is_checked BOOLEAN NOT NULL DEFAULT 0
 );
 
 EOF

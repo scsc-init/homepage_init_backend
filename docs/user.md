@@ -12,7 +12,7 @@ CREATE TABLE user (
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
     role INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'banned')),
+    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
 
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
