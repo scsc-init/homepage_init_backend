@@ -43,7 +43,7 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
 - **Method**: `POST`
 - **URL**: `/api/oldboy/register`
-- **Description**: 로그인된 사용자에 대해 새로운 졸업 신청자 기록을 생성합니다.
+- **Description**: 로그인된 사용자에 대해 새로운 졸업 신청자 기록을 생성합니다. 가입한 지 3년이 지난 정회원이 신청할 수 있습니다. 
 
 - **Response**:
 ```json
@@ -56,6 +56,7 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 ```
 - **Status Codes**:
   - `201 Created`: 생성 성공
+  - `400 Bad Request`: oldboy 신청 자격 없음
   - `401 Unauthorized` (로그인하지 않음)
   - `409 Conflict`: 이미 존재하는 `id`로 신청을 시도
 
@@ -128,5 +129,17 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
   - `401 Unauthorized`: 로그인하지 않음
   - `403 Forbidden`: 권한 없음 (예: 관리자가 아님)
   - `404 Not Found`: 해당 ID의 졸업 신청 기록 없음
+
+---
+
+## 🔹 Reactivate Oldboy Applicant(Self)
+
+- **Method**: `POST`
+- **URL**: `/api/oldboy/reactivate`
+- **Description**: 로그인한 사용자의 권한이 oldboy이면 권한을 member로 바꾸고 상태를 pending으로 바꾼다. 
+- **Status Codes**:
+  - `204 No Content`
+  - `400 Bad Request`: oldboy가 아님
+  - `401 Unauthorized`: 로그인하지 않음
 
 ---

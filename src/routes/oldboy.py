@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import register_oldboy_applicant_controller, process_oldboy_applicant_controller
+from src.controller import register_oldboy_applicant_controller, process_oldboy_applicant_controller, reactivate_oldboy_controller
 from src.db import SessionDep
 from src.model import OldboyApplicant, User
 from src.util import get_user
@@ -48,3 +48,9 @@ async def delete_oldboy_applicant_executive(id: str, session: SessionDep) -> Non
     session.delete(oldboy_applicant)
     session.commit()
     return
+
+
+@oldboy_router.post('/oldboy/reactivate', status_code=204)
+async def reactivate_oldboy(session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
+    return await reactivate_oldboy_controller(session, current_user)

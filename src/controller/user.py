@@ -50,7 +50,8 @@ async def enroll_user_controller(session: SessionDep, user_id: str) -> None:
 
 async def register_oldboy_applicant_controller(session: SessionDep, user: User) -> OldboyApplicant:
     user_created_at_aware = user.created_at.replace(tzinfo=timezone.utc)
-    if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3): raise HTTPException(400, detail="lack of qualifications")
+    if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3): raise HTTPException(400, detail="must have been a member for at least 3 years.")
+    if user.role != get_user_role_level('member'): raise HTTPException(400, detail="must be a member")
     oldboy_applicant = OldboyApplicant(id=user.id)
     session.add(oldboy_applicant)
     try: session.commit()
@@ -73,5 +74,19 @@ async def process_oldboy_applicant_controller(session: SessionDep, user_id: str)
     session.add(oldboy_applicant)
     user.role = get_user_role_level('oldboy')
     session.add(user)
+    session.commit()
+    return
+
+
+async def reactivate_oldboy_controller(session: SessionDep, user: User) -> None:
+    if user.role != get_user_role_level('oldboy'): raise HTTPException(400, detail="you are not oldboy")
+
+    user.role = get_user_role_level('member')
+    user.status = UserStatus.pending
+    session.add(user)
+
+    oldboy_applicant = session.get(OldboyApplicant, user.id)
+    if oldboy_applicant: session.delete(oldboy_applicant)
+
     session.commit()
     return
