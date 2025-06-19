@@ -34,7 +34,7 @@ USER_CHECK=TRUE
 
 ## 실행 방법(with docker)
 
-linux, docker가 요구됩니다. docker compose 2.25.0 이상이 필요합니다. 
+linux, docker가 요구됩니다. docker compose>=2.25.0가 요구됩니다.  
 
 ### Development 중
 
