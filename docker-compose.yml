@@ -13,7 +13,8 @@ services:
       echo "Checking DB at /app/${SQLITE_FILENAME}";
 
       if [ ! -f "/app/${SQLITE_FILENAME}" ]; then
-        echo "Database not found. Initializing...";
+        echo "Database was not found. Initializing...";
+        mkdir -p /app/db
         chmod +x ./script/init_db.sh ./script/insert_majors.sh ./script/insert_user_roles.sh &&
         ./script/init_db.sh "/app/${SQLITE_FILENAME}" &&
         ./script/insert_user_roles.sh "/app/${SQLITE_FILENAME}" &&
