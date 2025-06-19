@@ -6,7 +6,9 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:/app/
+      - ./static/image/photo/:/app/static/image/photo/
+      - ./download/:/app/download/
+      - ./db/:/app/db/
     entrypoint: bash
     command: >
       -c '
