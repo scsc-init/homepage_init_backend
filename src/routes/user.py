@@ -7,10 +7,10 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateUser, create_user_controller, enroll_user_controller
+from src.controller import BodyCreateUser, create_user_controller, enroll_user_controller, register_oldboy_applicant_controller, process_oldboy_applicant_controller, reactivate_oldboy_controller
 from src.core import get_settings
 from src.db import SessionDep
-from src.model import User, UserStatus
+from src.model import User, UserStatus, OldboyApplicant
 from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user
 
 user_router = APIRouter(tags=['user'])
@@ -156,3 +156,46 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
     return
+
+
+@user_router.post('/user/oldboy/register', status_code=201)
+async def create_oldboy_applicant(session: SessionDep, request: Request) -> OldboyApplicant:
+    current_user = get_user(request)
+    return await register_oldboy_applicant_controller(session, current_user)
+
+
+@user_router.get('/executive/user/oldboy/applicants')
+async def get_oldboy_applicants(session: SessionDep, processed: bool) -> Sequence[OldboyApplicant]:
+    return session.exec(select(OldboyApplicant).where(OldboyApplicant.processed == processed)).all()
+
+
+@user_router.post('/executive/user/oldboy/{id}/process', status_code=204)
+async def process_oldboy_applicant(id: str, session: SessionDep) -> None:
+    return await process_oldboy_applicant_controller(session, id)
+
+
+@user_router.post('/user/oldboy/unregister', status_code=204)
+async def delete_oldboy_applicant_self(session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
+    oldboy_applicant = session.get(OldboyApplicant, current_user.id)
+    if not oldboy_applicant: raise HTTPException(404, detail="oldboy_applicant not found")
+    session.delete(oldboy_applicant)
+    session.commit()
+    return
+
+
+@user_router.post('/executive/user/oldboy/{id}/unregister', status_code=204)
+async def delete_oldboy_applicant_executive(id: str, session: SessionDep) -> None:
+    user = session.get(User, id)
+    if not user: raise HTTPException(404, detail="user does not exist")
+    oldboy_applicant = session.get(OldboyApplicant, user.id)
+    if not oldboy_applicant: raise HTTPException(404, detail="oldboy_applicant not found")
+    session.delete(oldboy_applicant)
+    session.commit()
+    return
+
+
+@user_router.post('/user/oldboy/reactivate', status_code=204)
+async def reactivate_oldboy(session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
+    return await reactivate_oldboy_controller(session, current_user)
