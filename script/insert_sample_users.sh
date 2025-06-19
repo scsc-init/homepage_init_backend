@@ -36,4 +36,4 @@ VALUES
   ('$ID3', '$EMAIL3', 'Carol Choi', '01034567890', '202512347', 600, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
 EOF
 
-echo "✅ Sample users inserted successfully into '$DB_FILE'."
+echo "Sample users inserted successfully into '$DB_FILE'."

@@ -8,7 +8,7 @@ from src.db import SessionDep
 from src.model import PIG, SCSCGlobalStatus, PIGMember, SCSCStatus
 from src.util import is_valid_semester, is_valid_year, get_user_role_level
 
-from .article import BodyCreateArticle, create_article_controller
+from .article import BodyCreateArticle, create_article
 
 
 class BodyCreatePIG(BaseModel):
@@ -19,12 +19,12 @@ class BodyCreatePIG(BaseModel):
     semester: int
 
 
-async def create_pig_controller(session: SessionDep, body: BodyCreatePIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> PIG:
+async def create_pig(session: SessionDep, body: BodyCreatePIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> PIG:
     if scsc_global_status.status != SCSCStatus.surveying: raise HTTPException(400, "cannot create pig when pig global status is not surveying")
     if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
     if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
 
-    pig_article = await create_article_controller(
+    pig_article = await create_article(
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
@@ -68,7 +68,7 @@ class BodyUpdatePIG(BaseModel):
     semester: Optional[int] = None
 
 
-async def update_pig_controller(session: SessionDep, id: int, body: BodyUpdatePIG, user_id: str, is_executive: bool) -> None:
+async def update_pig(session: SessionDep, id: int, body: BodyUpdatePIG, user_id: str, is_executive: bool) -> None:
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     if not is_executive and pig.owner != user_id: raise HTTPException(status_code=403, detail="cannot update pig of other")
@@ -78,7 +78,7 @@ async def update_pig_controller(session: SessionDep, id: int, body: BodyUpdatePI
     if body.title: pig.title = body.title
     if body.description: pig.description = body.description
     if body.content:
-        pig_article = await create_article_controller(
+        pig_article = await create_article(
             session,
             BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
             user_id,

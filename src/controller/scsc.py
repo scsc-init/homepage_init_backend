@@ -21,7 +21,7 @@ def _check_valid_scsc_global_status_update(old_status: SCSCStatus, new_status: S
     return False
 
 
-async def update_scsc_global_status_controller(session: SessionDep, status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
+async def update_scsc_global_status(session: SessionDep, status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
     if not _check_valid_scsc_global_status_update(scsc_global_status.status, status): raise HTTPException(400, "invalid sig global status update")
     if status == SCSCStatus.inactive:
         sigs = session.exec(select(SIG).where(SIG.status != SCSCStatus.inactive)).all()

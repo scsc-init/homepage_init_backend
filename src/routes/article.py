@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateArticle, create_article_controller
+from src.controller import BodyCreateArticle, create_article
 from src.db import SessionDep
 from src.model import Article, Board
 from src.util import get_user
@@ -17,7 +17,7 @@ article_router = APIRouter(tags=['article'])
 @article_router.post('/article/create', status_code=201)
 async def create_article(session: SessionDep, request: Request, body: BodyCreateArticle) -> Article:
     current_user = get_user(request)
-    return await create_article_controller(session, body, current_user.id, current_user.role)
+    return await create_article(session, body, current_user.id, current_user.role)
 
 
 @article_router.get('/articles/{board_id}')

@@ -25,6 +25,6 @@ async def process_standby_user(encoding: str, file: UploadFile = File(...)) -> l
     trimmed_csv = io.StringIO("".join(trimmed_lines))
     reader = csv.DictReader(trimmed_csv)
     result = []
-    for i, line in enumerate(reader):
+    for line in reader:
         result.append((int(str(line["입금액"]).replace(',', '')), line["거래일시"], line["보낸분/받는분"]))
     return result

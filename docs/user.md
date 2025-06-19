@@ -77,6 +77,19 @@ END;
 CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 ```
 
+## standby request DB
+```sql
+CREATE TABLE standby_req_tbl (
+    standby_user_id TEXT PRIMARY KEY,
+    user_name TEXT NOT NULL,
+    deposit_name TEXT NOT NULL,
+    request_time TEXT NOT NULL,
+    is_checked BOOLEAN NOT NULL DEFAULT 0
+);
+```
+- `deposit_name`은 입금자명으로, "이름"+"전화번호 뒤 2자리"로 설정한다.
+
+
 # API 구조
 
 ## 회원 관련 API(/api/user)
@@ -439,7 +452,7 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
 ---
 
-## 🔹 Get Standby Request List
+## Get Standby Request List
 - **Method**: `GET`
 - **URL**: `/api/executive/user/standby/list`
 - **Response**:
@@ -468,7 +481,7 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
 ---
 
-## 🔹 Process Standby Request List with File
+## Process Standby Request List with File
 
 - **Method**: `POST`
 - **URL**: `/api/executive/user/standby/process`
@@ -478,7 +491,7 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
     | 필드명  | 타입   | 필수 여부 | 설명                    |
     | ---- | ---- | ----- | --------------------- |
-    | file | File | ✅     | 업로드할 파일 (csv(UTF-8 or EUC-KR)) |
+    | file | File | O   | 업로드할 파일 (csv(UTF-8 or EUC-KR)) |
 
 - **Status Codes**:
   - `204 No Content`: 성공
