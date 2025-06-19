@@ -7,7 +7,6 @@ from sqlmodel import Field, SQLModel
 class UserStatus(str, Enum):
     active = "active"
     pending = "pending"
-    standby = "standby"
     banned = "banned"
 
 
