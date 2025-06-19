@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
@@ -45,6 +46,19 @@ async def enroll_user_controller(session: SessionDep, user_id: str) -> None:
     session.add(user)
     session.commit()
     return
+
+
+async def register_oldboy_applicant_controller(session: SessionDep, user: User) -> OldboyApplicant:
+    user_created_at_aware = user.created_at.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3): raise HTTPException(400, detail="lack of qualifications")
+    oldboy_applicant = OldboyApplicant(id=user.id)
+    session.add(oldboy_applicant)
+    try: session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, detail="oldboy_applicant already exists")
+    session.refresh(oldboy_applicant)
+    return oldboy_applicant
 
 
 async def process_oldboy_applicant_controller(session: SessionDep, user_id: str) -> None:

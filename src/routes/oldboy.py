@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import process_oldboy_applicant_controller
+from src.controller import register_oldboy_applicant_controller, process_oldboy_applicant_controller
 from src.db import SessionDep
 from src.model import OldboyApplicant, User
 from src.util import get_user
@@ -16,14 +16,7 @@ oldboy_router = APIRouter(tags=['oldboy'])
 @oldboy_router.post('/oldboy/register', status_code=201)
 async def create_oldboy_applicant(session: SessionDep, request: Request) -> OldboyApplicant:
     current_user = get_user(request)
-    oldboy_applicant = OldboyApplicant(id=current_user.id)
-    session.add(oldboy_applicant)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="oldboy_applicant already exists")
-    session.refresh(oldboy_applicant)
-    return oldboy_applicant
+    return await register_oldboy_applicant_controller(session, current_user)
 
 
 @oldboy_router.get('/executive/oldboy/applicants')
