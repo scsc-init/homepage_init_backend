@@ -9,7 +9,7 @@ from .article import article_router
 from .board import board_router
 from .file import file_router
 from .scsc import scsc_router
-from .oldboy_applicant import oldboy_applicant_router
+from .oldboy import oldboy_router
 
 root_router = APIRouter()
 
@@ -23,4 +23,4 @@ root_router.include_router(board_router, prefix='/api')
 root_router.include_router(file_router, prefix='/api')
 root_router.include_router(scsc_router, prefix='/api')
 root_router.include_router(scsc_router, prefix='/api')
-root_router.include_router(oldboy_applicant_router, prefix='/api')
+root_router.include_router(oldboy_router, prefix='/api')

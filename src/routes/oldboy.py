@@ -10,10 +10,10 @@ from src.model import OldboyApplicant, User
 from src.util import get_user
 
 
-oldboy_applicant_router = APIRouter(tags=['oldboy_applicant'])
+oldboy_router = APIRouter(tags=['oldboy'])
 
 
-@oldboy_applicant_router.post('/oldboy-applicant/create', status_code=201)
+@oldboy_router.post('/oldboy/register', status_code=201)
 async def create_oldboy_applicant(session: SessionDep, request: Request) -> OldboyApplicant:
     current_user = get_user(request)
     oldboy_applicant = OldboyApplicant(id=current_user.id)
@@ -26,17 +26,17 @@ async def create_oldboy_applicant(session: SessionDep, request: Request) -> Oldb
     return oldboy_applicant
 
 
-@oldboy_applicant_router.get('/executive/oldboy-applicants')
+@oldboy_router.get('/executive/oldboy/applicants')
 async def get_oldboy_applicants(session: SessionDep, processed: bool) -> Sequence[OldboyApplicant]:
     return session.exec(select(OldboyApplicant).where(OldboyApplicant.processed == processed)).all()
 
 
-@oldboy_applicant_router.post('/executive/oldboy-applicant/{id}/process', status_code=204)
+@oldboy_router.post('/executive/oldboy/{id}/process', status_code=204)
 async def process_oldboy_applicant(id: str, session: SessionDep) -> None:
     return await process_oldboy_applicant_controller(session, id)
 
 
-@oldboy_applicant_router.post('/oldboy-applicant/delete', status_code=204)
+@oldboy_router.post('/oldboy/unregister', status_code=204)
 async def delete_oldboy_applicant_self(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     oldboy_applicant = session.get(OldboyApplicant, current_user.id)
@@ -46,7 +46,7 @@ async def delete_oldboy_applicant_self(session: SessionDep, request: Request) ->
     return
 
 
-@oldboy_applicant_router.post('/executive/oldboy-applicant/{id}/delete', status_code=204)
+@oldboy_router.post('/executive/oldboy/{id}/unregister', status_code=204)
 async def delete_oldboy_applicant_executive(id: str, session: SessionDep) -> None:
     user = session.get(User, id)
     if not user: raise HTTPException(404, detail="user does not exist")

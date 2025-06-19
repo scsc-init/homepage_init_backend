@@ -32,17 +32,17 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
 # API 구조
 
-## 졸업 신청자 관리 API (`/api/oldboy-applicant`)
+## 졸업 신청자 관리 API (`/api/oldboy`)
 
 - `oldboy_applicant` 테이블의 데이터를 관리하는 API입니다.
 - 이 테이블은 `user` 테이블의 `id`를 참조하며, 졸업 신청자의 처리 여부와 신청/업데이트 시각을 기록합니다.
 
 ---
 
-## 🔹 Create Oldboy Applicant
+## 🔹 Register Oldboy Applicant
 
 - **Method**: `POST`
-- **URL**: `/api/oldboy-applicant/create`
+- **URL**: `/api/oldboy/register`
 - **Description**: 로그인된 사용자에 대해 새로운 졸업 신청자 기록을 생성합니다.
 
 - **Response**:
@@ -64,7 +64,7 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 ## 🔹 Get All Oldboy Applicants
 
 - **Method**: `GET`
-- **URL**: `/api/executive/oldboy-applicants`
+- **URL**: `/api/executive/oldboy/applicants`
 - **Description**: 졸업 신청자 기록을 조회합니다.
 - **Query Parameters**:
     - `processed`: Allowed values: `true`, `false`
@@ -95,7 +95,7 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 ## 🔹 Process Oldboy Applicant
 
 - **Method**: `POST`
-- **URL**: `/api/executive/oldboy-applicant/:id/process`
+- **URL**: `/api/executive/oldboy/:id/process`
 - **Description**: 특정 졸업 신청자의 `processed` 상태를 업데이트하고 졸업 신청자의 권한을 `oldboy`로 변경합니다. 
 - **Status Codes**:
   - `204 No Content`: 업데이트 성공 (응답 본문 없음)
@@ -105,10 +105,10 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
 ---
 
-## 🔹 Delete Oldboy Applicant(Self)
+## 🔹 Unregister Oldboy Applicant(Self)
 
 - **Method**: `POST`
-- **URL**: `/api/oldboy-applicant/delete`
+- **URL**: `/api/oldboy/unregister`
 - **Description**: 로그인한 사용자의 졸업 신청자 기록이 처리되지 않았다면 삭제합니다. 
 - **Status Codes**:
   - `204 No Content`: 삭제 성공
@@ -118,10 +118,10 @@ CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
 ---
 
-## 🔹 Delete Oldboy Applicant(Executive)
+## 🔹 Unregister Oldboy Applicant(Executive)
 
 - **Method**: `POST`
-- **URL**: `/api/executive/oldboy-applicant/:id/delete`
+- **URL**: `/api/executive/oldboy/:id/unregister`
 - **Description**: 특정 `id`를 가진 졸업 신청자 기록을 삭제합니다. 
 - **Status Codes**:
   - `204 No Content`: 삭제 성공
