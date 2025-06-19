@@ -35,8 +35,19 @@ USER_CHECK=TRUE
 ## 실행 방법(with docker)
 
 linux, docker가 요구됩니다. docker compose 2.25.0 이상이 필요합니다. 
+
+### Development 중
+
+docker container를 빌드하고 실행합니다.
 ```bash
 docker-compose up --build
+```
+vscode의 `Dev Containers` extensions에서 `open folder in container`을 통해 위에서 실행한 컨테이너로 연결합니다.
+
+### Production 중
+
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 ```
 
 ## 실행 방법(without docker)
