@@ -1,13 +1,11 @@
 # 백엔드 공통 DB, API 명세서
-**최신개정일:** 2025-06-18
+**최신개정일:** 2025-06-14
 
 # API 구조
 
 ## 공통
 
-### 인증 관련
-
-모든 경로에는 header에 `x-api-secret`을 포함해야 한다. 
+모든 경로에는 header에 x-api-secret을 포함해야 함
 
 ```http
 x-api-secret: YOUR_SECRET_KEY
@@ -15,29 +13,6 @@ x-api-secret: YOUR_SECRET_KEY
 
 - **Status Codes**:
   - `401 Unauthorized` (인증 실패 시)
-
-### 로그인 관련
-
-사용자 정보가 필요한 경로에는 header에 `x-jwt`를 포함해야 한다. 이 값은 `/api/user/login`의 응답에서 얻는다. 
-
-
-```http
-x-jwt: USER_JWT
-```
-
-- **Status Codes**:
-  - `401 Unauthorized` (인증 실패 시)
-
-## 코딩 스타일
-
-### 라우터 함수 매개변수 순서
-라우터 함수의 매개변수는 path parameter -> dependency(`SessionDep`, `SCSCGlobalStatusDep`, etc.) -> request -> query parameter -> body -> form data 순으로 작성한다. 
-
-### 컨트롤러 함수 매개변수 순서
-컨트롤러 함수의 매개변수는 session을 맨 앞에 작성한다. 
-
-### `.env` 로딩
-`/src/core/config.py`에서 `.env`의 변수를 지정하고 `get_settings`를 통해 다른 코드에서 불러온다. 
 
 # SQL 관련
 
@@ -47,8 +22,6 @@ x-jwt: USER_JWT
 PRAGMA foreign_keys = ON;
 ```
 
-## 테이블 생성
-db 파일이 없을 때 `/docker-compose.yml`에 작성된 명령어에 따라 `/script/init_db.sh`, `/script/insert_user_roles.sh`, `/script/insert_majors.sh`를 순차적으로 실행하여 db 파일을 초기화한다. 모든 테이블은 `/script/init_db.sh`에서 생성되어야 한다. 
 
 ## 권한 DB
 ```sql
@@ -64,7 +37,7 @@ CREATE TABLE user_role (
 - 라우터에서 권한을 query, body에 포함한다면 권한의 `name`을 입력한다. 유효하지 않은 `name`을 전달하면 400 상태 코드를 반환한다. 
 
 다음의 권한이 존재한다. 권한에 대한 CRUD 기능은 존재하지 않고 DB 초기화 시 [./script/insert_user_roles.sh](./script/insert_user_roles.sh)에서 권한을 추가한다. 
-- 총 7가지 권한이 존재한다. 권한의 서열은 나중에 나열된 항목이 높다. 
+- 총 8가지 권한이 존재한다. 권한의 서열은 나중에 나열된 항목이 높다. 
 1. (0, 'lowest', '최저권한'): 가장 낮은 권한으로 `article.md`의 `board`에서 사용된다. 
 1. (100, 'dormant', '휴회원'): 
 1. (200, 'newcomer', '준회원'): 

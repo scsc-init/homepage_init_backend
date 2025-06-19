@@ -7,10 +7,10 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateUser, create_user_controller, enroll_user_controller, register_oldboy_applicant_controller, process_oldboy_applicant_controller, reactivate_oldboy_controller
+from src.controller import BodyCreateUser, create_user_controller, enroll_user_controller
 from src.core import get_settings
 from src.db import SessionDep
-from src.model import User, UserStatus, OldboyApplicant, StandbyReqTbl
+from src.model import User, UserStatus, StandbyReqTbl
 from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user
 
 user_router = APIRouter(tags=['user'])
@@ -156,3 +156,82 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
     return
+
+
+@user_router.get('/executive/user/standby/list')
+async def get_standby_list(session: SessionDep) -> Sequence[StandbyReqTbl]:
+    return session.exec(select(StandbyReqTbl)).all()
+
+
+@user_router.post('/executive/user/standby/process', status_code=204)
+async def process_standby_list(session: SessionDep, file: UploadFile = File(...)):
+    if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
+    ext_whitelist = ('csv')
+    if file.filename is None or get_file_extension(file.filename) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
+    
+    try:
+        deposit_array = await process_standby_user('utf-8', file)
+    except UnicodeDecodeError:
+        deposit_array = await process_standby_user('euc-kr', file)
+    except Exception as e:
+        raise HTTPException(400, detail=f"csv file reading failed with following error: {e}")
+    
+    user_array = session.exec(select(User).where(User.status == UserStatus.pending)).all()
+    stby_user_array = session.exec(select(StandbyReqTbl)).all()
+    
+    for deposit in deposit_array:
+        print(deposit)
+        matching_users: list[StandbyReqTbl] = []
+        if deposit[2][-2:].isdigit():
+            for stby_user in stby_user_array:
+                if stby_user.deposit_name == deposit[2]:
+                    matching_users.append(stby_user)
+        else:
+            for stby_user in stby_user_array:
+                if stby_user.user_name == deposit[2]:
+                    print(deposit)
+                    matching_users.append(stby_user)
+        
+        if len(matching_users) > 1:
+            raise HTTPException(400, f"more than one matching user in standby request db for deposit {deposit}")
+        
+        elif len(matching_users) == 1:
+            if deposit[0] < get_settings().enrollment_fee:
+                raise HTTPException(400, f"Insufficient funds from {deposit}")
+            elif deposit[0] > get_settings().enrollment_fee:
+                raise HTTPException(400, f"Oversufficient funds from {deposit}")
+            
+            stby_user = matching_users[0]
+            if stby_user.is_checked: return
+            user = session.get(User, stby_user.standby_user_id)
+            user.status = UserStatus.active
+            stby_user.request_time = deposit[1]
+            stby_user.is_checked = True
+            session.add(user)
+            session.add(stby_user)
+            session.commit()
+            
+        elif len(matching_users) == 0:
+            matching_users_error: list[User] = []
+            if deposit[2][-2:].isdigit():
+                for user in user_array:
+                    if deposit[2][:-2] == user.name and deposit[2][-2:] == user.phone[-2:]:
+                        matching_users_error.append(stby_user)
+            else:
+                for user in user_array:
+                    if deposit[2] == user.name:
+                        matching_users_error.append(stby_user)
+            
+            if len(matching_users_error) > 1 or len(matching_users_error) == 0:
+                raise HTTPException(400, detail=f"no matching user in standby request db for deposit {deposit}")
+
+            await enroll_user_controller(session, user.id)
+            user.status = UserStatus.active
+            stby_tbl = session.get(StandbyReqTbl, user.id)
+            stby_tbl.request_time = deposit[1]
+            stby_tbl.is_checked = True
+            session.add(user)
+            session.add(stby_tbl)
+            session.commit()
+    return
+        

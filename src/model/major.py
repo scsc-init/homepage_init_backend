@@ -7,6 +7,6 @@ class Major(SQLModel, table=True):
         UniqueConstraint("college", "major_name", name="uq_college_major"),
     )
 
-    id: int = Field(default=None, primary_key=True)  # default=None because of autoincrement
+    id: int = Field(default=None, primary_key=True)
     college: str = Field(nullable=False)
     major_name: str = Field(nullable=False)

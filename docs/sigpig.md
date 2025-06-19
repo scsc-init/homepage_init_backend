@@ -116,7 +116,7 @@ END;
 
 ---
 
-## Create SIG
+## 🔹 Create SIG
 
 * **Method**: `POST`
 * **URL**: `/api/sig/create`
@@ -160,7 +160,7 @@ END;
 
 ---
 
-## Get SIG by ID
+## 🔹 Get SIG by ID
 
 * **Method**: `GET`
 * **URL**: `/api/sig/:id`
@@ -188,7 +188,7 @@ END;
 
 ---
 
-## Get All SIGs
+## 🔹 Get All SIGs
 
 * **Method**: `GET`
 * **URL**: `/api/sigs`
@@ -218,7 +218,7 @@ END;
 
 ---
 
-## Update SIG (Owner Only)
+## 🔹 Update SIG (Owner Only)
 
 * **Method**: `POST`
 * **URL**: `/api/sig/:id/update`
@@ -248,7 +248,7 @@ END;
 
 ---
 
-## Delete SIG (Owner Only)
+## 🔹 Delete SIG (Owner Only)
 
 * **Method**: `POST`
 * **URL**: `/api/sig/:id/delete`
@@ -262,7 +262,7 @@ END;
 
 ---
 
-## Transfer SIG Ownership(Owner / Executive)
+## 🔹 Transfer SIG Ownership(Owner / Executive)
 
 * **Method**: `POST`
 * **URL**: `/api/sig/:id/handover`
@@ -284,7 +284,7 @@ END;
 
 ---
 
-## Update SIG (Executive)
+## 🔹 Update SIG (Executive)
 
 * **Method**: `POST`
 * **URL**: `/api/executive/sig/:id/update`
@@ -314,7 +314,7 @@ END;
 
 ---
 
-## Delete SIG (Executive)
+## 🔹 Delete SIG (Executive)
 
 * **Method**: `POST`
 * **URL**: `/api/executive/sig/:id/delete`
@@ -328,7 +328,7 @@ END;
 
 ---
 
-## Get SIG Members
+## 🔹 Get SIG Members
 
 * **Method**: `GET`
 * **URL**: `/api/sig/:id/members`
@@ -352,7 +352,7 @@ END;
 
 ---
 
-## Join SIG (Current User)
+## 🔹 Join SIG (Current User)
 
 * **Method**: `POST`
 * **URL**: `/api/sig/:id/member/join`
@@ -366,7 +366,7 @@ END;
 
 ---
 
-## Leave SIG (Current User)
+## 🔹 Leave SIG (Current User)
 
 * **Method**: `POST`
 * **URL**: `/api/sig/:id/member/leave`
@@ -380,7 +380,7 @@ END;
 
 ---
 
-## Join SIG (Executive)
+## 🔹 Join SIG (Executive)
 
 * **Method**: `POST`
 * **URL**: `/api/executive/sig/:id/member/join`
@@ -402,7 +402,7 @@ END;
 
 ---
 
-## Leave SIG Member (Executive)
+## 🔹 Leave SIG Member (Executive)
 
 * **Method**: `POST`
 * **URL**: `/api/executive/sig/:id/member/leave`
