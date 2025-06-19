@@ -11,7 +11,7 @@
 
 - SCSC 전역 상태 정보를 관리하는 API
 
-## 🔹 Get Global SCSC Status
+## Get Global SCSC Status
 
 * **Method**: `GET`
 * **URL**: `/api/scsc/global/status`
@@ -29,7 +29,7 @@
 
 ---
 
-## 🔹 Update Global SCSC Status
+## Update Global SCSC Status
 
 * **Method**: `POST`
 * **URL**: `/api/executive/scsc/global/status`

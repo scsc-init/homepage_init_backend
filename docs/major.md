@@ -36,7 +36,7 @@ END;
 
 ---
 
-## 🔹 Create Major
+## Create Major
 
 - **Method**: `POST`
 - **URL**: `/api/executive/major/create`
@@ -64,7 +64,7 @@ END;
 
 ---
 
-## 🔹 Get All Majors
+## Get All Majors
 
 - **Method**: `GET`
 - **URL**: `/api/majors`
@@ -88,7 +88,7 @@ END;
 
 ---
 
-## 🔹 Get Major by ID
+## Get Major by ID
 
 - **Method**: `GET`
 - **URL**: `/api/major/:id`
@@ -106,7 +106,7 @@ END;
 
 ---
 
-## 🔹 Update Major
+## Update Major
 
 - **Method**: `POST`
 - **URL**: `/api/executive/major/update/:id`
@@ -128,7 +128,7 @@ END;
 
 ---
 
-## 🔹 Delete Major
+## Delete Major
 
 - **Method**: `POST`
 - **URL**: `/api/executive/major/delete/:id`
