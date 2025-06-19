@@ -7,7 +7,7 @@
 
 ---
 
-## 🔹 Upload Image (이미지 업로드)
+## Upload Image (이미지 업로드)
 
 * **Method**: `POST`
 * **URL**: `/api/image/upload`
@@ -42,7 +42,7 @@
 
 ---
 
-## 🔹 Download Image (이미지 다운로드)
+## Download Image (이미지 다운로드)
 
 * **Method**: `GET`
 * **URL**: `/api/image/download/:id`
