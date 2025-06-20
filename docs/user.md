@@ -83,8 +83,9 @@ CREATE TABLE standby_req_tbl (
     standby_user_id TEXT PRIMARY KEY,
     user_name TEXT NOT NULL,
     deposit_name TEXT NOT NULL,
-    request_time TEXT NOT NULL,
+    deposit_time DATETIME,
     is_checked BOOLEAN NOT NULL DEFAULT 0
+    FOREIGN KEY (standby_user_id) REFERENCES user(id)
 );
 ```
 - `deposit_name`은 입금자명으로, "이름"+"전화번호 뒤 2자리"로 설정한다.
@@ -451,6 +452,14 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
+## 입금 확인(standby) API (`/api/user/standby`)
+
+- `standby`는 입금 확인을 기다리는 회원들을 관리하는 API입니다.
+- 
+
+___
+
+
 ## Get Standby Request List
 - **Method**: `GET`
 - **URL**: `/api/executive/user/standby/list`
@@ -462,14 +471,14 @@ CREATE TABLE standby_req_tbl (
         "is_checked": false,
         "user_name": "Alice Kim",
         "standby_user_id": "b36a83701f1c3191e19722d6f90274bc1b5501fe69ebf33313e440fe4b0fe210",
-        "request_time": "NONE"
+        "deposit_time": "NONE"
     },
     {
         "deposit_name": "Bob Lee88",
         "is_checked": true,
         "user_name": "Bob Lee",
         "standby_user_id": "15e4c3b1b3006382a22241ea66d679c107bc9b15cf8e6a25b64f46ac559c50c9",
-        "request_time": "2025.06.02 08:33:28"
+        "deposit_time": "2025.06.02 08:33:28"
     }
 ]
 ```

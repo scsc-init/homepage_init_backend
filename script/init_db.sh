@@ -263,8 +263,9 @@ CREATE TABLE standby_req_tbl (
     standby_user_id TEXT PRIMARY KEY,
     user_name TEXT NOT NULL,
     deposit_name TEXT NOT NULL,
-    request_time TEXT NOT NULL,
+    deposit_time DATETIME,
     is_checked BOOLEAN NOT NULL DEFAULT 0
+    FOREIGN KEY (standby_user_id) REFERENCES user(id)
 );
 
 EOF

@@ -3,6 +3,8 @@ import csv
 import io
 from src.model import User
 from src.core import get_settings
+from datetime import datetime
+
 
 
 def get_file_extension(filename: str) -> str:
@@ -28,3 +30,7 @@ async def process_standby_user(encoding: str, file: UploadFile = File(...)) -> l
     for line in reader:
         result.append((int(str(line["입금액"]).replace(',', '')), line["거래일시"], line["보낸분/받는분"]))
     return result
+
+def str_to_datetime(before: str):
+
+    return datetime.strptime(before, "%Y.%m.%d %H:%M:%S")

@@ -47,7 +47,7 @@ class StandbyReqTbl(SQLModel, table=True):
     
     user_name: str = Field(nullable=False)
     deposit_name: str = Field(nullable=False)
-    request_time: str = Field(default='NONE', nullable=False)
+    deposit_time: str = Field(default='NONE', nullable=False)
     is_checked: bool = Field(default=False, nullable=False)
     
     
