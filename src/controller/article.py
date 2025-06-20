@@ -12,7 +12,7 @@ class BodyCreateArticle(BaseModel):
     board_id: int
 
 
-async def create_article(session: SessionDep, body: BodyCreateArticle, user_id: str, user_role: int) -> Article:
+async def create_article_ctrl(session: SessionDep, body: BodyCreateArticle, user_id: str, user_role: int) -> Article:
     board = session.get(Board, body.board_id)
     if not board:
         raise HTTPException(status_code=404, detail=f"Board {body.board_id} does not exist")

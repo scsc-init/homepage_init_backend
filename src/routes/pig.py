@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig, update_pig
+from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl
 from src.db import SessionDep
 from src.model import PIG, PIGMember, SCSCStatus, User
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
@@ -14,9 +14,9 @@ pig_router = APIRouter(tags=['pig'])
 
 
 @pig_router.post('/pig/create', status_code=201)
-async def create_pig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreatePIG) -> PIG:
+async def create_pig_ctrl(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreatePIG) -> PIG:
     current_user = get_user(request)
-    return await create_pig(session, body, current_user.id, scsc_global_status)
+    return await create_pig_ctrl(session, body, current_user.id, scsc_global_status)
 
 
 @pig_router.get('/pig/{id}')
@@ -34,7 +34,7 @@ async def get_all_pigs(session: SessionDep) -> Sequence[PIG]:
 @pig_router.post('/pig/{id}/update', status_code=204)
 async def update_my_pig(id: int, session: SessionDep, request: Request, body: BodyUpdatePIG) -> None:
     current_user = get_user(request)
-    await update_pig(session, id, body, current_user.id, False)
+    await update_pig_ctrl(session, id, body, current_user.id, False)
 
 
 @pig_router.post('/pig/{id}/delete', status_code=204)
@@ -49,9 +49,9 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
 
 
 @pig_router.post('/executive/pig/{id}/update', status_code=204)
-async def update_pig(id: int, session: SessionDep, request: Request, body: BodyUpdatePIG) -> None:
+async def update_pig_ctrl(id: int, session: SessionDep, request: Request, body: BodyUpdatePIG) -> None:
     current_user = get_user(request)
-    await update_pig(session, id, body, current_user.id, True)
+    await update_pig_ctrl(session, id, body, current_user.id, True)
 
 
 @pig_router.post('/executive/pig/{id}/delete', status_code=204)

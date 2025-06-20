@@ -49,3 +49,12 @@ class StandbyReqTbl(SQLModel, table=True):
     deposit_name: str = Field(nullable=False)
     request_time: str = Field(default='NONE', nullable=False)
     is_checked: bool = Field(default=False, nullable=False)
+    
+    
+class OldboyApplicant(SQLModel, table=True):
+    __tablename__ = "oldboy_applicant"  # type: ignore
+
+    id: str = Field(foreign_key="user.id", primary_key=True)
+    processed: bool = Field(default=False, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

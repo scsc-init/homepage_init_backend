@@ -1,5 +1,5 @@
-from .article import create_article, BodyCreateArticle
-from .sig import create_sig, BodyCreateSIG, update_sig, BodyUpdateSIG
-from .pig import create_pig, BodyCreatePIG, update_pig, BodyUpdatePIG
-from .user import create_user, BodyCreateUser, enroll_user, register_oldboy_applicant, process_oldboy_applicant, reactivate_oldboy
-from .scsc import update_scsc_global_status
+from .article import create_article_ctrl, BodyCreateArticle
+from .sig import create_sig, BodyCreateSIG, update_sig_ctrl, BodyUpdateSIG
+from .pig import create_pig_ctrl, BodyCreatePIG, update_pig_ctrl, BodyUpdatePIG
+from .user import create_user_ctrl, BodyCreateUser, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl
+from .scsc import update_scsc_global_status_ctrl
