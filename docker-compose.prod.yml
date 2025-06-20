@@ -16,8 +16,9 @@ services:
 
       if [ ! -f "/app/${SQLITE_FILENAME}" ]; then
         echo "Database not found. Initializing...";
-        chmod +x ./script/init_db.sh ./script/insert_majors.sh ./script/insert_user_roles.sh &&
+        chmod +x ./script/*.sh &&
         ./script/init_db.sh "/app/${SQLITE_FILENAME}" &&
+        ./script/insert_scsc_global_status.sh "/app/${SQLITE_FILENAME}" &&
         ./script/insert_user_roles.sh "/app/${SQLITE_FILENAME}" &&
         ./script/insert_majors.sh "/app/${SQLITE_FILENAME}" ./docs/majors.csv;
       else

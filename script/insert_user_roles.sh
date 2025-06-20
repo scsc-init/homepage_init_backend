@@ -26,4 +26,4 @@ VALUES
   (1000, 'president', '회장');
 EOF
 
-echo "✅ User roles inserted successfully into '$DB_FILE'."
+echo "User roles inserted successfully into '$DB_FILE'."

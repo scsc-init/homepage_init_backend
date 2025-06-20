@@ -6,23 +6,20 @@ from sqlalchemy.exc import IntegrityError
 
 from src.db import SessionDep
 from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus
-from src.util import is_valid_semester, is_valid_year, get_user_role_level
+from src.util import get_user_role_level
 
 from .article import BodyCreateArticle, create_article_ctrl
+from .scsc import status_available_create_sigpig
 
 
 class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
-    year: int
-    semester: int
 
 
 async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> SIG:
-    if scsc_global_status.status != SCSCStatus.surveying: raise HTTPException(400, "cannot create sig when sig global status is not surveying")
-    if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
-    if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
+    if scsc_global_status.status not in status_available_create_sigpig: raise HTTPException(400, f"cannot create sig when sig global status is not in {status_available_create_sigpig}")
 
     sig_article = await create_article_ctrl(
         session,
@@ -35,8 +32,8 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         title=body.title,
         description=body.description,
         content_id=sig_article.id,
-        year=body.year,
-        semester=body.semester,
+        year=scsc_global_status.year,
+        semester=scsc_global_status.semester,
         owner=user_id,
         status=SCSCStatus.surveying
     )
@@ -64,16 +61,12 @@ class BodyUpdateSIG(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
-    year: Optional[int] = None
-    semester: Optional[int] = None
 
 
 async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     if not is_executive and sig.owner != user_id: raise HTTPException(status_code=403, detail="cannot update sig of other")
-    if body.year and not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
-    if body.semester and not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
 
     if body.title: sig.title = body.title
     if body.description: sig.description = body.description
@@ -88,8 +81,6 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     if body.status:
         if not is_executive: raise HTTPException(403, detail="Only executive and above can update status")
         sig.status = body.status
-    if body.year: sig.year = body.year
-    if body.semester: sig.semester = body.semester
 
     session.add(sig)
     try: session.commit()

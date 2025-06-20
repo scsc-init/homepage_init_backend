@@ -12,7 +12,7 @@ CREATE TABLE sig (
     content_id INTEGER NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
-    semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
+    semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -128,8 +128,6 @@ END;
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
-  "year": 2025,
-  "semester": 1
 }
 ```
 
@@ -229,8 +227,6 @@ END;
   "title": "AI SIG",
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
-  "year": 2025,
-  "semester": 1
 }
 ```
 
@@ -296,8 +292,6 @@ END;
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
   "status": "recruiting",
-  "year": 2025,
-  "semester": 1
 }
 ```
 

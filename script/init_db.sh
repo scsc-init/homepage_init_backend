@@ -109,7 +109,7 @@ CREATE TABLE sig (
     content_id INTEGER UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
-    semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
+    semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -126,7 +126,7 @@ CREATE TABLE pig (
     content_id INTEGER UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
-    semester INTEGER NOT NULL CHECK (semester IN (1, 2)),
+    semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -208,6 +208,9 @@ END;
 CREATE TABLE scsc_global_status (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    year INTEGER NOT NULL CHECK (year >= 2025),
+    semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -216,13 +219,14 @@ AFTER UPDATE ON scsc_global_status
 FOR EACH ROW
 WHEN 
     OLD.status != NEW.status
+    OLD.year != NEW.year
+    OLD.semester != NEW.semester
 BEGIN
     UPDATE scsc_global_status
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
 
-INSERT INTO scsc_global_status (id, status) VALUES (1, 'inactive');
 
 -- File metadata table
 CREATE TABLE file_metadata (
