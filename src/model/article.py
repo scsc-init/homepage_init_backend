@@ -22,13 +22,7 @@ class Article(SQLModel, table=True):
     board_id: int = Field(foreign_key="board.id")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    
 
-class ArticleResponse(SQLModel):
-    id: int
-    title: str
-    author_id: str
-    board_id: int
-    created_at: datetime
-    updated_at: datetime
-    content: str 
+
+class ArticleResponse(Article):
+    content: str
