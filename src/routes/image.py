@@ -1,6 +1,6 @@
 from os import path
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse
 
 from src.core import get_settings
@@ -12,7 +12,7 @@ image_router = APIRouter(tags=['image'])
 
 
 @image_router.post('/image/upload', status_code=201)
-async def upload_image(session: SessionDep, request: Request, file: UploadFile) -> FileMetadata:
+async def upload_image(session: SessionDep, request: Request, file: UploadFile = File(...)) -> FileMetadata:
     current_user = get_user(request)
     if file.content_type is None or not file.content_type.startswith("image"): raise HTTPException(400, detail="cannot upload non-image file")
     ext_whitelist = ('jpg', 'jpeg', 'png')

@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 import jwt
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
@@ -214,67 +215,59 @@ async def get_standby_list(session: SessionDep) -> Sequence[StandbyReqTbl]:
 @user_router.post('/executive/user/standby/process', status_code=204)
 async def process_standby_list(session: SessionDep, file: UploadFile = File(...)):
     if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
-    ext_whitelist = ('csv')
+    ext_whitelist = ('csv',)
+
     if file.filename is None or get_file_extension(file.filename) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
 
-    try:
-        deposit_array = await process_standby_user('utf-8', file)
-    except UnicodeDecodeError:
-        deposit_array = await process_standby_user('euc-kr', file)
-    except Exception as e:
-        raise HTTPException(400, detail=f"csv file reading failed with following error: {e}")
+    content = await file.read()
+    if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"cannot upload file larger than {get_settings().file_max_size} bytes")
 
-    user_array = session.exec(select(User).where(User.status == UserStatus.pending)).all()
-    stby_user_array = session.exec(select(StandbyReqTbl)).all()
+    try: deposit_array = await process_standby_user('utf-8', content)
+    except UnicodeDecodeError: deposit_array = await process_standby_user('euc-kr', content)
+    except Exception as e: raise HTTPException(400, detail=f"csv file reading failed with following error: {e}")
 
     for deposit in deposit_array:
-        matching_users: list[StandbyReqTbl] = []
-        if deposit[2][-2:].isdigit():
-            for stby_user in stby_user_array:
-                if stby_user.deposit_name == deposit[2]:
-                    matching_users.append(stby_user)
-        else:
-            for stby_user in stby_user_array:
-                if stby_user.user_name == deposit[2]:
-                    matching_users.append(stby_user)
+        query_matching_users = select(StandbyReqTbl)
+        if deposit.deposit_name[-2:].isdigit(): query_matching_users = query_matching_users.where(StandbyReqTbl.deposit_name == deposit.deposit_name)  # search on deposit_name, which is "name+last 2 phone number" form
+        else: query_matching_users = query_matching_users.where(StandbyReqTbl.user_name == deposit.deposit_name)  # search on user_name, which is "name" form
+        matching_users = session.exec(query_matching_users).all()
 
-        if len(matching_users) > 1:
-            raise HTTPException(400, f"more than one matching user in standby request db for deposit {deposit}")
+        if len(matching_users) > 1: raise HTTPException(400, f"more than one matching user in standby request db for deposit {deposit}")
 
-        elif len(matching_users) == 1:
-            if deposit[0] < get_settings().enrollment_fee:
-                raise HTTPException(400, f"Insufficient funds from {deposit}")
-            elif deposit[0] > get_settings().enrollment_fee:
-                raise HTTPException(400, f"Oversufficient funds from {deposit}")
+        if len(matching_users) == 1:
+            if deposit.amount < get_settings().enrollment_fee: raise HTTPException(400, f"Insufficient funds from {deposit}")
+            if deposit.amount > get_settings().enrollment_fee: raise HTTPException(400, f"Oversufficient funds from {deposit}")
 
             stby_user = matching_users[0]
             if stby_user.is_checked: return
             user = session.get(User, stby_user.standby_user_id)
+            if not user: raise HTTPException(503, detail="user does not exist")
             user.status = UserStatus.active
-            stby_user.deposit_time = datetime.strptime(deposit[1], "%Y.%m.%d %H:%M:%S")
+            stby_user.deposit_time = deposit.deposit_time
             stby_user.is_checked = True
             session.add(user)
             session.add(stby_user)
             session.commit()
 
         elif len(matching_users) == 0:
-            matching_users_error: list[User] = []
-            if deposit[2][-2:].isdigit():
-                for user in user_array:
-                    if deposit[2][:-2] == user.name and deposit[2][-2:] == user.phone[-2:]:
-                        matching_users_error.append(stby_user)
+            query_matching_users_error = select(User)
+            if deposit.deposit_name[-2:].isdigit():
+                query_matching_users_error = query_matching_users_error.where(
+                    User.name == deposit.deposit_name[:-2],
+                    func.substring(User.phone, func.length(User.phone) - 1, 2) == deposit.deposit_name[-2:]
+                )
             else:
-                for user in user_array:
-                    if deposit[2] == user.name:
-                        matching_users_error.append(stby_user)
+                query_matching_users_error = query_matching_users_error.where(User.name == deposit.deposit_name)
+            matching_users_error = session.exec(query_matching_users_error).all()
 
-            if len(matching_users_error) > 1 or len(matching_users_error) == 0:
-                raise HTTPException(400, detail=f"no matching user in standby request db for deposit {deposit}")
+            if len(matching_users_error) != 1: raise HTTPException(400, detail=f"no matching user in standby request db for deposit {deposit}")
 
+            user = matching_users_error[0]
             await enroll_user_ctrl(session, user.id)
             user.status = UserStatus.active
             stby_tbl = session.get(StandbyReqTbl, user.id)
-            stby_tbl.deposit_time = datetime.strptime(deposit[1], "%Y.%m.%d %H:%M:%S")
+            if not stby_tbl: raise HTTPException(503, detail="stby_tbl does not exist")
+            stby_tbl.deposit_time = deposit.deposit_time
             stby_tbl.is_checked = True
             session.add(user)
             session.add(stby_tbl)

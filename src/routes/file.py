@@ -1,18 +1,18 @@
 from os import path
 
-from fastapi import APIRouter, HTTPException, Request, UploadFile
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from fastapi.responses import FileResponse
 
 from src.core import get_settings
 from src.db import SessionDep
-from src.model import FileMetadata, User
+from src.model import FileMetadata
 from src.util import create_uuid, get_file_extension, get_user
 
 file_router = APIRouter(tags=['file'])
 
 
 @file_router.post('/file/upload', status_code=201)
-async def upload_file(session: SessionDep, request: Request, file: UploadFile) -> FileMetadata:
+async def upload_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> FileMetadata:
     current_user = get_user(request)
     if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
     ext_whitelist = ('pdf', 'docx', 'pptx')

@@ -476,14 +476,14 @@ ___
         "is_checked": false,
         "user_name": "Alice Kim",
         "standby_user_id": "b36a83701f1c3191e19722d6f90274bc1b5501fe69ebf33313e440fe4b0fe210",
-        "deposit_time": "NONE"
+        "deposit_time": null
     },
     {
         "deposit_name": "Bob Lee88",
         "is_checked": true,
         "user_name": "Bob Lee",
         "standby_user_id": "15e4c3b1b3006382a22241ea66d679c107bc9b15cf8e6a25b64f46ac559c50c9",
-        "deposit_time": "2025.06.02 08:33:28"
+        "deposit_time": "2025-06-01T23:33:28"
     }
 ]
 ```
