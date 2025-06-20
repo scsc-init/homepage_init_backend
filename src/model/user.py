@@ -14,7 +14,7 @@ class UserStatus(str, Enum):
 class UserRole(SQLModel, table=True):
     __tablename__ = "user_role"  # type: ignore
 
-    level: int = Field(default=None, primary_key=True)
+    level: int = Field(primary_key=True)
 
     name: str = Field(nullable=False, unique=True)
     kor_name: str = Field(nullable=False, unique=True)
@@ -23,7 +23,7 @@ class UserRole(SQLModel, table=True):
 class User(SQLModel, table=True):
     __tablename__ = "user"  # type: ignore
 
-    id: str = Field(default=None, primary_key=True)
+    id: str = Field(primary_key=True)
 
     email: str = Field(nullable=False, unique=True)
     name: str = Field(nullable=False)
@@ -47,7 +47,7 @@ class StandbyReqTbl(SQLModel, table=True):
     
     user_name: str = Field(nullable=False)
     deposit_name: str = Field(nullable=False)
-    deposit_time: str = Field(default='NONE', nullable=False)
+    deposit_time: datetime = Field()
     is_checked: bool = Field(default=False, nullable=False)
     
     

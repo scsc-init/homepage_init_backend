@@ -286,8 +286,8 @@ CREATE TABLE standby_req_tbl (
     user_name TEXT NOT NULL,
     deposit_name TEXT NOT NULL,
     deposit_time DATETIME,
-    is_checked BOOLEAN NOT NULL DEFAULT 0
-    FOREIGN KEY (standby_user_id) REFERENCES user(id)
+    is_checked BOOLEAN NOT NULL DEFAULT 0,
+    FOREIGN KEY (standby_user_id) REFERENCES user(id) ON DELETE RESTRICT
 );
 
 EOF
