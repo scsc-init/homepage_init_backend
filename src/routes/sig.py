@@ -49,7 +49,7 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
 
 
 @sig_router.post('/executive/sig/{id}/update', status_code=204)
-async def update_sig_ctrl(id: int, session: SessionDep, request: Request, body: BodyUpdateSIG) -> None:
+async def update_sig(id: int, session: SessionDep, request: Request, body: BodyUpdateSIG) -> None:
     current_user = get_user(request)
     await update_sig_ctrl(session, id, body, current_user.id, True)
 

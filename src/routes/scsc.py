@@ -20,5 +20,5 @@ class BodyUpdateSCSCGlobalStatus(BaseModel):
 
 
 @scsc_router.post('/executive/scsc/global/status', status_code=204)
-async def update_scsc_global_status_ctrl(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, body: BodyUpdateSCSCGlobalStatus):
+async def update_scsc_global_status(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, body: BodyUpdateSCSCGlobalStatus):
     return await update_scsc_global_status_ctrl(session, body.status, scsc_global_status)

@@ -17,6 +17,6 @@ class SCSCGlobalStatus(SQLModel, table=True):
         CheckConstraint("id = 1", name="ck_id_valid"),
     )
 
-    id: int = Field(default=None, primary_key=True)
-    status: SCSCStatus = Field(default=None, nullable=False)
+    id: int = Field(primary_key=True)
+    status: SCSCStatus = Field(nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
