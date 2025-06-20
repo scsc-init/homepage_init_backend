@@ -7,7 +7,7 @@ from src.core import get_settings
 
 class APISecretMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if not request.url.path.startswith('/api'):
+        if not request.url.path.startswith('/api') or request.method not in ('GET', 'POST'):
             return await call_next(request)
         x_api_secret = request.headers.get('x-api-secret')
         if x_api_secret is None:

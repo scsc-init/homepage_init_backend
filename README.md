@@ -17,8 +17,10 @@ IMAGE_DIR="static/image/photo/"
 IMAGE_MAX_SIZE=10000000
 FILE_DIR="download/"
 FILE_MAX_SIZE=10000000
+ARTICLE_DIR="static/article/"
 USER_CHECK=TRUE
 ENROLLMENT_FEE=300000
+CORS_ALL_ACCEPT=FALSE
 ```
 
 | Key Name             | Description                                                      |
@@ -31,8 +33,10 @@ ENROLLMENT_FEE=300000
 | `IMAGE_MAX_SIZE`     | 이미지 최대 용량(바이트) |
 | `FILE_DIR`           | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`      | 파일 최대 용량(바이트) |
+| `ARTICLE_DIR`        | 글 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `USER_CHECK`         | 로그인 로직 활성화 여부. FALSE이면 사용자가 executive sample user로 설정된다. |
 | `ENROLLMENT_FEE`     | 동아리 가입비. |
+| `CORS_ALL_ACCEPT`    | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
 
 ## 실행 방법(with docker)
 
