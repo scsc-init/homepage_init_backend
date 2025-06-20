@@ -11,7 +11,7 @@ from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, r
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, str_to_datetime
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user
 
 user_router = APIRouter(tags=['user'])
 
@@ -246,7 +246,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
             if stby_user.is_checked: return
             user = session.get(User, stby_user.standby_user_id)
             user.status = UserStatus.active
-            stby_user.deposit_time = str_to_datetime(deposit[1])
+            stby_user.deposit_time = datetime.strptime(deposit[1], "%Y.%m.%d %H:%M:%S")
             stby_user.is_checked = True
             session.add(user)
             session.add(stby_user)
@@ -269,7 +269,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
             await enroll_user_ctrl(session, user.id)
             user.status = UserStatus.active
             stby_tbl = session.get(StandbyReqTbl, user.id)
-            stby_tbl.deposit_time = str_to_datetime(deposit[1])
+            stby_tbl.deposit_time = datetime.strptime(deposit[1], "%Y.%m.%d %H:%M:%S")
             stby_tbl.is_checked = True
             session.add(user)
             session.add(stby_tbl)
