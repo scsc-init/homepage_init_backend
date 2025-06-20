@@ -199,14 +199,19 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
-## Get Users by Role (임원 목록 조회)
+## Get Users by Role (사용자 목록 조회)
 
 * **Method**: `GET`
 * **URL**: `/api/users`
-* **Description**: 임원 이상의 권한에 대해 해당 권한의 사용자를 조회한다. 
-* **Query Parameters**:
-    * `user_role`: (Required) Specifies the role of the users to retrieve.
-        * Allowed values: `executive`, `president`
+* **Description**: Query Parameter에 맞는 사용자를 조회한다. 
+* **Query Parameters**: all optional
+    * `email`: `str`
+    * `name`: `str`
+    * `phone`: `str`
+    * `student_id`: `str`
+    * `role`: `str`
+    * `status`: `str`
+    * `major_id`: `int`
 * **Example Request**:
     * To get executives: `/api/users?user_role=executive`
     * To get presidents: `/api/users?user_role=president`
@@ -471,14 +476,14 @@ ___
         "is_checked": false,
         "user_name": "Alice Kim",
         "standby_user_id": "b36a83701f1c3191e19722d6f90274bc1b5501fe69ebf33313e440fe4b0fe210",
-        "deposit_time": "NONE"
+        "deposit_time": null
     },
     {
         "deposit_name": "Bob Lee88",
         "is_checked": true,
         "user_name": "Bob Lee",
         "standby_user_id": "15e4c3b1b3006382a22241ea66d679c107bc9b15cf8e6a25b64f46ac559c50c9",
-        "deposit_time": "2025.06.02 08:33:28"
+        "deposit_time": "2025-06-01T23:33:28"
     }
 ]
 ```

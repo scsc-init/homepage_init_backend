@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from enum import Enum
+from typing import Optional
 
 from sqlmodel import Field, SQLModel
 
@@ -42,15 +43,14 @@ class User(SQLModel, table=True):
 
 class StandbyReqTbl(SQLModel, table=True):
     __tablename__ = "standby_req_tbl"  # type: ignore
-    
+
     standby_user_id: str = Field(foreign_key="user.id", primary_key=True)
-    
     user_name: str = Field(nullable=False)
     deposit_name: str = Field(nullable=False)
-    deposit_time: datetime = Field()
+    deposit_time: Optional[datetime] = Field(default=None, nullable=True)
     is_checked: bool = Field(default=False, nullable=False)
-    
-    
+
+
 class OldboyApplicant(SQLModel, table=True):
     __tablename__ = "oldboy_applicant"  # type: ignore
 
