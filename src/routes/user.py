@@ -51,11 +51,16 @@ async def get_user_by_id(id: str, session: SessionDep) -> UserResponse:
 
 
 @user_router.get('/users')
-async def get_executives(session: SessionDep, user_role: str) -> Sequence[User]:
-    level = get_user_role_level(user_role)
-    if level < get_user_role_level('executive'):
-        raise HTTPException(400, detail="Cannot get users without executive or higher role")
-    return session.exec(select(User).where(User.role == level)).all()
+async def get_users(session: SessionDep, email: Optional[str] = None, name: Optional[str] = None, phone: Optional[str] = None, student_id: Optional[str] = None, role: Optional[str] = None, status: Optional[str] = None, major_id: Optional[int] = None) -> Sequence[User]:
+    query = select(User)
+    if email: query = query.where(User.email == email)
+    if name: query = query.where(User.name == name)
+    if phone: query = query.where(User.phone == phone)
+    if student_id: query = query.where(User.student_id == student_id)
+    if role: query = query.where(User.role == get_user_role_level(role))
+    if status: query = query.where(User.status == status)
+    if major_id: query = query.where(User.major_id == major_id)
+    return session.exec(query).all()
 
 
 class BodyUpdateMyProfile(BaseModel):

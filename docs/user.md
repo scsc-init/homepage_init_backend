@@ -199,14 +199,19 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
-## Get Users by Role (임원 목록 조회)
+## Get Users by Role (사용자 목록 조회)
 
 * **Method**: `GET`
 * **URL**: `/api/users`
-* **Description**: 임원 이상의 권한에 대해 해당 권한의 사용자를 조회한다. 
-* **Query Parameters**:
-    * `user_role`: (Required) Specifies the role of the users to retrieve.
-        * Allowed values: `executive`, `president`
+* **Description**: Query Parameter에 맞는 사용자를 조회한다. 
+* **Query Parameters**: all optional
+    * `email`: `str`
+    * `name`: `str`
+    * `phone`: `str`
+    * `student_id`: `str`
+    * `role`: `str`
+    * `status`: `str`
+    * `major_id`: `int`
 * **Example Request**:
     * To get executives: `/api/users?user_role=executive`
     * To get presidents: `/api/users?user_role=president`
