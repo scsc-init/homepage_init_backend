@@ -1,9 +1,11 @@
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
+from os import path
 
 from src.db import SessionDep
 from src.model import Article, Board
+from src.core import get_settings
 
 
 class BodyCreateArticle(BaseModel):
@@ -20,14 +22,15 @@ async def create_article_controller(session: SessionDep, body: BodyCreateArticle
         raise HTTPException(status_code=403, detail="You are not allowed to write this article",)
     article = Article(
         title=body.title,
-        content=body.content,
         author_id=user_id,
         board_id=body.board_id,
     )
     session.add(article)
     try: session.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         session.rollback()
-        raise HTTPException(status_code=409, detail="unique field already exists")
+        raise HTTPException(status_code=409, detail=f"unique field already exists, {e}")
     session.refresh(article)
+    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp:
+        fp.write(body.content)
     return article

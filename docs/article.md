@@ -28,7 +28,6 @@ INSERT INTO board (id, name, description, writing_permission_level, reading_perm
 CREATE TABLE "article" (
 	"id"	INTEGER,
 	"title"	TEXT NOT NULL,
-	"content"	TEXT NOT NULL,
 	"author_id"	TEXT NOT NULL,
 	"board_id"	INTEGER NOT NULL,
 	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -216,13 +215,12 @@ CREATE TABLE "comment" (
 - **Response**:
 ```json
 {
-  "id": 1,
-  "title": "안녕하세요",
-  "content": "## Hello?",
-  "board_id": 1,
-  "author_id": "",
-  "created_at": "2025-04-01T12:00:00",
-  "updated_at": "2025-04-01T12:00:00"
+    "title": "안녕하세요",
+    "author_id": "fc2eef7ad1e1f2f91786b4fd4f65508651373b0ad6fc4f13103c452369bc9703",
+    "created_at": "2025-06-20T04:45:59.518849",
+    "id": 1,
+    "board_id": 1,
+    "updated_at": "2025-06-20T04:45:59.518877"
 }
 ```
 - **Status Codes**:
@@ -241,15 +239,17 @@ CREATE TABLE "comment" (
 - **Response**:
 ```json
 [
-  {
-    "id": 1,
-    "title": "안녕하세요",
-    "content": "## Hello?",
-    "board_id": 1,
-    "author_id": "",
-    "created_at": "2025-04-01T12:00:00",
-    "updated_at": "2025-04-01T12:00:00"
-  }
+    {
+        "article": {
+            "title": "안녕하세요",
+            "author_id": "fc2eef7ad1e1f2f91786b4fd4f65508651373b0ad6fc4f13103c452369bc9703",
+            "created_at": "2025-06-20T04:45:59.518849",
+            "id": 1,
+            "board_id": 1,
+            "updated_at": "2025-06-20T04:45:59.518877"
+        },
+        "content": "## Hello?"
+    }
 ]
 ```
 - **Status Codes**:
@@ -266,13 +266,15 @@ CREATE TABLE "comment" (
 - **Response**:
 ```json
 {
-  "id": 1,
-  "title": "안녕하세요",
-  "content": "## Hello?",
-  "board_id": 1,
-  "author_id": "",
-  "created_at": "2025-04-01T12:00:00",
-  "updated_at": "2025-04-01T12:00:00"
+    "article": {
+        "title": "안녕하세요",
+        "author_id": "fc2eef7ad1e1f2f91786b4fd4f65508651373b0ad6fc4f13103c452369bc9703",
+        "created_at": "2025-06-20T04:45:59.518849",
+        "id": 1,
+        "board_id": 1,
+        "updated_at": "2025-06-20T04:45:59.518877"
+    },
+    "content": "## Hello?"
 }
 ```
 - **Status Codes**:
@@ -299,7 +301,6 @@ CREATE TABLE "comment" (
 {
   "id": 1,
   "title": "안녕하세요",
-  "content": "## Hello?",
   "board_id": 1,
   "author_id": "",
   "created_at": "2025-04-01T12:00:00",
@@ -332,7 +333,6 @@ CREATE TABLE "comment" (
 {
   "id": 1,
   "title": "안녕하세요",
-  "content": "## Hello?",
   "board_id": 1,
   "author_id": "",
   "created_at": "2025-04-01T12:00:00",

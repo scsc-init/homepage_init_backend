@@ -9,7 +9,6 @@ from .article import article_router
 from .board import board_router
 from .file import file_router
 from .scsc import scsc_router
-from .oldboy import user_router
 
 root_router = APIRouter()
 

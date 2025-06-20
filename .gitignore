@@ -5,6 +5,7 @@
 
 # user uploaded files
 static/image/photo/
+static/article/
 download/
 
 # private files

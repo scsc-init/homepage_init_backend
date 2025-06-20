@@ -253,7 +253,6 @@ INSERT INTO board (id, name, description, writing_permission_level, reading_perm
 CREATE TABLE "article" (
 	"id"	INTEGER,
 	"title"	TEXT NOT NULL,
-	"content"	TEXT NOT NULL,
 	"author_id"	TEXT NOT NULL,
 	"board_id"	INTEGER NOT NULL,
 	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

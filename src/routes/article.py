@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Sequence
+from os import path
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -10,6 +11,7 @@ from src.controller import BodyCreateArticle, create_article_controller
 from src.db import SessionDep
 from src.model import Article, Board
 from src.util import get_user
+from src.core import get_settings
 
 article_router = APIRouter(tags=['article'])
 
@@ -21,18 +23,25 @@ async def create_article(session: SessionDep, request: Request, body: BodyCreate
 
 
 @article_router.get('/articles/{board_id}')
-async def get_article_list_by_board(board_id: int, session: SessionDep) -> Sequence[Article]:
+async def get_article_list_by_board(board_id: int, session: SessionDep) -> list:
     board = session.get(Board, board_id)
     if not board: raise HTTPException(404, detail="Board not found")
-    articles = session.exec(select(Article).where(Article.board_id == board_id))
-    return articles.all()
+    articles = session.exec(select(Article).where(Article.board_id == board_id)).all()
+    result: list[Article] = []
+    for article in articles:
+        with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
+            content = fp.read()
+            result.append({"article": article, "content": content})
+    return result
 
 
 @article_router.get('/article/{id}')
-async def get_article_by_id(id: int, session: SessionDep) -> Article:
+async def get_article_by_id(id: int, session: SessionDep) -> dict:
     article = session.get(Article, id)
     if not article: raise HTTPException(404, detail="Article not found")
-    return article
+    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
+        content = fp.read()
+        return {"article": article, "content": content}
 
 
 class BodyUpdateArticle(BaseModel):
@@ -51,13 +60,15 @@ async def update_article_by_author(id: int, session: SessionDep, request: Reques
     board = session.get(Board, body.board_id)
     if not board: raise HTTPException(404, detail="Board not found")
     article.title = body.title
-    article.content = body.content
     article.board_id = body.board_id
     article.updated_at = datetime.now(timezone.utc)
     try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
+    session.refresh(article)
+    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "wb") as fp:
+        fp.write(body.content)
 
 
 @article_router.post('/executive/article/update/{id}', status_code=204)
@@ -67,13 +78,15 @@ async def update_article_by_executive(id: int, session: SessionDep, body: BodyUp
     board = session.get(Board, body.board_id)
     if not board: raise HTTPException(404, detail="Board not found")
     article.title = body.title
-    article.content = body.content
     article.board_id = body.board_id
     article.updated_at = datetime.now(timezone.utc)
     try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
+    session.refresh(article)
+    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "wb") as fp:
+        fp.write(body.content)
 
 
 @article_router.post('/article/delete/{id}', status_code=204)
