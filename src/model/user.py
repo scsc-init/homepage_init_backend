@@ -43,7 +43,7 @@ class User(SQLModel, table=True):
 class StandbyReqTbl(SQLModel, table=True):
     __tablename__ = "standby_req_tbl"  # type: ignore
     
-    standby_user_id: str = Field(default=None, primary_key=True)
+    standby_user_id: str = Field(foreign_key="user.id", primary_key=True)
     
     user_name: str = Field(nullable=False)
     deposit_name: str = Field(nullable=False)
