@@ -72,7 +72,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Create Board (게시판 생성)
+## Create Board (게시판 생성)
 
 - **Method**: `POST`  
 - **URL**: `/api/executive/board/create`
@@ -107,7 +107,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Get Board (게시판 조회)
+## Get Board (게시판 조회)
 
 - **Method**: `GET`  
 - **URL**: `/api/board/:id`  
@@ -131,7 +131,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Get Board List (게시판 목록 조회)
+## Get Board List (게시판 목록 조회)
 
 - **Method**: `GET`
 - **URL**: `/api/boards`
@@ -158,7 +158,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Update Board (게시판 정보 수정)
+## Update Board (게시판 정보 수정)
 
 - **Method**: `POST`  
 - **URL**: `/api/executive/board/update/:id`  
@@ -180,7 +180,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Delete Board (게시판 삭제)
+## Delete Board (게시판 삭제)
 
 - **Method**: `POST`  
 - **URL**: `/api/executive/board/delete/:id`  
@@ -200,7 +200,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Create Article (게시글 생성)
+## Create Article (게시글 생성)
 
 - **Method**: `POST`
 - **URL**: `/api/article/create`
@@ -233,7 +233,7 @@ CREATE TABLE "comment" (
   - `409 Conflict` (중복 데이터 삽입)
 ---
 
-## 🔹 Get Article List (게시글 목록 조희)
+## Get Article List (게시글 목록 조희)
 
 - **Method**: `GET`
 - **URL**: `/api/articles/:board_id`
@@ -258,7 +258,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Get Article by ID (ID로 게시글 조회)
+## Get Article by ID (ID로 게시글 조회)
 
 - **Method**: `GET`
 - **URL**: `/api/article/:id`
@@ -281,7 +281,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Update Article (게시글 수정)
+## Update Article (게시글 수정)
 
 - **Method**: `POST`
 - **URL**: `/api/article/update/:id`
@@ -314,7 +314,7 @@ CREATE TABLE "comment" (
   
 ---
 
-## 🔹 Update Article by Executive (관리자에 의한 게시글 수정)
+## Update Article by Executive (관리자에 의한 게시글 수정)
 
 - **Method**: `POST`
 - **URL**: `/api/executive/article/update/:id`
@@ -347,7 +347,7 @@ CREATE TABLE "comment" (
   
 ---
 
-## 🔹 Delete Article (작성자에 의한 게시글 삭제)
+## Delete Article (작성자에 의한 게시글 삭제)
 
 - **Method**: `POST`
 - **URL**: `/api/article/delete/:id`
@@ -361,7 +361,7 @@ CREATE TABLE "comment" (
 
 ---
 
-## 🔹 Delete Article by Executive (관리자에 의한 게시글 삭제)
+## Delete Article by Executive (관리자에 의한 게시글 삭제)
 
 - **Method**: `POST`
 - **URL**: `/api/executive/article/delete/:id`
