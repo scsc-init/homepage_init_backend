@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from sqlmodel import select
 
 from src.db import SessionDep
-from src.model import SIG, SCSCGlobalStatus, SCSCStatus, User, UserStatus, OldboyApplicant
+from src.model import SIG, PIG, SCSCGlobalStatus, SCSCStatus, User, UserStatus, OldboyApplicant
 from src.util import get_user_role_level
 
 from .user import process_oldboy_applicant_ctrl
@@ -48,12 +48,18 @@ async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCSt
         for sig in session.exec(select(SIG).where(SIG.status == SCSCStatus.surveying)).all():
             sig.status = SCSCStatus.recruiting
             session.add(sig)
+        for pig in session.exec(select(PIG).where(PIG.status == SCSCStatus.surveying)).all():
+            pig.status = SCSCStatus.recruiting
+            session.add(pig)
 
     # end of active
     if scsc_global_status.status == SCSCStatus.active:
         for sig in session.exec(select(SIG).where(SIG.year == scsc_global_status.year, SIG.semester == scsc_global_status.semester, SIG.status != SCSCStatus.inactive)).all():
             sig.status = SCSCStatus.inactive
             session.add(sig)
+        for pig in session.exec(select(PIG).where(PIG.year == scsc_global_status.year, PIG.semester == scsc_global_status.semester, PIG.status != SCSCStatus.inactive)).all():
+            pig.status = SCSCStatus.inactive
+            session.add(pig)
         if scsc_global_status.semester != 4: scsc_global_status.semester += 1
         else:
             scsc_global_status.semester = 1
