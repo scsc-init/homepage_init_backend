@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
+from sqlmodel import Session
 
 from src.db import SessionDep
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
@@ -53,6 +54,16 @@ async def enroll_user_ctrl(session: SessionDep, user_id: str) -> None:
         is_checked=False
     )
     session.add(stby_req_tbl)
+    session.commit()
+    return
+
+
+async def verify_enroll_user_ctrl(session: SessionDep, user: User, stby_tbl: StandbyReqTbl, deposit_time: datetime) -> None:
+    user.status = UserStatus.active
+    stby_tbl.deposit_time = deposit_time
+    stby_tbl.is_checked = True
+    session.add(user)
+    session.add(stby_tbl)
     session.commit()
     return
 

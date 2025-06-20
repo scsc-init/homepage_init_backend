@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl
+from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl, verify_enroll_user_ctrl
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
@@ -242,12 +242,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
             if stby_user.is_checked: return
             user = session.get(User, stby_user.standby_user_id)
             if not user: raise HTTPException(503, detail="user does not exist")
-            user.status = UserStatus.active
-            stby_user.deposit_time = deposit.deposit_time
-            stby_user.is_checked = True
-            session.add(user)
-            session.add(stby_user)
-            session.commit()
+            await verify_enroll_user_ctrl(session, user, stby_user, deposit.deposit_time)
 
         elif len(matching_users) == 0:
             query_matching_users_error = select(User)
@@ -264,12 +259,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
 
             user = matching_users_error[0]
             await enroll_user_ctrl(session, user.id)
-            user.status = UserStatus.active
             stby_tbl = session.get(StandbyReqTbl, user.id)
             if not stby_tbl: raise HTTPException(503, detail="stby_tbl does not exist")
-            stby_tbl.deposit_time = deposit.deposit_time
-            stby_tbl.is_checked = True
-            session.add(user)
-            session.add(stby_tbl)
-            session.commit()
+            await verify_enroll_user_ctrl(session, user, stby_tbl, deposit.deposit_time)
     return
