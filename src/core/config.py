@@ -9,10 +9,12 @@ class Settings(BaseSettings):
     jwt_valid_seconds: int
     sqlite_filename: str
     image_dir: str
+    article_dir: str
     image_max_size: int
     file_dir: str
     file_max_size: int
     user_check: bool
+    enrollment_fee: int
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

@@ -8,7 +8,7 @@ from src.db import SessionDep
 from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus
 from src.util import is_valid_semester, is_valid_year, get_user_role_level
 
-from .article import BodyCreateArticle, create_article_controller
+from .article import BodyCreateArticle, create_article_ctrl
 
 
 class BodyCreateSIG(BaseModel):
@@ -19,12 +19,12 @@ class BodyCreateSIG(BaseModel):
     semester: int
 
 
-async def create_sig_controller(session: SessionDep, body: BodyCreateSIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> SIG:
+async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> SIG:
     if scsc_global_status.status != SCSCStatus.surveying: raise HTTPException(400, "cannot create sig when sig global status is not surveying")
     if not is_valid_year(body.year): raise HTTPException(422, detail="invalid year")
     if not is_valid_semester(body.semester): raise HTTPException(422, detail="invalid semester")
 
-    sig_article = await create_article_controller(
+    sig_article = await create_article_ctrl(
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
@@ -68,7 +68,7 @@ class BodyUpdateSIG(BaseModel):
     semester: Optional[int] = None
 
 
-async def update_sig_controller(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
+async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     if not is_executive and sig.owner != user_id: raise HTTPException(status_code=403, detail="cannot update sig of other")
@@ -78,7 +78,7 @@ async def update_sig_controller(session: SessionDep, id: int, body: BodyUpdateSI
     if body.title: sig.title = body.title
     if body.description: sig.description = body.description
     if body.content:
-        sig_article = await create_article_controller(
+        sig_article = await create_article_ctrl(
             session,
             BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
             user_id,

@@ -18,6 +18,7 @@ IMAGE_MAX_SIZE=10000000
 FILE_DIR="download/"
 FILE_MAX_SIZE=10000000
 USER_CHECK=TRUE
+ENROLLMENT_FEE=300000
 ```
 
 | Key Name             | Description                                                      |
@@ -31,6 +32,7 @@ USER_CHECK=TRUE
 | `FILE_DIR`           | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`      | 파일 최대 용량(바이트) |
 | `USER_CHECK`         | 로그인 로직 활성화 여부. FALSE이면 사용자가 executive sample user로 설정된다. |
+| `ENROLLMENT_FEE`     | 동아리 가입비. |
 
 ## 실행 방법(with docker)
 

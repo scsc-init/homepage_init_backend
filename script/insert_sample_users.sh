@@ -31,9 +31,9 @@ ID3=$(generate_hash "$EMAIL3")
 sqlite3 "$DB_FILE" <<EOF
 INSERT INTO user (id, email, name, phone, student_id, role, status, last_login, created_at, updated_at, major_id)
 VALUES
-  ('$ID1', '$EMAIL1', 'Alice Kim', '01012345678', '202512345', 200, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
-  ('$ID2', '$EMAIL2', 'Bob Lee', '01023456789', '202512346', 500, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
-  ('$ID3', '$EMAIL3', 'Carol Choi', '01034567890', '202512347', 600, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
+  ('$ID1', '$EMAIL1', 'Alice Kim', '01012345678', '202512345', 200, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
+  ('$ID2', '$EMAIL2', 'Bob Lee', '01023456789', '202512346', 500, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
+  ('$ID3', '$EMAIL3', 'Carol Choi', '01034567890', '202512347', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
 EOF
 
-echo "✅ Sample users inserted successfully into '$DB_FILE'."
+echo "Sample users inserted successfully into '$DB_FILE'."

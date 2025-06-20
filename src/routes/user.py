@@ -2,29 +2,29 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
 
 import jwt
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateUser, create_user_controller, enroll_user_controller, register_oldboy_applicant_controller, process_oldboy_applicant_controller, reactivate_oldboy_controller
+from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl
 from src.core import get_settings
 from src.db import SessionDep
-from src.model import User, UserStatus, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user
+from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user
 
 user_router = APIRouter(tags=['user'])
 
 
 @user_router.post('/user/create', status_code=201)
 async def create_user(session: SessionDep, body: BodyCreateUser) -> User:
-    return await create_user_controller(session, body)
+    return await create_user_ctrl(session, body)
 
 
 @user_router.post('/user/enroll', status_code=204)
 async def enroll_user(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
-    return await enroll_user_controller(session, current_user.id)
+    return await enroll_user_ctrl(session, current_user.id)
 
 
 @user_router.get('/user/profile')
@@ -161,7 +161,7 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
 @user_router.post('/user/oldboy/register', status_code=201)
 async def create_oldboy_applicant(session: SessionDep, request: Request) -> OldboyApplicant:
     current_user = get_user(request)
-    return await register_oldboy_applicant_controller(session, current_user)
+    return await register_oldboy_applicant_ctrl(session, current_user)
 
 
 @user_router.get('/executive/user/oldboy/applicants')
@@ -171,7 +171,7 @@ async def get_oldboy_applicants(session: SessionDep, processed: bool) -> Sequenc
 
 @user_router.post('/executive/user/oldboy/{id}/process', status_code=204)
 async def process_oldboy_applicant(id: str, session: SessionDep) -> None:
-    return await process_oldboy_applicant_controller(session, id)
+    return await process_oldboy_applicant_ctrl(session, id)
 
 
 @user_router.post('/user/oldboy/unregister', status_code=204)
@@ -198,4 +198,80 @@ async def delete_oldboy_applicant_executive(id: str, session: SessionDep) -> Non
 @user_router.post('/user/oldboy/reactivate', status_code=204)
 async def reactivate_oldboy(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
-    return await reactivate_oldboy_controller(session, current_user)
+    return await reactivate_oldboy_ctrl(session, current_user)
+
+
+@user_router.get('/executive/user/standby/list')
+async def get_standby_list(session: SessionDep) -> Sequence[StandbyReqTbl]:
+    return session.exec(select(StandbyReqTbl)).all()
+
+
+@user_router.post('/executive/user/standby/process', status_code=204)
+async def process_standby_list(session: SessionDep, file: UploadFile = File(...)):
+    if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
+    ext_whitelist = ('csv')
+    if file.filename is None or get_file_extension(file.filename) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
+
+    try:
+        deposit_array = await process_standby_user('utf-8', file)
+    except UnicodeDecodeError:
+        deposit_array = await process_standby_user('euc-kr', file)
+    except Exception as e:
+        raise HTTPException(400, detail=f"csv file reading failed with following error: {e}")
+
+    user_array = session.exec(select(User).where(User.status == UserStatus.pending)).all()
+    stby_user_array = session.exec(select(StandbyReqTbl)).all()
+
+    for deposit in deposit_array:
+        matching_users: list[StandbyReqTbl] = []
+        if deposit[2][-2:].isdigit():
+            for stby_user in stby_user_array:
+                if stby_user.deposit_name == deposit[2]:
+                    matching_users.append(stby_user)
+        else:
+            for stby_user in stby_user_array:
+                if stby_user.user_name == deposit[2]:
+                    matching_users.append(stby_user)
+
+        if len(matching_users) > 1:
+            raise HTTPException(400, f"more than one matching user in standby request db for deposit {deposit}")
+
+        elif len(matching_users) == 1:
+            if deposit[0] < get_settings().enrollment_fee:
+                raise HTTPException(400, f"Insufficient funds from {deposit}")
+            elif deposit[0] > get_settings().enrollment_fee:
+                raise HTTPException(400, f"Oversufficient funds from {deposit}")
+
+            stby_user = matching_users[0]
+            if stby_user.is_checked: return
+            user = session.get(User, stby_user.standby_user_id)
+            user.status = UserStatus.active
+            stby_user.deposit_time = datetime.strptime(deposit[1], "%Y.%m.%d %H:%M:%S")
+            stby_user.is_checked = True
+            session.add(user)
+            session.add(stby_user)
+            session.commit()
+
+        elif len(matching_users) == 0:
+            matching_users_error: list[User] = []
+            if deposit[2][-2:].isdigit():
+                for user in user_array:
+                    if deposit[2][:-2] == user.name and deposit[2][-2:] == user.phone[-2:]:
+                        matching_users_error.append(stby_user)
+            else:
+                for user in user_array:
+                    if deposit[2] == user.name:
+                        matching_users_error.append(stby_user)
+
+            if len(matching_users_error) > 1 or len(matching_users_error) == 0:
+                raise HTTPException(400, detail=f"no matching user in standby request db for deposit {deposit}")
+
+            await enroll_user_ctrl(session, user.id)
+            user.status = UserStatus.active
+            stby_tbl = session.get(StandbyReqTbl, user.id)
+            stby_tbl.deposit_time = datetime.strptime(deposit[1], "%Y.%m.%d %H:%M:%S")
+            stby_tbl.is_checked = True
+            session.add(user)
+            session.add(stby_tbl)
+            session.commit()
+    return

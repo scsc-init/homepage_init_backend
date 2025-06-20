@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_controller, update_sig_controller
+from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl
 from src.db import SessionDep
 from src.model import SIG, SIGMember, SCSCStatus, User
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
@@ -16,7 +16,7 @@ sig_router = APIRouter(tags=['sig'])
 @sig_router.post('/sig/create', status_code=201)
 async def create_sig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreateSIG) -> SIG:
     current_user = get_user(request)
-    return await create_sig_controller(session, body, current_user.id, scsc_global_status)
+    return await create_sig_ctrl(session, body, current_user.id, scsc_global_status)
 
 
 @sig_router.get('/sig/{id}')
@@ -34,7 +34,7 @@ async def get_all_sigs(session: SessionDep) -> Sequence[SIG]:
 @sig_router.post('/sig/{id}/update', status_code=204)
 async def update_my_sig(id: int, session: SessionDep, request: Request, body: BodyUpdateSIG) -> None:
     current_user = get_user(request)
-    await update_sig_controller(session, id, body, current_user.id, False)
+    await update_sig_ctrl(session, id, body, current_user.id, False)
 
 
 @sig_router.post('/sig/{id}/delete', status_code=204)
@@ -51,7 +51,7 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
 @sig_router.post('/executive/sig/{id}/update', status_code=204)
 async def update_sig(id: int, session: SessionDep, request: Request, body: BodyUpdateSIG) -> None:
     current_user = get_user(request)
-    await update_sig_controller(session, id, body, current_user.id, True)
+    await update_sig_ctrl(session, id, body, current_user.id, True)
 
 
 @sig_router.post('/executive/sig/{id}/delete', status_code=204)

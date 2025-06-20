@@ -7,6 +7,7 @@ from sqlmodel import Field, SQLModel
 class UserStatus(str, Enum):
     active = "active"
     pending = "pending"
+    standby = "standby"
     banned = "banned"
 
 
@@ -14,6 +15,7 @@ class UserRole(SQLModel, table=True):
     __tablename__ = "user_role"  # type: ignore
 
     level: int = Field(primary_key=True)
+
     name: str = Field(nullable=False, unique=True)
     kor_name: str = Field(nullable=False, unique=True)
 
@@ -38,6 +40,17 @@ class User(SQLModel, table=True):
     major_id: int = Field(foreign_key="major.id", nullable=False)
 
 
+class StandbyReqTbl(SQLModel, table=True):
+    __tablename__ = "standby_req_tbl"  # type: ignore
+    
+    standby_user_id: str = Field(foreign_key="user.id", primary_key=True)
+    
+    user_name: str = Field(nullable=False)
+    deposit_name: str = Field(nullable=False)
+    deposit_time: datetime = Field()
+    is_checked: bool = Field(default=False, nullable=False)
+    
+    
 class OldboyApplicant(SQLModel, table=True):
     __tablename__ = "oldboy_applicant"  # type: ignore
 

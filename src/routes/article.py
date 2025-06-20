@@ -1,15 +1,17 @@
 from datetime import datetime, timezone
 from typing import Sequence
+from os import path
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateArticle, create_article_controller
+from src.controller import BodyCreateArticle, create_article_ctrl
 from src.db import SessionDep
-from src.model import Article, Board
+from src.model import Article, Board, ArticleResponse
 from src.util import get_user
+from src.core import get_settings
 
 article_router = APIRouter(tags=['article'])
 
@@ -17,22 +19,29 @@ article_router = APIRouter(tags=['article'])
 @article_router.post('/article/create', status_code=201)
 async def create_article(session: SessionDep, request: Request, body: BodyCreateArticle) -> Article:
     current_user = get_user(request)
-    return await create_article_controller(session, body, current_user.id, current_user.role)
+    return await create_article_ctrl(session, body, current_user.id, current_user.role)
 
 
 @article_router.get('/articles/{board_id}')
-async def get_article_list_by_board(board_id: int, session: SessionDep) -> Sequence[Article]:
+async def get_article_list_by_board(board_id: int, session: SessionDep) -> list[ArticleResponse]:
     board = session.get(Board, board_id)
     if not board: raise HTTPException(404, detail="Board not found")
-    articles = session.exec(select(Article).where(Article.board_id == board_id))
-    return articles.all()
+    articles = session.exec(select(Article).where(Article.board_id == board_id)).all()
+    result: list[ArticleResponse] = []
+    for article in articles:
+        with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
+            content = fp.read()
+            result.append(ArticleResponse(**article.dict(), content=content))
+    return result
 
 
 @article_router.get('/article/{id}')
 async def get_article_by_id(id: int, session: SessionDep) -> Article:
     article = session.get(Article, id)
     if not article: raise HTTPException(404, detail="Article not found")
-    return article
+    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
+        content = fp.read()
+        return ArticleResponse(**article.dict(), content=content)
 
 
 class BodyUpdateArticle(BaseModel):

@@ -1,10 +1,9 @@
-from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.db import SessionDep
-from src.model import User, UserStatus, OldboyApplicant
+from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
 from src.util import is_valid_phone, is_valid_student_id, sha256_hash, get_user_role_level
 
 
@@ -16,7 +15,7 @@ class BodyCreateUser(BaseModel):
     major_id: int
 
 
-async def create_user_controller(session: SessionDep, body: BodyCreateUser) -> User:
+async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
     if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
     user = User(
@@ -38,17 +37,24 @@ async def create_user_controller(session: SessionDep, body: BodyCreateUser) -> U
     return user
 
 
-async def enroll_user_controller(session: SessionDep, user_id: str) -> None:
+async def enroll_user_ctrl(session: SessionDep, user_id: str) -> None:
     user = session.get(User, user_id)
     if not user: raise HTTPException(404, detail="user not found")
     if user.status != UserStatus.pending: raise HTTPException(400, detail="Only user with pending status can enroll")
-    user.status = UserStatus.active
+    user.status = UserStatus.standby
     session.add(user)
+    stby_req_tbl = StandbyReqTbl(
+        standby_user_id=user.id,
+        user_name=user.name,
+        deposit_name=f'{user.name}{user.phone[-2:]}',
+        is_checked=False
+    )
+    session.add(stby_req_tbl)
     session.commit()
     return
 
 
-async def register_oldboy_applicant_controller(session: SessionDep, user: User) -> OldboyApplicant:
+async def register_oldboy_applicant_ctrl(session: SessionDep, user: User) -> OldboyApplicant:
     user_created_at_aware = user.created_at.replace(tzinfo=timezone.utc)
     if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3): raise HTTPException(400, detail="must have been a member for at least 3 years.")
     if user.role != get_user_role_level('member'): raise HTTPException(400, detail="must be a member")
@@ -62,7 +68,7 @@ async def register_oldboy_applicant_controller(session: SessionDep, user: User) 
     return oldboy_applicant
 
 
-async def process_oldboy_applicant_controller(session: SessionDep, user_id: str) -> None:
+async def process_oldboy_applicant_ctrl(session: SessionDep, user_id: str) -> None:
     oldboy_applicant = session.get(OldboyApplicant, user_id)
     if not oldboy_applicant: raise HTTPException(404, detail="oldboy_applicant not found")
 
@@ -78,7 +84,7 @@ async def process_oldboy_applicant_controller(session: SessionDep, user_id: str)
     return
 
 
-async def reactivate_oldboy_controller(session: SessionDep, user: User) -> None:
+async def reactivate_oldboy_ctrl(session: SessionDep, user: User) -> None:
     if user.role != get_user_role_level('oldboy'): raise HTTPException(400, detail="you are not oldboy")
 
     user.role = get_user_role_level('member')
