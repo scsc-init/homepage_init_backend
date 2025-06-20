@@ -1,4 +1,4 @@
-from .article import Article, Board
+from .article import Article, Board, ArticleResponse
 from .file_metadata import FileMetadata
 from .major import Major
 from .scsc_global_status import SCSCStatus, SCSCGlobalStatus

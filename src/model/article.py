@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-
+from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 
 
@@ -18,8 +18,17 @@ class Article(SQLModel, table=True):
     __tablename__ = "article"  # type: ignore
     id: int = Field(default=None, primary_key=True)  # default=None because of autoincrement
     title: str = Field()
-    content: str = Field()
     author_id: str = Field(foreign_key="user.id")
     board_id: int = Field(foreign_key="board.id")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+
+class ArticleResponse(SQLModel):
+    id: int
+    title: str
+    author_id: str
+    board_id: int
+    created_at: datetime
+    updated_at: datetime
+    content: str 
