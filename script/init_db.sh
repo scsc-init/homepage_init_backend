@@ -31,6 +31,15 @@ CREATE TABLE major (
     UNIQUE (college, major_name)
 );
 
+-- Prevent updates to major(id)
+CREATE TRIGGER prevent_major_id_update
+BEFORE UPDATE ON major
+FOR EACH ROW
+WHEN OLD.id != NEW.id
+BEGIN
+    SELECT RAISE(ABORT, 'Updating major.id is not allowed');
+END;
+
 -- Create 'user' table
 CREATE TABLE user (
     id TEXT PRIMARY KEY,
@@ -70,14 +79,27 @@ END;
 CREATE INDEX idx_user_major ON user(major_id);
 CREATE INDEX idx_user_role ON user(role);
 
--- Prevent updates to major(id)
-CREATE TRIGGER prevent_major_id_update
-BEFORE UPDATE ON major
+-- Create 'oldboy_applicant' table
+CREATE TABLE oldboy_applicant (
+    id TEXT PRIMARY KEY,
+    processed BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id) REFERENCES user(id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER update_oldboy_applicant_updated_at
+AFTER UPDATE ON oldboy_applicant
 FOR EACH ROW
-WHEN OLD.id != NEW.id
+WHEN 
+    OLD.processed != NEW.processed
 BEGIN
-    SELECT RAISE(ABORT, 'Updating major.id is not allowed');
+    UPDATE oldboy_applicant
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE id = OLD.id;
 END;
+
+CREATE INDEX idx_oldboy_applicant_processed ON oldboy_applicant(processed);
 
 -- Create SIG/PIG table
 CREATE TABLE sig (
