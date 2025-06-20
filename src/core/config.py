@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     image_max_size: int
     file_dir: str
     file_max_size: int
+    user_check: bool
     enrollment_fee: int
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)

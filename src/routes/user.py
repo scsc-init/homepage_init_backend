@@ -223,7 +223,6 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
     stby_user_array = session.exec(select(StandbyReqTbl)).all()
 
     for deposit in deposit_array:
-        print(deposit)
         matching_users: list[StandbyReqTbl] = []
         if deposit[2][-2:].isdigit():
             for stby_user in stby_user_array:
@@ -232,7 +231,6 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
         else:
             for stby_user in stby_user_array:
                 if stby_user.user_name == deposit[2]:
-                    print(deposit)
                     matching_users.append(stby_user)
 
         if len(matching_users) > 1:

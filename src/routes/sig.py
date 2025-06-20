@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig, update_sig_ctrl
+from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl
 from src.db import SessionDep
 from src.model import SIG, SIGMember, SCSCStatus, User
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
@@ -16,7 +16,7 @@ sig_router = APIRouter(tags=['sig'])
 @sig_router.post('/sig/create', status_code=201)
 async def create_sig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreateSIG) -> SIG:
     current_user = get_user(request)
-    return await create_sig(session, body, current_user.id, scsc_global_status)
+    return await create_sig_ctrl(session, body, current_user.id, scsc_global_status)
 
 
 @sig_router.get('/sig/{id}')
