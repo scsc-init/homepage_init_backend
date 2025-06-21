@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from os import path
+from os import path, remove
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -59,13 +59,14 @@ async def update_article_by_author(id: int, session: SessionDep, request: Reques
     board = session.get(Board, body.board_id)
     if not board: raise HTTPException(404, detail="Board not found")
     article.title = body.title
-    article.content = body.content
     article.board_id = body.board_id
     article.updated_at = datetime.now(timezone.utc)
     try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
+    session.refresh(article)
+    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
 @article_router.post('/executive/article/update/{id}', status_code=204)
@@ -75,13 +76,14 @@ async def update_article_by_executive(id: int, session: SessionDep, body: BodyUp
     board = session.get(Board, body.board_id)
     if not board: raise HTTPException(404, detail="Board not found")
     article.title = body.title
-    article.content = body.content
     article.board_id = body.board_id
     article.updated_at = datetime.now(timezone.utc)
     try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
+    session.refresh(article)
+    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
 @article_router.post('/article/delete/{id}', status_code=204)
@@ -92,6 +94,10 @@ async def delete_article_by_author(id: int, session: SessionDep, request: Reques
     if current_user.id != article.author_id:
         raise HTTPException(status_code=403, detail="You are not the author of this article",)
     session.delete(article)
+    try:
+        remove(path.join(get_settings().article_dir, f"{article.id}.md"))
+    except:
+        pass
     session.commit()
 
 
@@ -101,4 +107,8 @@ async def delete_article_by_executive(id: int, session: SessionDep) -> None:
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     # TODO: Which permission is needed
     session.delete(article)
+    try:
+        remove(path.join(get_settings().article_dir, f"{article.id}.md"))
+    except:
+        pass
     session.commit()
