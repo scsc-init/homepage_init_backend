@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, status_available_join_sigpig
+from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, ctrl_status_available
 from src.db import SessionDep
 from src.model import SIG, SIGMember, User
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
@@ -93,7 +93,7 @@ async def join_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
-    if sig.status not in status_available_join_sigpig: raise HTTPException(400, f"cannot join to sig when sig status is not in {status_available_join_sigpig}")
+    if sig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"cannot join to sig when sig status is not in {ctrl_status_available.join_sigpig}")
     sig_member = SIGMember(
         ig_id=id,
         user_id=current_user.id,

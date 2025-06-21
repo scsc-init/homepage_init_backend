@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, status_available_join_sigpig
+from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, ctrl_status_available
 from src.db import SessionDep
 from src.model import PIG, PIGMember, User
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
@@ -93,7 +93,7 @@ async def join_pig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
-    if pig.status not in status_available_join_sigpig: raise HTTPException(400, f"cannot join to pig when pig status is not in {status_available_join_sigpig}")
+    if pig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"cannot join to pig when pig status is not in {ctrl_status_available.join_sigpig}")
     pig_member = PIGMember(
         ig_id=id,
         user_id=current_user.id,

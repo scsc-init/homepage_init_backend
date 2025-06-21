@@ -1,9 +1,12 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException
 from sqlmodel import select
 
 from src.db import SessionDep
-from src.model import SIG, PIG, SCSCGlobalStatus, SCSCStatus, User, UserStatus, OldboyApplicant
+from src.model import (PIG, SIG, OldboyApplicant, SCSCGlobalStatus, SCSCStatus,
+                       User, UserStatus)
 from src.util import get_user_role_level
 
 from .user import process_oldboy_applicant_ctrl
@@ -16,18 +19,22 @@ _valid_scsc_global_status_update = (
     (SCSCStatus.active, SCSCStatus.inactive),
 )
 
-status_available_create_sigpig = (SCSCStatus.surveying, SCSCStatus.recruiting)
-status_available_join_sigpig = (SCSCStatus.surveying, SCSCStatus.recruiting)
+
+@dataclass
+class _CtrlStatusAvailable:
+    create_sigpig: tuple[SCSCStatus, SCSCStatus]
+    join_sigpig: tuple[SCSCStatus, SCSCStatus]
 
 
-def _check_valid_scsc_global_status_update(old_status: SCSCStatus, new_status: SCSCStatus) -> bool:
-    for valid_update in _valid_scsc_global_status_update:
-        if (old_status, new_status) == valid_update: return True
-    return False
+ctrl_status_available = _CtrlStatusAvailable(
+    create_sigpig=(SCSCStatus.surveying, SCSCStatus.recruiting),
+    join_sigpig=(SCSCStatus.surveying, SCSCStatus.recruiting)
+)
 
 
 async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
-    if not _check_valid_scsc_global_status_update(scsc_global_status.status, new_status): raise HTTPException(400, "invalid sig global status update")
+    # VALIDATE SCSC GLOBAL STATUS UPDATE
+    if (scsc_global_status.status, new_status) not in _valid_scsc_global_status_update: raise HTTPException(400, "invalid sig global status update")
 
     # end of inactive
     if scsc_global_status.status == SCSCStatus.inactive:

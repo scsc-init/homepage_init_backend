@@ -9,7 +9,7 @@ from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus
 from src.util import get_user_role_level
 
 from .article import BodyCreateArticle, create_article_ctrl
-from .scsc import status_available_create_sigpig
+from .scsc import ctrl_status_available
 
 
 class BodyCreateSIG(BaseModel):
@@ -19,7 +19,7 @@ class BodyCreateSIG(BaseModel):
 
 
 async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, scsc_global_status: SCSCGlobalStatus) -> SIG:
-    if scsc_global_status.status not in status_available_create_sigpig: raise HTTPException(400, f"cannot create sig when sig global status is not in {status_available_create_sigpig}")
+    if scsc_global_status.status not in ctrl_status_available.create_sigpig: raise HTTPException(400, f"cannot create sig when sig global status is not in {ctrl_status_available.create_sigpig}")
 
     sig_article = await create_article_ctrl(
         session,
