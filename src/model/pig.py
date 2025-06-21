@@ -10,7 +10,7 @@ class PIG(SQLModel, table=True):
     __table_args__ = (
         UniqueConstraint("title", "year", "semester", name="uq_title_year_semester"),
         CheckConstraint("year >= 2025", name="ck_year_min"),
-        CheckConstraint("semester IN (1, 2)", name="ck_semester_valid"),
+        CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
     )
 
     id: int = Field(default=None, primary_key=True)  # default=None because of autoincrement

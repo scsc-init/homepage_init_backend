@@ -1,5 +1,5 @@
 # 백엔드 공통 DB, API 명세서
-**최신개정일:** 2025-06-18
+**최신개정일:** 2025-06-21
 
 # API 구조
 
@@ -79,9 +79,18 @@ CREATE TABLE user_role (
 CREATE TABLE scsc_global_status (
     id INTEGER PRIMARY KEY CHECK (id = 1),
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
+    year INTEGER NOT NULL CHECK (year >= 2025),
+    semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
+- semester의 각 값의 의미는 다음과 같다.
+    * 1: 1학기 정규학기
+    * 2: 여름 계절학기
+    * 3: 2학기 정규학기
+    * 4: 겨울 계절학기
+- DB 초기화 시 `script/insert_scsc_global_status.sh` 파일의 값으로 scsc global status가 초기화된다. 
 
 ## SQL 관련
 ```sql
@@ -90,6 +99,8 @@ AFTER UPDATE ON scsc_global_status
 FOR EACH ROW
 WHEN 
     OLD.status != NEW.status
+    OLD.year != NEW.year
+    OLD.semester != NEW.semester
 BEGIN
     UPDATE scsc_global_status
     SET updated_at = CURRENT_TIMESTAMP

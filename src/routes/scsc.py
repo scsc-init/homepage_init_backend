@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from src.db import SessionDep
-from src.model import SCSCStatus
+from src.model import SCSCStatus, SCSCGlobalStatus
 from src.util import SCSCGlobalStatusDep
 from src.controller import update_scsc_global_status_ctrl
 
@@ -11,8 +11,8 @@ scsc_router = APIRouter(tags=['scsc'])
 
 
 @scsc_router.get('/scsc/global/status')
-async def _get_scsc_global_status(scsc_global_status: SCSCGlobalStatusDep):
-    return {'status': scsc_global_status.status}
+async def _get_scsc_global_status(scsc_global_status: SCSCGlobalStatusDep) -> SCSCGlobalStatus:
+    return scsc_global_status
 
 
 class BodyUpdateSCSCGlobalStatus(BaseModel):
