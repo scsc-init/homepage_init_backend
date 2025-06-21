@@ -1,5 +1,5 @@
 # SCSC 전역 상태 관련 DB, API 명세서
-**최신개정일:** 2025-06-14
+**최신개정일:** 2025-06-21
 
 # DB 구조
 [./common.md](./common.md) 참고
@@ -20,7 +20,11 @@
 
 ```json
 {
-  "status": "active"
+  "status": "inactive",
+  "semester": 2,
+  "id": 1,
+  "updated_at": "2025-06-20T18:09:57",
+  "year": 2025
 }
 ```
 
@@ -50,7 +54,8 @@ status는 ('surveying', 'recruiting', 'active', 'inactive') 중 하나
 |inactive|surveying|
 |surveying|recruiting|
 |recruiting|active|
-|any|inactive|
+|active|surveying|
+|active|inactive|
 
 * **Status Codes**:
 

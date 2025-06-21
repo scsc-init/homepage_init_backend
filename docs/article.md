@@ -1,5 +1,5 @@
 # 게시글 관련 DB, API 명세서
-**최신개정일:** 2025-06-14
+**최신개정일:** 2025-06-21
 
 # DB 구조
 
@@ -37,6 +37,7 @@ CREATE TABLE "article" (
 	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
 );
 ```
+- article의 content는 `ARTICLE_DIR(static/article/)`에 md 파일로 저장된다. 
 
 
 ## 댓글 DB
