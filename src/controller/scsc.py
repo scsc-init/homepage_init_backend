@@ -5,8 +5,7 @@ from fastapi import HTTPException
 from sqlmodel import select
 
 from src.db import SessionDep
-from src.model import (PIG, SIG, OldboyApplicant, SCSCGlobalStatus, SCSCStatus,
-                       User, UserStatus)
+from src.model import PIG, SIG, OldboyApplicant, SCSCGlobalStatus, SCSCStatus, User, UserStatus, StandbyReqTbl
 from src.util import get_user_role_level
 
 from .user import process_oldboy_applicant_ctrl
@@ -67,14 +66,14 @@ async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCSt
         for pig in session.exec(select(PIG).where(PIG.year == scsc_global_status.year, PIG.semester == scsc_global_status.semester, PIG.status != SCSCStatus.inactive)).all():
             pig.status = SCSCStatus.inactive
             session.add(pig)
-        if scsc_global_status.semester != 4: scsc_global_status.semester += 1
-        else:
-            scsc_global_status.semester = 1
-            scsc_global_status.year += 1
+        scsc_global_status.year += scsc_global_status.semester // 4
+        scsc_global_status.semester = scsc_global_status.semester % 4 + 1
         session.add(scsc_global_status)
 
     # start of inactive
     if new_status == SCSCStatus.inactive:
+        for standby in session.exec(select(StandbyReqTbl)):
+            session.delete(standby)
         for user in session.exec(select(User).where(User.status == UserStatus.active, User.role == get_user_role_level("member"))).all():
             user.status = UserStatus.pending
             session.add(user)
