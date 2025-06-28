@@ -1,5 +1,5 @@
 # 회원 관련 DB, API 명세서
-**최신개정일:** 2025-06-21
+**최신개정일:** 2025-06-28
 
 # DB 구조
 
@@ -209,12 +209,13 @@ CREATE TABLE standby_req_tbl (
     * `name`: `str`
     * `phone`: `str`
     * `student_id`: `str`
-    * `role`: `str`
+    * `user_role`: `str`
     * `status`: `str`
     * `major_id`: `int`
 * **Example Request**:
     * To get executives: `/api/users?user_role=executive`
     * To get presidents: `/api/users?user_role=president`
+    * To get all users:  `/api/users?user_role=all`
 * **Response**:
 
 ```json
@@ -238,6 +239,52 @@ CREATE TABLE standby_req_tbl (
 * **Status Codes**:
     * `200 OK`
     * `400 Bad Request`: If the `role` query parameter is invalid.
+    * `401 Unauthorized`
+
+---
+
+## Get Role Names (각 role level의 명칭 반환)
+
+* **Method**: `GET`
+* **URL**: `/api/role_names`
+* **Description**: 각 role level의 명칭을 반환한다.
+* **Query Parameters**: optional (defaults to English)
+    * `lang`: `str`
+* **Example Request**:
+    * To get names in English: `/api/users?lang=en`
+    * To get names in Korean: `/api/users?lang=ko`
+    * If unidentified language code, defaults to English
+* **Response**:
+
+```json
+{
+    "role_names": {
+        "0": "lowest",
+        "100": "dormant",
+        "200": "newcomer",
+        "300": "member",
+        "400": "oldboy",
+        "500": "executive",
+        "1000": "president"
+    }
+}
+```
+```json
+{
+    "role_names": {
+        "0": "최저권한",
+        "100": "휴회원",
+        "200": "준회원",
+        "300": "정회원",
+        "400": "졸업생",
+        "500": "운영진",
+        "1000": "회장"
+    }
+}
+```
+
+* **Status Codes**:
+    * `200 OK`
     * `401 Unauthorized`
 
 ---
