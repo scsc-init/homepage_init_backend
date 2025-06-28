@@ -64,6 +64,14 @@ async def get_users(session: SessionDep, email: Optional[str] = None, name: Opti
     return session.exec(query).all()
 
 
+@user_router.get('/role_names')
+async def get_role_names(lang: Optional[str] = "en"):
+    if lang == "ko":
+        return {"role_names": { "0": "최저권한", "100": "휴회원", "200": "준회원", "300": "정회원", "400": "졸업생", "500": "운영진", "1000": "회장", }}
+    else:
+        return {"role_names": { "0": "lowest", "100": "dormant", "200": "newcomer", "300": "member", "400": "oldboy", "500": "executive", "1000": "president", }}
+
+
 class BodyUpdateMyProfile(BaseModel):
     name: str
     phone: str
