@@ -1,5 +1,5 @@
 # 게시글 관련 DB, API 명세서
-**최신개정일:** 2025-06-21
+**최신개정일:** 2025-06-28
 
 # DB 구조
 
@@ -17,10 +17,6 @@ CREATE TABLE "board" (
   FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
   FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
-
-INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
-```
-- sig, pig 홍보글을 저장하는 board를 추가함. 
 
 
 ## 게시글 DB

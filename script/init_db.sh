@@ -218,8 +218,8 @@ CREATE TRIGGER update_scsc_global_status_updated_at
 AFTER UPDATE ON scsc_global_status
 FOR EACH ROW
 WHEN 
-    OLD.status != NEW.status
-    OLD.year != NEW.year
+    OLD.status != NEW.status OR
+    OLD.year != NEW.year OR
     OLD.semester != NEW.semester
 BEGIN
     UPDATE scsc_global_status
@@ -253,7 +253,7 @@ CREATE TABLE "board" (
 	FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
 	FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
-INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'sigpig_content', 'sig/pig advertising board', 1000, 0);
+
 
 CREATE TABLE "article" (
 	"id"	INTEGER,

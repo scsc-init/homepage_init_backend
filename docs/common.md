@@ -1,5 +1,5 @@
 # 백엔드 공통 DB, API 명세서
-**최신개정일:** 2025-06-21
+**최신개정일:** 2025-06-28
 
 # API 구조
 
@@ -106,6 +106,17 @@ BEGIN
     SET updated_at = CURRENT_TIMESTAMP
     WHERE id = OLD.id;
 END;
+```
+
+## 게시판(Board) DB
+총 5종류의 게시판을 초기화하며, 각 게시판의 쓰기/읽기 권한을 반영하여 아래와 같이 설정한다.
+
+```sql
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (1, 'Sig', 'sig advertising board', 1000, 0);
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (2, 'Pig', 'pig advertising board', 1000, 0);
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (3, 'Project Archive', 'archive of various projects held in the club', 300, 0);
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (4, 'Album', 'photos of club members and activities', 500, 0);
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (5, 'Notice', 'notices from club executive', 500, 100);
 ```
 
 
