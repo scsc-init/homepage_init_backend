@@ -209,12 +209,13 @@ CREATE TABLE standby_req_tbl (
     * `name`: `str`
     * `phone`: `str`
     * `student_id`: `str`
-    * `role`: `str`
+    * `user_role`: `str`
     * `status`: `str`
     * `major_id`: `int`
 * **Example Request**:
     * To get executives: `/api/users?user_role=executive`
     * To get presidents: `/api/users?user_role=president`
+    * To get all users:  `/api/users?user_role=all`
 * **Response**:
 
 ```json
