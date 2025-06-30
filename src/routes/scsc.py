@@ -15,6 +15,11 @@ async def _get_scsc_global_status(scsc_global_status: SCSCGlobalStatusDep) -> SC
     return scsc_global_status
 
 
+@scsc_router.get('/scsc/global/statuses')
+async def _get_scsc_global_statuses() -> dict[str, list[str]]:
+    return {"statuses": ["surveying", "recruiting", "active", "inactive"]}
+
+
 class BodyUpdateSCSCGlobalStatus(BaseModel):
     status: SCSCStatus
 

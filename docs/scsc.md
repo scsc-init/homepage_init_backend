@@ -1,5 +1,5 @@
 # SCSC 전역 상태 관련 DB, API 명세서
-**최신개정일:** 2025-06-21
+**최신개정일:** 2025-07-01
 
 # DB 구조
 [./common.md](./common.md) 참고
@@ -25,6 +25,24 @@
   "id": 1,
   "updated_at": "2025-06-20T18:09:57",
   "year": 2025
+}
+```
+
+* **Status Codes**:
+  * `200 OK`
+
+---
+
+## Get Global SCSC Status(All Possible Statuses)
+
+* **Method**: `GET`
+* **URL**: `/api/scsc/global/statuses`
+
+* **Response Body**:
+
+```json
+{
+  "statuses": [ "surveying", "recruiting", "active", "inactive" ]
 }
 ```
 
