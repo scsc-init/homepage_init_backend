@@ -13,6 +13,8 @@ CREATE TABLE user (
     student_id TEXT NOT NULL UNIQUE,
     role INTEGER NOT NULL,
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
+    discord_id INTEGER UNIQUE DEFAULT NULL,
+    discord_name TEXT UNIQUE DEFAULT NULL,
 
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -39,6 +41,8 @@ WHEN
     OLD.student_id != NEW.student_id OR
     OLD.role != NEW.role OR
     OLD.status != NEW.status OR
+    OLD.discord_id != NEW.discord_id OR
+    OLD.discord_name != NEW.discord_name OR
     OLD.major_id != NEW.major_id
 BEGIN
     UPDATE user
@@ -124,6 +128,8 @@ CREATE TABLE standby_req_tbl (
   "student_id": "202312345",
   "role": "user",
   "status": "pending",
+  "discord_id": null,
+  "discord_name": null.
   "major_id": 1,
   "last_login": "2025-04-01T12:00:00",
   "created_at": "2025-04-01T12:00:00",
@@ -166,6 +172,8 @@ CREATE TABLE standby_req_tbl (
   "student_id": "202312345",
   "role": "user",
   "status": "active",
+  "discord_id": null,
+  "discord_name": null.
   "major_id": 1,
   "last_login": "2025-05-01T09:00:00",
   "created_at": "2025-04-01T12:00:00",
@@ -199,7 +207,7 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
-## Get Users by Role (사용자 목록 조회)
+## Get Users (사용자 목록 조회)
 
 * **Method**: `GET`
 * **URL**: `/api/users`
@@ -211,11 +219,14 @@ CREATE TABLE standby_req_tbl (
     * `student_id`: `str`
     * `user_role`: `str`
     * `status`: `str`
+    * `discord_id`: `int`: 빈 문자열을 입력하면 null을 검색한다. 
+    * `discord_name`: `str`: 빈 문자열을 입력하면 null을 검색한다. 
     * `major_id`: `int`
 * **Example Request**:
     * To get executives: `/api/users?user_role=executive`
     * To get presidents: `/api/users?user_role=president`
-    * To get all users:  `/api/users?user_role=all`
+    * To get all users:  `/api/users`
+    * To get users whose discord_id is null: `/api/users?discord_id=`
 * **Response**:
 
 ```json
@@ -228,6 +239,8 @@ CREATE TABLE standby_req_tbl (
     "student_id": "202512345",
     "role": "executive",
     "status": "active",
+    "discord_id": null,
+    "discord_name": null.
     "major_id": 1,
     "last_login": "2025-05-01T09:00:00",
     "created_at": "2025-04-01T12:00:00",
