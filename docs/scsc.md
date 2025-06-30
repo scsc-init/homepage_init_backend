@@ -33,6 +33,24 @@
 
 ---
 
+## Get Global SCSC Status(All Possible Statuses)
+
+* **Method**: `GET`
+* **URL**: `/api/scsc/global/statuses`
+
+* **Response Body**:
+
+```json
+{
+  "statuses": [ "surveying", "recruiting", "active", "inactive" ]
+}
+```
+
+* **Status Codes**:
+  * `200 OK`
+
+---
+
 ## Update Global SCSC Status
 
 * **Method**: `POST`
