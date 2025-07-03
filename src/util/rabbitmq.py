@@ -5,7 +5,10 @@ import asyncio
 
 from src.core import get_settings
 
-
+'''
+Sends request to bot server through rabbitmq, returns reply from bot server.
+Raises TimeoutError if bot fails to respond in time.
+'''
 async def send_discord_bot_request(action_code: int, body: dict|None = None, timeout=5):
     correlation_id = str(uuid.uuid4())
     body = body or {}
@@ -45,6 +48,11 @@ async def send_discord_bot_request(action_code: int, body: dict|None = None, tim
     return result
 
 
+'''
+Sends request to bot server through rabbitmq.
+Handles requests that do not expect a response from the bot server.
+No return value.
+'''
 async def send_discord_bot_request_no_reply(action_code: int, body: dict|None = None):
     connection = await aio_pika.connect_robust(f"amqp://guest:guest@{get_settings().rabbitmq_host}/")
     channel = await connection.channel()
@@ -53,3 +61,4 @@ async def send_discord_bot_request_no_reply(action_code: int, body: dict|None = 
 
     await channel.default_exchange.publish(message, routing_key=get_settings().discord_receive_queue)
     await connection.close()
+    
