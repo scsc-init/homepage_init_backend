@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     user_check: bool
     enrollment_fee: int
     cors_all_accept: bool
+    rabbitmq_host: str
+    reply_queue: str
+    discord_receive_queue: str
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

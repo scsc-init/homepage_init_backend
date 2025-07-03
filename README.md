@@ -2,7 +2,7 @@
 
 2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
 
-> 최종개정일: 2025-06-18  
+> 최종개정일: 2025-07-03  
 
 ## .env 파일 형식
 
@@ -21,22 +21,28 @@ ARTICLE_DIR="static/article/"
 USER_CHECK=TRUE
 ENROLLMENT_FEE=300000
 CORS_ALL_ACCEPT=FALSE
+RABBITMQ_HOST="rabbitmq"
+REPLY_QUEUE="main_response_queue"
+DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 ```
 
 | Key Name             | Description                                                      |
 |----------------------|------------------------------------------------------------------|
-| `API_SECRET`         | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
-| `JWT_SECRET`         | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
-| `JWT_VALID_SECONDS`  | 로그인 관련 JWT 유효 시간(초)          |
-| `SQLITE_FILENAME`    | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
-| `IMAGE_DIR`          | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
-| `IMAGE_MAX_SIZE`     | 이미지 최대 용량(바이트) |
-| `FILE_DIR`           | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
-| `FILE_MAX_SIZE`      | 파일 최대 용량(바이트) |
-| `ARTICLE_DIR`        | 글 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
-| `USER_CHECK`         | 로그인 로직 활성화 여부. FALSE이면 사용자가 executive sample user로 설정된다. |
-| `ENROLLMENT_FEE`     | 동아리 가입비. |
-| `CORS_ALL_ACCEPT`    | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
+| `API_SECRET`             | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
+| `JWT_SECRET`             | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
+| `JWT_VALID_SECONDS`      | 로그인 관련 JWT 유효 시간(초)          |
+| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `IMAGE_DIR`              | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
+| `IMAGE_MAX_SIZE`         | 이미지 최대 용량(바이트) |
+| `FILE_DIR`               | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
+| `FILE_MAX_SIZE`          | 파일 최대 용량(바이트) |
+| `ARTICLE_DIR`            | 글 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
+| `USER_CHECK`             | 로그인 로직 활성화 여부. FALSE이면 사용자가 executive sample user로 설정된다. |
+| `ENROLLMENT_FEE`         | 동아리 가입비. |
+| `CORS_ALL_ACCEPT`        | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
+| `RABBITMQ_HOST`          | RabbitMQ가 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
+| `REPLY_QUEUE`            | 봇 서버에서 결과를 반환하는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
+| `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 
 ## 실행 방법(with docker)
 
