@@ -17,7 +17,7 @@ CREATE TABLE "board" (
   FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
   FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
-
+```
 
 ## 게시글 DB
 ```sql

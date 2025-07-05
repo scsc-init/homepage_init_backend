@@ -35,7 +35,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         year=scsc_global_status.year,
         semester=scsc_global_status.semester,
         owner=user_id,
-        status=SCSCStatus.surveying
+        status=scsc_global_status.status
     )
     session.add(sig)
     try: session.commit()
