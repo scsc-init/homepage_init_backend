@@ -7,6 +7,8 @@ from src.util import get_user, get_user_role_level
 
 class AssertPermissionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        if not request.url.path.startswith('/api') or request.method not in ('GET', 'POST'):
+            return await call_next(request)
         if request.url.path.startswith("/api/executive"):
             try:
                 current_user = get_user(request)
