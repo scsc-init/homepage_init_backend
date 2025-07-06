@@ -25,6 +25,8 @@ This is an auto-generated markdown file.
 
 "
 
+mkdir -p ./static/article
+
 echo "$CONTENT" > "./static/article/0.md"
 
 echo "Sample articles inserted successfully into '$DB_FILE'."
