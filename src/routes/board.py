@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Sequence
+from typing import Optional, Sequence
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -50,10 +50,10 @@ async def get_board_list(session: SessionDep) -> Sequence[Board]:
 
 
 class BodyUpdateArticle(BaseModel):
-    name: str
-    description: str
-    writing_permission_level: int
-    reading_permission_level: int
+    name: Optional[str] = None
+    description: Optional[str] = None
+    writing_permission_level: Optional[int] = None
+    reading_permission_level: Optional[int] = None
 
 
 @board_router.post('/executive/board/update/{id}', status_code=204)
@@ -62,10 +62,10 @@ async def update_board(id: int, session: SessionDep, body: BodyUpdateArticle) ->
     if not board:
         raise HTTPException(status_code=404, detail="Board not found",)
     # TODO: Who can, What can?
-    board.name = body.name
-    board.description = body.description
-    board.writing_permission_level = body.writing_permission_level
-    board.reading_permission_level = body.reading_permission_level
+    if body.name: board.name = body.name
+    if body.description: board.description = body.description
+    if body.writing_permission_level: board.writing_permission_level = body.writing_permission_level
+    if body.reading_permission_level: board.reading_permission_level = body.reading_permission_level
     board.updated_at = datetime.now(timezone.utc)
     try: session.commit()
     except IntegrityError:
