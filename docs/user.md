@@ -173,7 +173,7 @@ CREATE TABLE standby_req_tbl (
   "role": "user",
   "status": "active",
   "discord_id": null,
-  "discord_name": null.
+  "discord_name": null,
   "major_id": 1,
   "last_login": "2025-05-01T09:00:00",
   "created_at": "2025-04-01T12:00:00",
@@ -240,7 +240,7 @@ CREATE TABLE standby_req_tbl (
     "role": "executive",
     "status": "active",
     "discord_id": null,
-    "discord_name": null.
+    "discord_name": null,
     "major_id": 1,
     "last_login": "2025-05-01T09:00:00",
     "created_at": "2025-04-01T12:00:00",
