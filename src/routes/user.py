@@ -147,6 +147,8 @@ class BodyUpdateUser(BaseModel):
     major_id: Optional[int] = None
     role: Optional[str] = None
     status: Optional[UserStatus] = None
+    discord_id: Optional[int] = None
+    discord_name: Optional[str]= None
 
 
 @user_router.post('/executive/user/{id}', status_code=204)
@@ -171,6 +173,8 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
     if body.name: user.name = body.name
     if body.major_id: user.major_id = body.major_id
     if body.status: user.status = body.status
+    if body.discord_id: user.discord_id = body.discord_id
+    if body.discord_name: user.discord_name = body.discord_name
 
     session.add(user)
     try: session.commit()
