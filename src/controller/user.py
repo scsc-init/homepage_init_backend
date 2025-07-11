@@ -6,10 +6,9 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
-from homepage_init_backend.src.model.user import UserRole
-from homepage_init_backend.src.util.rabbitmq import send_discord_bot_request_no_reply
+from src.util.rabbitmq import send_discord_bot_request_no_reply
 from src.db import SessionDep
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
+from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus, UserRole
 from src.util import (get_user_role_level, is_valid_phone, is_valid_student_id,
                       sha256_hash)
 
