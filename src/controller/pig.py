@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.db import SessionDep
 from src.model import PIG, SCSCGlobalStatus, PIGMember, SCSCStatus
-from src.util import get_user_role_level
+from src.util import get_user_role_level, send_discord_bot_request_no_reply
 
 from .article import BodyCreateArticle, create_article_ctrl
 from .scsc import ctrl_status_available
@@ -53,6 +53,7 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
     session.add(pig_member)
     session.commit()
     session.refresh(pig)
+    await send_discord_bot_request_no_reply()
     return pig
 
 

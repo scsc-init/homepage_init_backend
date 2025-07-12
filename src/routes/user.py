@@ -12,7 +12,7 @@ from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, r
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant, UserRole
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, send_discord_bot_request_no_reply
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, send_discord_bot_request_no_reply, change_discord_role
 
 user_router = APIRouter(tags=['user'])
 
@@ -107,19 +107,14 @@ async def update_my_profile(session: SessionDep, request: Request, body: BodyUpd
 @user_router.post('/user/delete', status_code=204)
 async def delete_my_profile(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
-    discord_id = current_user.discord_id
-    original_role = session.exec(select(UserRole).where(UserRole.level == current_user.role)).first()
-    if not original_role:
-        raise HTTPException(409, detail=f"fatal error when retrieving user data: role level {current_user.role} not found")
-    original_role_name = original_role.name
     if current_user.role >= get_user_role_level('executive'): raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
     session.delete(current_user)
     try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="cannot delete user because of foreign key restriction")
-    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': discord_id, 'role_name': original_role_name})
-    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': discord_id, 'role_name': 'dormant'})
+    session.refresh(current_user)
+    if current_user.discord_id: await change_discord_role(session, current_user.discord_id, 'dormant')
     return
 
 
@@ -163,11 +158,6 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
     current_user = get_user(request)
     user = session.get(User, id)
     if user is None: raise HTTPException(404, detail="no user exists")
-    original_role = session.exec(select(UserRole).where(UserRole.level == user.role)).first()
-    if not original_role:
-        raise HTTPException(409, detail=f"fatal error when retrieving user data: role level {user.role} not found")
-    original_role_name = original_role.name
-    discord_id = user.discord_id
 
     if current_user.role <= user.role: raise HTTPException(403, detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}")
     if body.role:
@@ -194,8 +184,8 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
     if body.role:
-        await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': discord_id, 'role_name': original_role_name})
-        await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': discord_id, 'role_name': body.role})
+        session.refresh(user)
+        if user.discord_id: await change_discord_role(session, user.discord_id, body.role)
     return
 
 

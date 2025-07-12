@@ -2,10 +2,12 @@ import csv
 import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-
 from fastapi import HTTPException, Request
+from sqlmodel import select
 
-from src.model import User
+from src.model import User, UserRole
+from src.db import SessionDep
+from src.util import send_discord_bot_request_no_reply
 
 
 def get_file_extension(filename: str) -> str:
@@ -27,7 +29,7 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
 @dataclass
 class DepositDTO:
     amount: int
-    deposit_time: datetime  # shoule be utc
+    deposit_time: datetime  # should be utc
     deposit_name: str
 
 
@@ -44,3 +46,9 @@ async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO
         deposit_name=line["보낸분/받는분"]
     ) for line in reader]
     return result
+
+
+async def change_discord_role(session: SessionDep, discord_id: int, to_role_name: str) -> None:
+    for role in session.exec(select(UserRole)):
+        await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': discord_id, 'role_name': role.name})
+    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': discord_id, 'role_name': to_role_name})

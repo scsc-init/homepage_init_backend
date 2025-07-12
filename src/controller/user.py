@@ -2,15 +2,14 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
-from src.util.rabbitmq import send_discord_bot_request_no_reply
 from src.db import SessionDep
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus, UserRole
 from src.util import (get_user_role_level, is_valid_phone, is_valid_student_id,
-                      sha256_hash)
+                      sha256_hash, change_discord_role)
 
 
 class BodyCreateUser(BaseModel):
@@ -96,14 +95,8 @@ async def process_oldboy_applicant_ctrl(session: SessionDep, user_id: str) -> No
     session.add(oldboy_applicant)
     user.role = get_user_role_level('oldboy')
     session.add(user)
-    discord_id = user.discord_id
-    role = session.exec(select(UserRole).where(UserRole.level == user.role)).first()
-    if not role:
-        raise HTTPException(409, detail=f"fatal error when retrieving user data: role level {user.role} not found")
-    role_name = role.name
     session.commit()
-    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': discord_id, 'role_name': role_name})
-    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': discord_id, 'role_name': 'oldboy'})
+    if user.discord_id: await change_discord_role(session, user.discord_id, 'oldboy')
     return
 
 
@@ -117,8 +110,6 @@ async def reactivate_oldboy_ctrl(session: SessionDep, user: User) -> None:
     oldboy_applicant = session.get(OldboyApplicant, user.id)
     if oldboy_applicant: session.delete(oldboy_applicant)
 
-    discord_id = user.discord_id
+    if user.discord_id: await change_discord_role(session, user.discord_id, 'member')
     session.commit()
-    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': discord_id, 'role_name': 'oldboy'})
-    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': discord_id, 'role_name': 'member'})
     return
