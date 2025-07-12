@@ -8,7 +8,7 @@ from sqlmodel import select
 from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, ctrl_status_available
 from src.db import SessionDep
 from src.model import PIG, PIGMember, User
-from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
+from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
 
 pig_router = APIRouter(tags=['pig'])
 
@@ -104,6 +104,9 @@ async def join_pig(id: int, session: SessionDep, request: Request):
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
+    session.refresh(current_user)
+    session.refresh(pig)
+    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': pig.title})
     return
 
 
@@ -117,6 +120,9 @@ async def leave_pig(id: int, session: SessionDep, scsc_global_status: SCSCGlobal
     if not pig_member: raise HTTPException(404, detail="pig member not found")
     session.delete(pig_member)
     session.commit()
+    session.refresh(current_user)
+    session.refresh(pig)
+    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': pig.title})
     return
 
 
@@ -140,6 +146,9 @@ async def executive_join_pig(id: int, session: SessionDep, body: BodyExecutiveJo
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
+    session.refresh(user)
+    session.refresh(pig)
+    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': pig.title})
     return
 
 
@@ -159,4 +168,7 @@ async def executive_leave_pig(id: int, session: SessionDep, body: BodyExecutiveL
     for member in pig_members:
         session.delete(member)
     session.commit()
+    session.refresh(user)
+    session.refresh(pig)
+    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': pig.title})
     return
