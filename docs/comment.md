@@ -10,15 +10,15 @@ CREATE TABLE "comment" (
 	"content"	TEXT NOT NULL,
 	"author_id"	TEXT NOT NULL,
 	"board_id"	INTEGER NOT NULL,
-	"post_id"	INTEGER NOT NULL,
+	"article_id"	INTEGER NOT NULL,
 	"parent_id"	INTEGER,
 	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("author_id") REFERENCES "user"("id"),
-	FOREIGN KEY("board_id") REFERENCES "board"("id"),
-	FOREIGN KEY("post_id") REFERENCES "article"("id"),
-	FOREIGN KEY("parent_id") REFERENCES "comment"("id")
+  	PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
+	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE,
+	FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
+	FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL 
 );
 ```
 
@@ -37,8 +37,7 @@ CREATE TABLE "comment" (
 ```json
 {
   "content": "Nice.",
-  "board_id": 1,
-  "post_id": 1,
+  "article_id": 1,
   "parent_id": null
 }
 ```
@@ -48,7 +47,7 @@ CREATE TABLE "comment" (
   "id": 1,
   "content": "Nice.",
   "board_id": 1,
-  "post_id": 1,
+  "article_id": 1,
   "parent_id": null,
   "author_id": "",
   "created_at": "2025-07-01T12:00:00",
@@ -67,7 +66,7 @@ CREATE TABLE "comment" (
 ## Get Comments List (댓글 목록 조희)
 
 - **Method**: `GET`
-- **URL**: `/api/comments/:board_id/:article_id`
+- **URL**: `/api/comments/:article_id`
 - **설명**: 댓글 목록 조회
 - **Response**:
 ```json
@@ -76,7 +75,7 @@ CREATE TABLE "comment" (
     "id": 1,
     "content": "Nice.",
     "board_id": 1,
-    "post_id": 1,
+    "article_id": 1,
     "parent_id": null,
     "author_id": "",
     "created_at": "2025-07-01T12:00:00",
@@ -101,7 +100,7 @@ CREATE TABLE "comment" (
   "id": 1,
   "content": "Nice.",
   "board_id": 1,
-  "post_id": 1,
+  "article_id": 1,
   "parent_id": null,
   "author_id": "",
   "created_at": "2025-07-01T12:00:00",
@@ -122,7 +121,9 @@ CREATE TABLE "comment" (
 - **Request Body** (JSON):
 ```json
 {
-  "content": "Isn't nice."
+  "content": "Isn't nice.",
+  "article_id": 1,
+  "parent_id": null
 }
 ```
 - **Response**:
@@ -131,7 +132,7 @@ CREATE TABLE "comment" (
   "id": 1,
   "content": "Isn't nice.",
   "board_id": 1,
-  "post_id": 1,
+  "article_id": 1,
   "parent_id": null,
   "author_id": "",
   "created_at": "2025-07-01T12:00:00",
