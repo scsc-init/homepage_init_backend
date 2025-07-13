@@ -65,7 +65,7 @@ CREATE TABLE user_role (
 
 다음의 권한이 존재한다. 권한에 대한 CRUD 기능은 존재하지 않고 DB 초기화 시 [./script/insert_user_roles.sh](./script/insert_user_roles.sh)에서 권한을 추가한다. 
 - 총 7가지 권한이 존재한다. 권한의 서열은 나중에 나열된 항목이 높다. 
-1. (0, 'lowest', '최저권한'): 가장 낮은 권한으로 `article.md`의 `board`에서 사용된다. 
+1. (0, 'lowest', '최저권한'): 가장 낮은 권한으로 `article.md`의 `board`에서 사용된다. 사용자에게 부여되지 않는다. 
 1. (100, 'dormant', '휴회원'): 
 1. (200, 'newcomer', '준회원'): 
 1. (300, 'member', '정회원'): 
