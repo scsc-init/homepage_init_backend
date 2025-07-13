@@ -70,8 +70,8 @@ async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCSt
     # end of active
     if scsc_global_status.status == SCSCStatus.active:
         await send_discord_bot_request_no_reply(action_code=3008, body={"previousSemester": f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)}"})
-        await send_discord_bot_request_no_reply(action_code=3002, body={'category_name': f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)} Sig Archive"})
-        await send_discord_bot_request_no_reply(action_code=3004, body={'category_name': f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)} Pig Archive"})
+        await send_discord_bot_request_no_reply(action_code=3002, body={'category_name': f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)} SIG Archive"})
+        await send_discord_bot_request_no_reply(action_code=3004, body={'category_name': f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)} PIG Archive"})
         for sig in session.exec(select(SIG).where(SIG.year == scsc_global_status.year, SIG.semester == scsc_global_status.semester, SIG.status != SCSCStatus.inactive)).all():
             sig.status = SCSCStatus.inactive
             session.add(sig)
