@@ -8,7 +8,7 @@ from sqlmodel import select
 from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, ctrl_status_available
 from src.db import SessionDep
 from src.model import SIG, SIGMember, User
-from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level
+from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
 
 sig_router = APIRouter(tags=['sig'])
 
@@ -16,7 +16,8 @@ sig_router = APIRouter(tags=['sig'])
 @sig_router.post('/sig/create', status_code=201)
 async def create_sig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreateSIG) -> SIG:
     current_user = get_user(request)
-    return await create_sig_ctrl(session, body, current_user.id, scsc_global_status)
+    if not current_user.discord_id: raise HTTPException(409, 'No discord ID found, creator must enroll in the discord server first')
+    return await create_sig_ctrl(session, body, current_user.id, current_user.discord_id, scsc_global_status)
 
 
 @sig_router.get('/sig/{id}')
@@ -104,6 +105,9 @@ async def join_sig(id: int, session: SessionDep, request: Request):
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
+    session.refresh(sig)
+    if not current_user.discord_id: raise HTTPException(409, 'No discord ID found, user must enroll in the discord server first')
+    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': sig.title})
     return
 
 
@@ -117,6 +121,8 @@ async def leave_sig(id: int, session: SessionDep, scsc_global_status: SCSCGlobal
     if not sig_member: raise HTTPException(404, detail="sig member not found")
     session.delete(sig_member)
     session.commit()
+    session.refresh(sig)
+    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': sig.title})
     return
 
 
@@ -140,6 +146,10 @@ async def executive_join_sig(id: int, session: SessionDep, body: BodyExecutiveJo
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
+    session.refresh(user)
+    session.refresh(sig)
+    if not user.discord_id: raise HTTPException(409, 'No discord ID found, creator must enroll in the discord server first')
+    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': sig.title})
     return
 
 
@@ -159,4 +169,7 @@ async def executive_leave_sig(id: int, session: SessionDep, body: BodyExecutiveL
     for member in sig_members:
         session.delete(member)
     session.commit()
+    session.refresh(user)
+    session.refresh(sig)
+    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': sig.title})
     return

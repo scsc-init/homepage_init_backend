@@ -2,13 +2,14 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from pydantic import BaseModel
+from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
 from src.db import SessionDep
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
+from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus, UserRole
 from src.util import (get_user_role_level, is_valid_phone, is_valid_student_id,
-                      sha256_hash)
+                      sha256_hash, change_discord_role)
 
 
 class BodyCreateUser(BaseModel):
@@ -95,6 +96,7 @@ async def process_oldboy_applicant_ctrl(session: SessionDep, user_id: str) -> No
     user.role = get_user_role_level('oldboy')
     session.add(user)
     session.commit()
+    if user.discord_id: await change_discord_role(session, user.discord_id, 'oldboy')
     return
 
 
@@ -108,5 +110,6 @@ async def reactivate_oldboy_ctrl(session: SessionDep, user: User) -> None:
     oldboy_applicant = session.get(OldboyApplicant, user.id)
     if oldboy_applicant: session.delete(oldboy_applicant)
 
+    if user.discord_id: await change_discord_role(session, user.discord_id, 'member')
     session.commit()
     return

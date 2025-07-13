@@ -2,8 +2,8 @@ import csv
 import io
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-
 from fastapi import HTTPException, Request
+from sqlmodel import select
 
 from src.model import User
 
@@ -27,7 +27,7 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
 @dataclass
 class DepositDTO:
     amount: int
-    deposit_time: datetime  # shoule be utc
+    deposit_time: datetime  # should be utc
     deposit_name: str
 
 
@@ -44,3 +44,4 @@ async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO
         deposit_name=line["보낸분/받는분"]
     ) for line in reader]
     return result
+
