@@ -24,6 +24,7 @@ CORS_ALL_ACCEPT=FALSE
 RABBITMQ_HOST="rabbitmq"
 REPLY_QUEUE="main_response_queue"
 DISCORD_RECEIVE_QUEUE="discord_bot_queue"
+NOTICE_CHANNEL_ID=0
 ```
 
 | Key Name             | Description                                                      |
@@ -43,6 +44,7 @@ DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 | `RABBITMQ_HOST`          | RabbitMQ가 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
 | `REPLY_QUEUE`            | 봇 서버에서 결과를 반환하는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
+| `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 
 ## 실행 방법(with docker)
 

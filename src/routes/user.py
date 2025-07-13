@@ -12,7 +12,7 @@ from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, r
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, change_discord_role
 
 user_router = APIRouter(tags=['user'])
 
@@ -113,6 +113,8 @@ async def delete_my_profile(session: SessionDep, request: Request) -> None:
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="cannot delete user because of foreign key restriction")
+    session.refresh(current_user)
+    if current_user.discord_id: await change_discord_role(session, current_user.discord_id, 'dormant')
     return
 
 
@@ -157,7 +159,7 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
     user = session.get(User, id)
     if user is None: raise HTTPException(404, detail="no user exists")
 
-    if current_user.role <= user.role: raise HTTPException(403, detail="Cannot update user with a higher or equal role than yourself")
+    if (current_user.role <= user.role) and not (current_user.role==user.role==1000): raise HTTPException(403, detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}")
     if body.role:
         level = get_user_role_level(body.role)
         if current_user.role < level: raise HTTPException(403, detail="Cannot assign role higher than yours")
@@ -181,6 +183,9 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
+    if body.role:
+        session.refresh(user)
+        if user.discord_id: await change_discord_role(session, user.discord_id, body.role)
     return
 
 

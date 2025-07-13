@@ -10,7 +10,7 @@ from src.controller import BodyCreateArticle, create_article_ctrl
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import Article, ArticleResponse, Board
-from src.util import get_user
+from src.util import get_user, send_discord_bot_request_no_reply
 
 article_router = APIRouter(tags=['article'])
 
@@ -18,7 +18,10 @@ article_router = APIRouter(tags=['article'])
 @article_router.post('/article/create', status_code=201)
 async def create_article(session: SessionDep, request: Request, body: BodyCreateArticle) -> ArticleResponse:
     current_user = get_user(request)
-    return await create_article_ctrl(session, body, current_user.id, current_user.role)
+    ret = await create_article_ctrl(session, body, current_user.id, current_user.role)
+    if body.board_id == 5: # notice
+        await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().notice_channel_id, 'content': body.content})
+    return ret
 
 
 @article_router.get('/articles/{board_id}')

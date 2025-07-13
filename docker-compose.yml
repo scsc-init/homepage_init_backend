@@ -22,6 +22,7 @@ services:
         ./script/insert_majors.sh "/app/${SQLITE_FILENAME}" ./docs/majors.csv &&
         ./script/insert_boards.sh "/app/${SQLITE_FILENAME}" &&
         ./script/insert_sample_users.sh "/app/${SQLITE_FILENAME}" &&
+        ./script/insert_president_users.sh "/app/${SQLITE_FILENAME}" &&
         ./script/insert_sample_articles.sh "/app/${SQLITE_FILENAME}";
       else
         echo "Database already exists. Skipping initialization.";
