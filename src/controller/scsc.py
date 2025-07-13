@@ -69,17 +69,17 @@ async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCSt
 
     # end of active
     if scsc_global_status.status == SCSCStatus.active:
-        await send_discord_bot_request_no_reply(action_code=3008, body={"previousSemester": f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)}"})
+        await send_discord_bot_request_no_reply(action_code=3008, body={"data": {"previousSemester": f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)}"}})
         await send_discord_bot_request_no_reply(action_code=3002, body={'category_name': f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)} SIG Archive"})
         await send_discord_bot_request_no_reply(action_code=3004, body={'category_name': f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)} PIG Archive"})
         for sig in session.exec(select(SIG).where(SIG.year == scsc_global_status.year, SIG.semester == scsc_global_status.semester, SIG.status != SCSCStatus.inactive)).all():
             sig.status = SCSCStatus.inactive
             session.add(sig)
-            await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title})
+            await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title, "previous_semester": f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)}"})
         for pig in session.exec(select(PIG).where(PIG.year == scsc_global_status.year, PIG.semester == scsc_global_status.semester, PIG.status != SCSCStatus.inactive)).all():
             pig.status = SCSCStatus.inactive
             session.add(pig)
-            await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title})
+            await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title, "previous_semester": f"{scsc_global_status.year}-{_map_semester_name.get(scsc_global_status.semester)}"})
         scsc_global_status.year += scsc_global_status.semester // 4
         scsc_global_status.semester = scsc_global_status.semester % 4 + 1
         session.add(scsc_global_status)
