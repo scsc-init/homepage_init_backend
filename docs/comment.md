@@ -9,17 +9,19 @@ CREATE TABLE "comment" (
 	"id"	INTEGER,
 	"content"	TEXT NOT NULL,
 	"author_id"	TEXT NOT NULL,
-	"board_id"	INTEGER NOT NULL,
 	"article_id"	INTEGER NOT NULL,
 	"parent_id"	INTEGER,
 	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
-	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE,
 	FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
 	FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL 
 );
+```
+```sqlite
+CREATE INDEX idx_article_id ON comment(article_id);
+CREATE INDEX idx_parent_id ON comment(parent_id);
 ```
 
 # API 구조
@@ -121,9 +123,7 @@ CREATE TABLE "comment" (
 - **Request Body** (JSON):
 ```json
 {
-  "content": "Isn't nice.",
-  "article_id": 1,
-  "parent_id": null
+  "content": "Isn't nice."
 }
 ```
 - **Response**:

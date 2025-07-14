@@ -8,7 +8,6 @@ class Comment(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)  # default=None because of autoincrement
     content: str = Field()
     author_id: str = Field(foreign_key="user.id")
-    board_id: int = Field(foreign_key="board.id")
     article_id: int = Field(foreign_key="article.id")
     parent_id: int = Field(foreign_key="comment.id")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

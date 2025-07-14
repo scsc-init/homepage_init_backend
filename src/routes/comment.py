@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Sequence
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -10,15 +10,18 @@ from src.db import SessionDep
 from src.model import Article, Board, Comment
 from src.util import get_user
 
-comment_router = APIRouter(prefix="/comment", tags=['comment'])
-comment_executive_router = APIRouter(prefix="/executive/comment", tags=['comment', 'executive'])
+comment_router = APIRouter(tags=['comment'])
+comment_general_router = APIRouter(prefix="/comment", )
+comment_executive_router = APIRouter(prefix="/executive/comment", tags=['executive'])
+comment_router.include_router(comment_general_router)
+comment_router.include_router(comment_executive_router)
 
 class BodyCreateComment(BaseModel):
     content: str
     article_id: int
     parent_id: Optional[int]
 
-@comment_router.post('/create', status_code=201)
+@comment_general_router.post('/create', status_code=201)
 async def create_comment(session: SessionDep, request: Request, body: BodyCreateComment) -> Comment:
     user = get_user(request)
     article = session.get(Article, body.article_id)
@@ -28,24 +31,23 @@ async def create_comment(session: SessionDep, request: Request, body: BodyCreate
                                                                        detail="You are not allowed to write this comment", )
     comment = Comment(content=body.content, author_id=user.id, board_id=board.id, article_id=article.id, parent_id=body.parent_id)
     session.add(comment)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(comment)
     return comment
 
-
-@comment_router.get('s/{article_id}')
-async def get_comments_by_article(article_id: int, session: SessionDep) -> list[Comment]:
+# This works as "api/comment" + "s/{article_id}" (="api/comments/{article_id}")
+@comment_general_router.get('s/{article_id}')
+async def get_comments_by_article(article_id: int, session: SessionDep) -> Sequence[Comment]:
     article = session.get(Article, article_id)
     if not article: raise HTTPException(status_code=404, detail=f"Article {article_id} does not exist")
     comments = session.exec(select(Comment).where(Comment.article_id == article_id)).all()
     return comments
 
 
-@comment_router.get('/{id}')
+@comment_general_router.get('/{id}')
 async def get_comment_by_id(id: int, session: SessionDep) -> Comment:
     comment = session.get(Comment, id)
     if not comment: raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
@@ -54,11 +56,8 @@ async def get_comment_by_id(id: int, session: SessionDep) -> Comment:
 
 class BodyUpdateComment(BaseModel):
     content: str
-    article_id: int
-    parent_id: int
 
-
-@comment_router.post('/update/{id}', status_code=204)
+@comment_general_router.post('/update/{id}', status_code=204)
 async def update_comment_by_author(id: int, session: SessionDep, request: Request, body: BodyUpdateComment) -> None:
     current_user = get_user(request)
     comment = session.get(Comment, id)
@@ -66,12 +65,6 @@ async def update_comment_by_author(id: int, session: SessionDep, request: Reques
     if current_user.id != comment.author_id:
         raise HTTPException(status_code=403, detail="You are not the author of this comment",)
     comment.content = body.content
-    comment.author_id = current_user.id
-    article = session.get(Article, body.article_id)
-    if not article: raise HTTPException(status_code=404, detail=f"Article {body.article_id} does not exist")
-    comment.article_id = body.article_id
-    comment.board_id = article.board_id
-    comment.parent_id = body.parent_id
     comment.updated_at = datetime.now(timezone.utc)
     try: session.commit()
     except IntegrityError:
@@ -85,11 +78,6 @@ async def update_comment_by_author(id: int, session: SessionDep, request: Reques
 #     comment = session.get(Comment, id)
 #     if not comment: raise HTTPException(status_code=404, detail="Comment not found",)
 #     comment.content = body.content
-#     article = session.get(Article, body.article_id)
-#     if not article: raise HTTPException(status_code=404, detail=f"Article {body.article_id} does not exist")
-#     comment.article_id = body.article_id
-#     comment.board_id = article.board_id
-#     comment.parent_id = body.parent_id
 #     comment.updated_at = datetime.now(timezone.utc)
 #     try: session.commit()
 #     except IntegrityError:
@@ -98,13 +86,12 @@ async def update_comment_by_author(id: int, session: SessionDep, request: Reques
 #     session.refresh(comment)
 
 
-@comment_router.post('/delete/{id}', status_code=204)
+@comment_general_router.post('/delete/{id}', status_code=204)
 async def delete_comment_by_author(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     comment = session.get(Comment, id)
     if not comment: raise HTTPException(status_code=404, detail="Comment not found", )
-    if current_user.id != comment.author_id:
-        raise HTTPException(status_code=403, detail="You are not the author of this comment",)
+    if current_user.id != comment.author_id: raise HTTPException(status_code=403, detail="You are not the author of this comment",)
     session.delete(comment)
     session.commit()
 
@@ -112,7 +99,5 @@ async def delete_comment_by_author(id: int, session: SessionDep, request: Reques
 @comment_executive_router.post('/delete/{id}', status_code=204)
 async def delete_comment_by_executive(id: int, session: SessionDep) -> None:
     comment = session.get(Comment, id)
-    if not comment: raise HTTPException(status_code=404, detail="Comment not found",)
-    # TODO: Which permission is needed
     session.delete(comment)
     session.commit()
