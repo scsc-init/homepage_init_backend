@@ -260,7 +260,6 @@ CREATE TABLE "board" (
 	FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 
-
 CREATE TABLE "article" (
 	"id"	INTEGER,
 	"title"	TEXT NOT NULL,
@@ -277,16 +276,14 @@ CREATE TABLE "comment" (
 	"id"	INTEGER,
 	"content"	TEXT NOT NULL,
 	"author_id"	TEXT NOT NULL,
-	"board_id"	INTEGER NOT NULL,
-	"post_id"	INTEGER NOT NULL,
-	"parent_id"	INTEGER NOT NULL,
+	"article_id"	INTEGER NOT NULL,
+	"parent_id"	INTEGER,
 	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("author_id") REFERENCES "user"("id"),
-	FOREIGN KEY("board_id") REFERENCES "board"("id"),
-	FOREIGN KEY("post_id") REFERENCES "article"("id"),
-	FOREIGN KEY("parent_id") REFERENCES "comment"("id")
+  PRIMARY KEY("id" AUTOINCREMENT),
+	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
+	FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
+	FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL
 );
 
 -- Create standby request table

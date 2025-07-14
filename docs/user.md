@@ -129,7 +129,7 @@ CREATE TABLE standby_req_tbl (
   "role": "user",
   "status": "pending",
   "discord_id": null,
-  "discord_name": null.
+  "discord_name": null,
   "major_id": 1,
   "last_login": "2025-04-01T12:00:00",
   "created_at": "2025-04-01T12:00:00",
@@ -197,7 +197,7 @@ CREATE TABLE standby_req_tbl (
   "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
   "email": "user@example.com",
   "name": "홍길동",
-  "major_id": 1,
+  "major_id": 1
 }
 ```
 - **Status Codes**:
