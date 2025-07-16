@@ -13,8 +13,6 @@ from src.util import get_user
 comment_router = APIRouter(tags=['comment'])
 comment_general_router = APIRouter(prefix="/comment", )
 comment_executive_router = APIRouter(prefix="/executive/comment", tags=['executive'])
-comment_router.include_router(comment_general_router)
-comment_router.include_router(comment_executive_router)
 
 class BodyCreateComment(BaseModel):
     content: str
@@ -40,17 +38,24 @@ async def create_comment(session: SessionDep, request: Request, body: BodyCreate
 
 # This works as "api/comment" + "s/{article_id}" (="api/comments/{article_id}")
 @comment_general_router.get('s/{article_id}')
-async def get_comments_by_article(article_id: int, session: SessionDep) -> Sequence[Comment]:
+async def get_comments_by_article(article_id: int, session: SessionDep, request: Request) -> Sequence[Comment]:
+    user = get_user(request)
     article = session.get(Article, article_id)
     if not article: raise HTTPException(status_code=404, detail=f"Article {article_id} does not exist")
+    board = session.get(Board, article.board_id)
+    if user.role < board.reading_permission_level: raise HTTPException(status_code=403, detail="You are not allowed to read these comments", )
     comments = session.exec(select(Comment).where(Comment.article_id == article_id)).all()
     return comments
 
 
 @comment_general_router.get('/{id}')
-async def get_comment_by_id(id: int, session: SessionDep) -> Comment:
+async def get_comment_by_id(id: int, session: SessionDep, request: Request) -> Comment:
+    user = get_user(request)
     comment = session.get(Comment, id)
     if not comment: raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
+    article = session.get(Article, comment.article_id)
+    board = session.get(Board, article.board_id)
+    if user.role < board.reading_permission_level: raise HTTPException(status_code=403, detail="You are not allowed to read this comment", )
     return comment
 
 
@@ -102,3 +107,7 @@ async def delete_comment_by_executive(id: int, session: SessionDep) -> None:
     if not comment: raise HTTPException(status_code=404, detail="Comment not found", )
     session.delete(comment)
     session.commit()
+
+
+comment_router.include_router(comment_general_router, )
+comment_router.include_router(comment_executive_router)
