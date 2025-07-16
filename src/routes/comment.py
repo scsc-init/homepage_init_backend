@@ -99,5 +99,6 @@ async def delete_comment_by_author(id: int, session: SessionDep, request: Reques
 @comment_executive_router.post('/delete/{id}', status_code=204)
 async def delete_comment_by_executive(id: int, session: SessionDep) -> None:
     comment = session.get(Comment, id)
+    if not comment: raise HTTPException(status_code=404, detail="Comment not found", )
     session.delete(comment)
     session.commit()
