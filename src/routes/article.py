@@ -28,9 +28,11 @@ async def create_article(session: SessionDep, request: Request, body: BodyCreate
 
 # This works as "api/article" + "s/{board_id}" (="api/articles/{board_id}")
 @article_general_router.get('s/{board_id}')
-async def get_article_list_by_board(board_id: int, session: SessionDep) -> list[ArticleResponse]:
+async def get_article_list_by_board(board_id: int, session: SessionDep, request: Request) -> list[ArticleResponse]:
+    user = get_user(request)
     board = session.get(Board, board_id)
     if not board: raise HTTPException(404, detail="Board not found")
+    if user.role < board.reading_permission_level: raise HTTPException(403, detail="You are not allowed to read this board")
     articles = session.exec(select(Article).where(Article.board_id == board_id)).all()
     result: list[ArticleResponse] = []
     for article in articles:
@@ -41,9 +43,12 @@ async def get_article_list_by_board(board_id: int, session: SessionDep) -> list[
 
 
 @article_general_router.get('/{id}')
-async def get_article_by_id(id: int, session: SessionDep) -> ArticleResponse:
+async def get_article_by_id(id: int, session: SessionDep, request: Request) -> ArticleResponse:
+    user = get_user(request)
     article = session.get(Article, id)
     if not article: raise HTTPException(404, detail="Article not found")
+    board = session.get(Board, article.board_id)
+    if user.role < board.reading_permission_level: raise HTTPException(403, detail="You are not allowed to read this article")
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
         content = fp.read()
         return ArticleResponse(**article.model_dump(), content=content)
