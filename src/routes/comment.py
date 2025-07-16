@@ -27,7 +27,7 @@ async def create_comment(session: SessionDep, request: Request, body: BodyCreate
     board = session.get(Board, article.board_id)
     if user.role < board.writing_permission_level: raise HTTPException(status_code=403,
                                                                        detail="You are not allowed to write this comment", )
-    comment = Comment(content=body.content, author_id=user.id, board_id=board.id, article_id=article.id, parent_id=body.parent_id)
+    comment = Comment(content=body.content, author_id=user.id, article_id=article.id, parent_id=body.parent_id)
     session.add(comment)
     try: session.commit()
     except IntegrityError:
