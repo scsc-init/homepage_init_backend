@@ -286,6 +286,11 @@ CREATE TABLE "comment" (
 	FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL
 );
 
+-- Create index for Article and Comment
+CREATE INDEX idx_board_id ON article(board_id);
+CREATE INDEX idx_article_id ON comment(article_id);
+CREATE INDEX idx_parent_id ON comment(parent_id);
+
 -- Create standby request table
 CREATE TABLE standby_req_tbl (
     standby_user_id TEXT PRIMARY KEY,
