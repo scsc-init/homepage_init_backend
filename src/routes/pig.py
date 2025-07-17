@@ -42,7 +42,7 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if pig.owner != current_user.id: raise HTTPException(403, detail="cannot delete pig of other")
+    if pig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
     session.delete(pig)
     session.commit()
     return
@@ -71,7 +71,7 @@ class BodyHandoverPIG(BaseModel):
 async def handover_pig(id: int, session: SessionDep, request: Request, body: BodyHandoverPIG) -> None:
     current_user = get_user(request)
     pig = session.get(PIG, id)
-    if pig is None: raise HTTPException(404, detail="no pig exists")
+    if pig is None: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(
         PIGMember.user_id == body.new_owner)).first()
     if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
@@ -92,7 +92,7 @@ async def join_pig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if pig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"cannot join to pig when pig status is not in {ctrl_status_available.join_sigpig}")
+    if pig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"SCSC 전역 상태가 {ctrl_status_available.join_sigpig}일 때만 시그/피그에 가입할 수 있습니다")
     pig_member = PIGMember(
         ig_id=id,
         user_id=current_user.id,

@@ -42,7 +42,7 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.owner != current_user.id: raise HTTPException(403, detail="cannot delete sig of other")
+    if sig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
     session.delete(sig)
     session.commit()
     return
@@ -71,7 +71,7 @@ class BodyHandoverSIG(BaseModel):
 async def handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if sig is None: raise HTTPException(404, detail="no sig exists")
+    if sig is None: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(
         SIGMember.user_id == body.new_owner)).first()
     if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
@@ -92,7 +92,7 @@ async def join_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"cannot join to sig when sig status is not in {ctrl_status_available.join_sigpig}")
+    if sig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"SCSC 전역 상태가 {ctrl_status_available.join_sigpig}일 때만 시그/피그에 가입할 수 있습니다")
     sig_member = SIGMember(
         ig_id=id,
         user_id=current_user.id,
