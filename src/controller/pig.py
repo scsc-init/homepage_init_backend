@@ -18,7 +18,7 @@ class BodyCreatePIG(BaseModel):
     content: str
 
 
-async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str, user_discord_id: int, scsc_global_status: SCSCGlobalStatus) -> PIG:
+async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> PIG:
     if scsc_global_status.status not in ctrl_status_available.create_sigpig: raise HTTPException(400, f"cannot create pig when pig global status is not in {ctrl_status_available.create_sigpig}")
 
     pig_article = await create_article_ctrl(
@@ -53,7 +53,7 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
     session.add(pig_member)
     session.commit()
     session.refresh(pig)
-    await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': body.title, 'user_id_list': [user_discord_id]})
+    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': body.title, 'user_id_list': [user_discord_id]})
     return pig
 
 

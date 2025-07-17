@@ -16,7 +16,6 @@ pig_router = APIRouter(tags=['pig'])
 @pig_router.post('/pig/create', status_code=201)
 async def create_pig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request, body: BodyCreatePIG) -> PIG:
     current_user = get_user(request)
-    if not current_user.discord_id: raise HTTPException(409, 'No discord ID found, creator must enroll in the discord server first')
     return await create_pig_ctrl(session, body, current_user.id, current_user.discord_id, scsc_global_status)
 
 
@@ -106,8 +105,7 @@ async def join_pig(id: int, session: SessionDep, request: Request):
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
     session.refresh(pig)
-    if not current_user.discord_id: raise HTTPException(409, 'No discord ID found, user must enroll in the discord server first')
-    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': pig.title})
+    if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': pig.title})
     return
 
 
@@ -148,8 +146,7 @@ async def executive_join_pig(id: int, session: SessionDep, body: BodyExecutiveJo
         raise HTTPException(409, detail="unique field already exists")
     session.refresh(user)
     session.refresh(pig)
-    if not user.discord_id: raise HTTPException(409, 'No discord ID found, user must enroll in the discord server first')
-    await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': pig.title})
+    if user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': pig.title})
     return
 
 
