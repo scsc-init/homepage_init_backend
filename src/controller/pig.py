@@ -53,7 +53,7 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
     session.add(pig_member)
     session.commit()
     session.refresh(pig)
-    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': body.title, 'user_id_list': [user_discord_id]})
+    await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': body.title, 'user_id_list': ([user_discord_id] if user_discord_id else [])})
     return pig
 
 
