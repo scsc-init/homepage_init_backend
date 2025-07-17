@@ -20,14 +20,17 @@ generate_hash() {
 }
 
 # Sample user data
+DISCORD_BOT_EMAIL="bot@discord.com"
 EMAIL2="zizonms@snu.ac.kr"
 EMAIL3="tteokgook1@snu.ac.kr"
+DISCORD_BOT_ID=$(generate_hash "$DISCORD_BOT_EMAIL")
 ID2=$(generate_hash "$EMAIL2")
 ID3=$(generate_hash "$EMAIL3")
 
 sqlite3 "$DB_FILE" <<EOF
 INSERT INTO user (id, email, name, phone, student_id, role, status, last_login, created_at, updated_at, major_id)
 VALUES
+  ('$DISCORD_BOT_ID', '$DISCORD_BOT_EMAIL', 'Discord Bot', '01000000000', '202500000', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
   ('$ID2', '$EMAIL2', '강명석', '09900000002', '200000002', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
   ('$ID3', '$EMAIL3', '이한경', '09900000003', '200000003', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
 EOF
