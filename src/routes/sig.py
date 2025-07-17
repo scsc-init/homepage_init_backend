@@ -22,7 +22,7 @@ async def create_sig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDe
 @sig_router.get('/sig/{id}')
 async def get_sig_by_id(id: int, session: SessionDep) -> SIG:
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     return sig
 
 
@@ -41,7 +41,7 @@ async def update_my_sig(id: int, session: SessionDep, request: Request, body: Bo
 async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if sig.owner != current_user.id: raise HTTPException(403, detail="cannot delete sig of other")
     session.delete(sig)
     session.commit()
@@ -57,7 +57,7 @@ async def update_sig(id: int, session: SessionDep, request: Request, body: BodyU
 @sig_router.post('/executive/sig/{id}/delete', status_code=204)
 async def delete_sig(id: int, session: SessionDep) -> None:
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     session.delete(sig)
     session.commit()
     return
@@ -74,9 +74,8 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
     if sig is None: raise HTTPException(404, detail="no sig exists")
     user = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(
         SIGMember.user_id == body.new_owner)).first()
-    if not user: raise HTTPException(
-        status_code=404, detail="new_owner should be a member of the sig")
-    if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner: raise HTTPException(403, "handover can be executed only by executive or owner of the sig")
+    if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
+    if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner: raise HTTPException(403, "타인의 시그/피그를 변경할 수 없습니다")
     sig.owner = body.new_owner
     session.add(sig)
     session.commit()
@@ -92,7 +91,7 @@ async def get_sig_members(id: int, session: SessionDep) -> Sequence[SIGMember]:
 async def join_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if sig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"cannot join to sig when sig status is not in {ctrl_status_available.join_sigpig}")
     sig_member = SIGMember(
         ig_id=id,
@@ -103,7 +102,7 @@ async def join_sig(id: int, session: SessionDep, request: Request):
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(409, detail="unique field already exists")
+        raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(sig)
     if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': sig.title})
     return
@@ -113,10 +112,10 @@ async def join_sig(id: int, session: SessionDep, request: Request):
 async def leave_sig(id: int, session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
-    if sig.owner == current_user.id: raise HTTPException(409, detail="sig owner cannot leave the sig")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if sig.owner == current_user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
     sig_member = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id).where(SIGMember.status == scsc_global_status.status)).first()
-    if not sig_member: raise HTTPException(404, detail="sig member not found")
+    if not sig_member: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
     session.delete(sig_member)
     session.commit()
     session.refresh(sig)
@@ -131,9 +130,9 @@ class BodyExecutiveJoinSIG(BaseModel):
 @sig_router.post('/executive/sig/{id}/member/join', status_code=204)
 async def executive_join_sig(id: int, session: SessionDep, body: BodyExecutiveJoinSIG):
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
-    if not user: raise HTTPException(404, detail="user not found")
+    if not user: raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
     sig_member = SIGMember(
         ig_id=id,
         user_id=body.user_id,
@@ -143,7 +142,7 @@ async def executive_join_sig(id: int, session: SessionDep, body: BodyExecutiveJo
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(409, detail="unique field already exists")
+        raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(user)
     session.refresh(sig)
     if user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': sig.title})
@@ -157,12 +156,12 @@ class BodyExecutiveLeaveSIG(BaseModel):
 @sig_router.post('/executive/sig/{id}/member/leave', status_code=204)
 async def executive_leave_sig(id: int, session: SessionDep, body: BodyExecutiveLeaveSIG):
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
-    if not user: raise HTTPException(404, detail="user not found")
-    if sig.owner == user.id: raise HTTPException(409, detail="sig owner cannot leave the sig")
+    if not user: raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
+    if sig.owner == user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
     sig_members = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == body.user_id)).all()
-    if not sig_members: raise HTTPException(404, detail="sig member not found")
+    if not sig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
     for member in sig_members:
         session.delete(member)
     session.commit()
