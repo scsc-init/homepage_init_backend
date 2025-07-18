@@ -33,6 +33,9 @@ CREATE TABLE "article" (
 	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
 );
 ```
+```sqlite
+CREATE INDEX idx_board_id ON article(board_id);
+```
 - article의 content는 `ARTICLE_DIR(static/article/)`에 md 파일로 저장된다. 
 
 # API 구조
