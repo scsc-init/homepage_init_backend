@@ -14,10 +14,12 @@ comment_router = APIRouter(tags=['comment'])
 comment_general_router = APIRouter(prefix="/comment", )
 comment_executive_router = APIRouter(prefix="/executive/comment", tags=['executive'])
 
+
 class BodyCreateComment(BaseModel):
     content: str
     article_id: int
     parent_id: Optional[int]
+
 
 @comment_general_router.post('/create', status_code=201)
 async def create_comment(session: SessionDep, request: Request, body: BodyCreateComment) -> Comment:
@@ -35,6 +37,7 @@ async def create_comment(session: SessionDep, request: Request, body: BodyCreate
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(comment)
     return comment
+
 
 # This works as "api/comment" + "s/{article_id}" (="api/comments/{article_id}")
 @comment_general_router.get('s/{article_id}')
@@ -61,6 +64,7 @@ async def get_comment_by_id(id: int, session: SessionDep, request: Request) -> C
 
 class BodyUpdateComment(BaseModel):
     content: str
+
 
 @comment_general_router.post('/update/{id}', status_code=204)
 async def update_comment_by_author(id: int, session: SessionDep, request: Request, body: BodyUpdateComment) -> None:
