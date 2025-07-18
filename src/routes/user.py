@@ -81,21 +81,21 @@ async def get_role_names(lang: Optional[str] = "en"):
 
 
 class BodyUpdateMyProfile(BaseModel):
-    name: str
-    phone: str
-    student_id: str
-    major_id: int
+    name: Optional[str]
+    phone: Optional[str]
+    student_id: Optional[str]
+    major_id: Optional[int]
 
 
 @user_router.post('/user/update', status_code=204)
 async def update_my_profile(session: SessionDep, request: Request, body: BodyUpdateMyProfile) -> None:
     current_user = get_user(request)
-    if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
-    if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
-    current_user.name = body.name
-    current_user.phone = body.phone
-    current_user.student_id = body.student_id
-    current_user.major_id = body.major_id
+    if body.phone and not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
+    if body.student_id and not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
+    if body.name: current_user.name = body.name
+    if body.phone: current_user.phone = body.phone
+    if body.student_id: current_user.student_id = body.student_id
+    if body.major_id: current_user.major_id = body.major_id
     session.add(current_user)
     try: session.commit()
     except IntegrityError:
@@ -150,7 +150,7 @@ class BodyUpdateUser(BaseModel):
     role: Optional[str] = None
     status: Optional[UserStatus] = None
     discord_id: Optional[int] = None
-    discord_name: Optional[str]= None
+    discord_name: Optional[str] = None
 
 
 @user_router.post('/executive/user/{id}', status_code=204)
@@ -159,7 +159,7 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
     user = session.get(User, id)
     if user is None: raise HTTPException(404, detail="no user exists")
 
-    if (current_user.role <= user.role) and not (current_user.role==user.role==1000): raise HTTPException(403, detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}")
+    if (current_user.role <= user.role) and not (current_user.role == user.role == 1000): raise HTTPException(403, detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}")
     if body.role:
         level = get_user_role_level(body.role)
         if current_user.role < level: raise HTTPException(403, detail="Cannot assign role higher than yours")
