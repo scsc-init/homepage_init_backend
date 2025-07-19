@@ -260,7 +260,7 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `GET`
 * **URL**: `/api/role_names`
-* **Description**: 각 role level의 명칭을 반환한다.
+* **Description**: 각 role level의 명칭을 반환한다. 만약 role name을 변경하더라도, 프론트엔드 로직과의 통일성을 위해 관리자는 500 이상, 비관리자는 500 미만의 role level을 가지고 있어야 한다.
 * **Query Parameters**: optional (defaults to English)
     * `lang`: `str`
 * **Example Request**:
