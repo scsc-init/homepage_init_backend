@@ -2,39 +2,56 @@
 
 set -e
 
-# Check if DB file argument is provided
-if [ -z "$1" ]; then
-  echo "Usage: $0 <database_file>"
+# Check arguments
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 <database_file> <csv_file>"
+  echo "CSV should have a header: email,name"
   exit 1
 fi
 
 DB_FILE="$1"
+CSV_FILE="$2"
 
-# Check if the database file exists
 if [ ! -f "$DB_FILE" ]; then
   echo "Error: Database file '$DB_FILE' does not exist."
   exit 1
 fi
 
-# Helper function to generate SHA-256 hash of an email
+if [ ! -f "$CSV_FILE" ]; then
+  echo "Error: CSV file '$CSV_FILE' does not exist."
+  exit 1
+fi
+
 generate_hash() {
   echo -n "$1" | sha256sum | awk '{print $1}'
 }
 
-# Sample user data
-DISCORD_BOT_EMAIL="bot@discord.com"
-EMAIL2="zizonms@snu.ac.kr"
-EMAIL3="tteokgook1@snu.ac.kr"
-DISCORD_BOT_ID=$(generate_hash "$DISCORD_BOT_EMAIL")
-ID2=$(generate_hash "$EMAIL2")
-ID3=$(generate_hash "$EMAIL3")
+# Initialize counters
+phone_number_base=9900000001
+student_id_base=200000001
+
+SQL_VALUES=""
+
+# Skip header using tail
+while IFS=',' read -r email name; do
+  id=$(generate_hash "$email")
+  phone="0${phone_number_base}"
+  student_id="${student_id_base}"
+
+  SQL_VALUES+="  ('$id', '$email', '$name', '$phone', '$student_id', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),\n"
+
+  ((phone_number_base++))
+  ((student_id_base++))
+done < <(tail -n +2 "$CSV_FILE")
+
+# Remove trailing comma
+SQL_VALUES=$(echo -e "$SQL_VALUES")
+SQL_VALUES="${SQL_VALUES%,*}"
 
 sqlite3 "$DB_FILE" <<EOF
 INSERT INTO user (id, email, name, phone, student_id, role, status, last_login, created_at, updated_at, major_id)
 VALUES
-  ('$DISCORD_BOT_ID', '$DISCORD_BOT_EMAIL', 'Discord Bot', '01000000000', '202500000', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
-  ('$ID2', '$EMAIL2', '강명석', '09900000002', '200000002', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),
-  ('$ID3', '$EMAIL3', '이한경', '09900000003', '200000003', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1);
+$SQL_VALUES;
 EOF
 
-echo "President users inserted successfully into '$DB_FILE'."
+echo "President users from '$CSV_FILE' inserted into '$DB_FILE'."
