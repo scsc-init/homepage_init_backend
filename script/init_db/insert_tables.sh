@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Check if a database file name is provided
 if [ -z "$1" ]; then
     echo "Usage: $0 <database_file_name>"
@@ -8,10 +10,10 @@ fi
 
 DB_FILE="$1"
 
-# Check if the database file already exists
-if [ -f "$DB_FILE" ]; then
-    echo "Error: Database file '$DB_FILE' already exists. Aborting."
-    exit 1
+# Check if the database file exists
+if [ ! -f "$DB_FILE" ]; then
+  echo "Error: Database file '$DB_FILE' does not exist."
+  exit 1
 fi
 
 # Execute SQL commands using a here-document

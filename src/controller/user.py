@@ -2,12 +2,10 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from pydantic import BaseModel
-from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
 
 from src.db import SessionDep
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus, UserRole
+from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
 from src.util import (get_user_role_level, is_valid_phone, is_valid_student_id,
                       sha256_hash, change_discord_role)
 
