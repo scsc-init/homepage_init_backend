@@ -148,9 +148,9 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `POST`
 * **URL**: `/api/user/enroll`
-* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
+* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
 * **Status Codes**:
-  * `204 No Content`: 사용자가 성공적으로 `active` 상태로 등록되었습니다.
+  * `204 No Content`: 사용자가 성공적으로 `standby_req_tbl` 대기열에 등록되었습니다.
   * `400 Bad Request`: 현재 로그인된 사용자의 상태가 `pending`이 아닌 경우
   * `401 Unauthorized`: 로그인하지 않았거나 유효한 인증 정보가 없습니다.
   * `404 Not Found`: (이 경우는 내부적으로 발생할 가능성이 매우 낮지만, 만약 `current_user.id`에 해당하는 사용자를 데이터베이스에서 찾을 수 없을 때 반환될 수 있습니다.)
