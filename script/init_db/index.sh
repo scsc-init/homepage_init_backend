@@ -23,11 +23,24 @@ echo "Initializing database at $DB_FILE..."
 
 touch "$DB_FILE"
 
+# Define a function to run when the script exits
+cleanup() {
+  exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    rm "$DB_FILE"
+    echo "Initializing DB Script terminated with error code $exit_code"
+    # Do some error handling here
+  fi
+}
+
+# Trap EXIT signal to call cleanup function on exit (error or success)
+trap cleanup EXIT
+
 "$SCRIPT_DIR/insert_tables.sh" "$DB_FILE"
 "$SCRIPT_DIR/insert_scsc_global_status.sh" "$DB_FILE"
 "$SCRIPT_DIR/insert_user_roles.sh" "$DB_FILE"
 "$SCRIPT_DIR/insert_majors.sh" "$DB_FILE" "$SCRIPT_DIR/majors.csv"
 "$SCRIPT_DIR/insert_boards.sh" "$DB_FILE"
-"$SCRIPT_DIR/insert_president_users.sh" "$DB_FILE"
+"$SCRIPT_DIR/insert_president_users.sh" "$DB_FILE" "$SCRIPT_DIR/presidents.csv"
 
 echo "Database initialization and inserts completed successfully."

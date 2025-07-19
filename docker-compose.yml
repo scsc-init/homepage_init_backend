@@ -10,6 +10,8 @@ services:
     entrypoint: bash
     command: >
       -c '
+      set -e
+      
       echo "Checking DB at /app/${SQLITE_FILENAME}";
 
       if [ ! -f "/app/${SQLITE_FILENAME}" ]; then
