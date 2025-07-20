@@ -10,21 +10,15 @@ services:
     entrypoint: bash
     command: >
       -c '
+      set -e
+      
       echo "Checking DB at /app/${SQLITE_FILENAME}";
 
       if [ ! -f "/app/${SQLITE_FILENAME}" ]; then
         echo "Database was not found. Initializing...";
         mkdir -p /app/db
-        chmod +x ./script/*.sh &&
-        ./script/init_db.sh "/app/${SQLITE_FILENAME}" &&
-        ./script/insert_scsc_global_status.sh "/app/${SQLITE_FILENAME}" &&
-        ./script/insert_user_roles.sh "/app/${SQLITE_FILENAME}" &&
-        ./script/insert_majors.sh "/app/${SQLITE_FILENAME}" ./docs/majors.csv &&
-        ./script/insert_boards.sh "/app/${SQLITE_FILENAME}" &&
-        ./script/insert_sample_users.sh "/app/${SQLITE_FILENAME}" &&
-        ./script/insert_president_users.sh "/app/${SQLITE_FILENAME}" &&
-        ./script/insert_sample_articles.sh "/app/${SQLITE_FILENAME}" &&
-        ./script/insert_sample_comments.sh "/app/${SQLITE_FILENAME}";
+        chmod +x ./script/*.sh && chmod +x ./script/**/*.sh &&
+        ./script/init_db/index.sh "/app/${SQLITE_FILENAME}";
       else
         echo "Database already exists. Skipping initialization.";
       fi;

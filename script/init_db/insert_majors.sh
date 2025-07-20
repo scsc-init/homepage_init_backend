@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Check for both database file and CSV file arguments
 if [ "$#" -ne 2 ]; then
     echo "Usage: $0 <database_file_path> <csv_file_path>"

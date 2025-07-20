@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Check if DB file argument is provided
 if [ -z "$1" ]; then
   echo "Usage: $0 <database_file>"
