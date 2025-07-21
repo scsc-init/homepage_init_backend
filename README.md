@@ -2,7 +2,12 @@
 
 2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
 
-> 최종개정일: 2025-07-03  
+> 최종개정일: 2025-07-21
+
+## 브랜치 설명
+
+- main: 배포된 코드를 저장하며 버전 별로 태그가 붙어 있습니다.
+- develop(default): 개발 중인 코드를 저장합니다.
 
 ## .env 파일 형식
 
@@ -58,11 +63,6 @@ docker-compose up --build
 ```
 vscode의 `Dev Containers` extensions에서 `open folder in container`을 통해 위에서 실행한 컨테이너로 연결합니다.
 
-### Production 중
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-```
 
 ## 실행 방법(without docker)
 
@@ -75,13 +75,12 @@ conda activate scsc_init_backend
 
 db 파일을 생성합니다.
 ```bash
-./script/init_db.sh YOUR_DB_FILENAME.db
+./script/init_db/index.sh ./db/YOUR_DB_FILENAME.db
 ```
 
 (선택) 예시 데이터를 db에 추가합니다. 
 ```bash
-./script/insert_majors.sh ./YOUR_DB_FILENAME.db ./docs/majors.csv
-./script/insert_sample_users.sh ./YOUR_DB_FILENAME.db
+./script/insert_sample_data/index.sh ./db/YOUR_DB_FILENAME.db
 ```
 
 (선택) 예시 데이터가 잘 추가되었는지 확인합니다. 

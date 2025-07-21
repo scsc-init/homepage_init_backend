@@ -33,27 +33,10 @@ CREATE TABLE "article" (
 	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
 );
 ```
-- article의 content는 `ARTICLE_DIR(static/article/)`에 md 파일로 저장된다. 
-
-
-## 댓글 DB
-```sql
-CREATE TABLE "comment" (
-	"id"	INTEGER,
-	"content"	TEXT NOT NULL,
-	"author_id"	TEXT NOT NULL,
-	"board_id"	INTEGER NOT NULL,
-	"post_id"	INTEGER NOT NULL,
-	"parent_id"	INTEGER NOT NULL,
-	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("author_id") REFERENCES "user"("id"),
-	FOREIGN KEY("board_id") REFERENCES "board"("id"),
-	FOREIGN KEY("post_id") REFERENCES "article"("id"),
-	FOREIGN KEY("parent_id") REFERENCES "comment"("id")
-);
+```sqlite
+CREATE INDEX idx_board_id ON article(board_id);
 ```
+- article의 content는 `ARTICLE_DIR(static/article/)`에 md 파일로 저장된다. 
 
 # API 구조
 
@@ -227,9 +210,10 @@ CREATE TABLE "comment" (
   - `403 Forbidden` (권한 없음)
   - `404 Not Found` (게시판이 존재하지 않음)
   - `409 Conflict` (중복 데이터 삽입)
+  
 ---
 
-## Get Article List (게시글 목록 조희)
+## Get Articles List (게시글 목록 조희)
 
 - **Method**: `GET`
 - **URL**: `/api/articles/:board_id`

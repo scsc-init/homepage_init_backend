@@ -13,9 +13,11 @@ from src.model import Article, ArticleResponse, Board
 from src.util import get_user, send_discord_bot_request_no_reply
 
 article_router = APIRouter(tags=['article'])
+article_general_router = APIRouter(prefix="/article")
+article_executive_router = APIRouter(prefix="/executive/article", tags=['executive'])
 
 
-@article_router.post('/article/create', status_code=201)
+@article_general_router.post('/create', status_code=201)
 async def create_article(session: SessionDep, request: Request, body: BodyCreateArticle) -> ArticleResponse:
     current_user = get_user(request)
     ret = await create_article_ctrl(session, body, current_user.id, current_user.role)
@@ -24,10 +26,13 @@ async def create_article(session: SessionDep, request: Request, body: BodyCreate
     return ret
 
 
-@article_router.get('/articles/{board_id}')
-async def get_article_list_by_board(board_id: int, session: SessionDep) -> list[ArticleResponse]:
+# This works as "api/article" + "s/{board_id}" (="api/articles/{board_id}")
+@article_general_router.get('s/{board_id}')
+async def get_article_list_by_board(board_id: int, session: SessionDep, request: Request) -> list[ArticleResponse]:
+    user = get_user(request)
     board = session.get(Board, board_id)
     if not board: raise HTTPException(404, detail="Board not found")
+    if user.role < board.reading_permission_level: raise HTTPException(403, detail="You are not allowed to read this board")
     articles = session.exec(select(Article).where(Article.board_id == board_id)).all()
     result: list[ArticleResponse] = []
     for article in articles:
@@ -37,10 +42,13 @@ async def get_article_list_by_board(board_id: int, session: SessionDep) -> list[
     return result
 
 
-@article_router.get('/article/{id}')
-async def get_article_by_id(id: int, session: SessionDep) -> ArticleResponse:
+@article_general_router.get('/{id}')
+async def get_article_by_id(id: int, session: SessionDep, request: Request) -> ArticleResponse:
+    user = get_user(request)
     article = session.get(Article, id)
     if not article: raise HTTPException(404, detail="Article not found")
+    board = session.get(Board, article.board_id)
+    if user.role < board.reading_permission_level: raise HTTPException(403, detail="You are not allowed to read this article")
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
         content = fp.read()
         return ArticleResponse(**article.model_dump(), content=content)
@@ -52,7 +60,7 @@ class BodyUpdateArticle(BaseModel):
     board_id: int
 
 
-@article_router.post('/article/update/{id}', status_code=204)
+@article_general_router.post('/update/{id}', status_code=204)
 async def update_article_by_author(id: int, session: SessionDep, request: Request, body: BodyUpdateArticle) -> None:
     current_user = get_user(request)
     article = session.get(Article, id)
@@ -72,7 +80,7 @@ async def update_article_by_author(id: int, session: SessionDep, request: Reques
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
-@article_router.post('/executive/article/update/{id}', status_code=204)
+@article_executive_router.post('/update/{id}', status_code=204)
 async def update_article_by_executive(id: int, session: SessionDep, body: BodyUpdateArticle) -> None:
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
@@ -89,7 +97,7 @@ async def update_article_by_executive(id: int, session: SessionDep, body: BodyUp
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
-@article_router.post('/article/delete/{id}', status_code=204)
+@article_general_router.post('/delete/{id}', status_code=204)
 async def delete_article_by_author(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     article = session.get(Article, id)
@@ -104,14 +112,16 @@ async def delete_article_by_author(id: int, session: SessionDep, request: Reques
     session.commit()
 
 
-@article_router.post('/executive/article/delete/{id}', status_code=204)
+@article_executive_router.post('/delete/{id}', status_code=204)
 async def delete_article_by_executive(id: int, session: SessionDep) -> None:
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
-    # TODO: Which permission is needed
     session.delete(article)
     try:
         remove(path.join(get_settings().article_dir, f"{article.id}.md"))
     except:
         pass
     session.commit()
+
+article_router.include_router(article_general_router)
+article_router.include_router(article_executive_router)
