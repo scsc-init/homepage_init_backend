@@ -8,6 +8,8 @@ static/image/photo/
 static/article/
 download/
 
+presidents.csv
+
 # private files
 ignoredir/
 
