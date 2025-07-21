@@ -51,6 +51,14 @@ NOTICE_CHANNEL_ID=0
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 
+## 기타 설정 파일
+
+### `script/init_db/president.csv`
+
+- DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
+- `script/init_db/president.example.csv`의 형식을 참고하여 작성합니다
+- 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
+
 ## 실행 방법(with docker)
 
 linux, docker가 요구됩니다. docker compose>=2.25.0가 요구됩니다.  
