@@ -107,7 +107,7 @@ async def update_my_profile(session: SessionDep, request: Request, body: BodyUpd
 @user_router.post('/user/delete', status_code=204)
 async def delete_my_profile(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
-    if current_user.role >= get_user_role_level('executive'): raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
+    if current_user.role >= get_user_role_level('executive'): raise HTTPException(403, detail="임원진 이상의 권한을 가진 사람은 휴회원으로 전환할 수 없습니다.")
     current_user.role = get_user_role_level('dormant')
     session.add(current_user)
     session.commit()

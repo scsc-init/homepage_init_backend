@@ -88,6 +88,9 @@ async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCSt
     if new_status == SCSCStatus.inactive:
         for standby in session.exec(select(StandbyReqTbl)):
             session.delete(standby)
+        for user in session.exec(select(User).where(User.status == UserStatus.active, User.role == get_user_role_level("newcomer"))).all():
+            user.status = UserStatus.pending
+            session.add(user)
         for user in session.exec(select(User).where(User.status == UserStatus.active, User.role == get_user_role_level("member"))).all():
             user.status = UserStatus.pending
             session.add(user)
