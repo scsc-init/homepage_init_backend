@@ -108,11 +108,9 @@ async def update_my_profile(session: SessionDep, request: Request, body: BodyUpd
 async def delete_my_profile(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     if current_user.role >= get_user_role_level('executive'): raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
-    session.delete(current_user)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="cannot delete user because of foreign key restriction")
+    current_user.role = get_user_role_level('dormant')
+    session.add(current_user)
+    session.commit()
     session.refresh(current_user)
     if current_user.discord_id: await change_discord_role(session, current_user.discord_id, 'dormant')
     return
