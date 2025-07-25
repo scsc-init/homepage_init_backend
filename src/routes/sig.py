@@ -7,8 +7,9 @@ from sqlmodel import select
 
 from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, ctrl_status_available
 from src.db import SessionDep
-from src.model import SIG, SIGMember, User
+from src.model import SIG, SIGMember, User, SCSCStatus, SCSCGlobalStatus
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
+from src.controller.scsc import _map_semester_name
 
 sig_router = APIRouter(tags=['sig'])
 
@@ -44,8 +45,12 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
     if sig.owner != current_user.id: raise HTTPException(403, detail="cannot delete sig of other")
-    session.delete(sig)
+    sig.status = SCSCStatus.inactive
     session.commit()
+    year = sig.year
+    semester = sig.semester
+    await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
+                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
     return
 
 
@@ -59,8 +64,12 @@ async def update_sig(id: int, session: SessionDep, request: Request, body: BodyU
 async def delete_sig(id: int, session: SessionDep) -> None:
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="sig not found")
-    session.delete(sig)
+    sig.status = SCSCStatus.inactive
     session.commit()
+    year = sig.year
+    semester = sig.semester
+    await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
+                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
     return
 
 

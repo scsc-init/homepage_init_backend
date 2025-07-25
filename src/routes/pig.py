@@ -6,8 +6,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, ctrl_status_available
+from src.controller.scsc import _map_semester_name
 from src.db import SessionDep
-from src.model import PIG, PIGMember, User
+from src.model import PIG, PIGMember, User, SCSCStatus
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
 
 pig_router = APIRouter(tags=['pig'])
@@ -44,8 +45,12 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
     if pig.owner != current_user.id: raise HTTPException(403, detail="cannot delete pig of other")
-    session.delete(pig)
+    pig.status = SCSCStatus.inactive
     session.commit()
+    year = pig.year
+    semester = pig.semester
+    await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
+                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
     return
 
 
@@ -59,8 +64,12 @@ async def update_pig(id: int, session: SessionDep, request: Request, body: BodyU
 async def delete_pig(id: int, session: SessionDep) -> None:
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="pig not found")
-    session.delete(pig)
+    pig.status = SCSCStatus.inactive
     session.commit()
+    year = pig.year
+    semester = pig.semester
+    await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
+                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
     return
 
 
