@@ -38,7 +38,7 @@ while IFS=',' read -r email name; do
   phone="0${phone_number_base}"
   student_id="${student_id_base}"
 
-  SQL_VALUES+="  ('$id', '$email', '$name', '$phone', '$student_id', 1000, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),\n"
+  SQL_VALUES+="  ('$id', '$email', '$name', '$phone', '$student_id', 1000, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1),\n"
 
   ((phone_number_base++))
   ((student_id_base++))
