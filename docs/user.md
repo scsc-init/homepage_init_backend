@@ -1,5 +1,5 @@
 # 회원 관련 DB, API 명세서
-**최신개정일:** 2025-07-01
+**최신개정일:** 2025-07-19
 
 # DB 구조
 
@@ -126,7 +126,7 @@ CREATE TABLE standby_req_tbl (
   "name": "홍길동",
   "phone": "01012345678",
   "student_id": "202312345",
-  "role": "user",
+  "role": 200,
   "status": "pending",
   "discord_id": null,
   "discord_name": null,
@@ -148,9 +148,9 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `POST`
 * **URL**: `/api/user/enroll`
-* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
+* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
 * **Status Codes**:
-  * `204 No Content`: 사용자가 성공적으로 `active` 상태로 등록되었습니다.
+  * `204 No Content`: 사용자가 성공적으로 `standby_req_tbl` 대기열에 등록되었습니다.
   * `400 Bad Request`: 현재 로그인된 사용자의 상태가 `pending`이 아닌 경우
   * `401 Unauthorized`: 로그인하지 않았거나 유효한 인증 정보가 없습니다.
   * `404 Not Found`: (이 경우는 내부적으로 발생할 가능성이 매우 낮지만, 만약 `current_user.id`에 해당하는 사용자를 데이터베이스에서 찾을 수 없을 때 반환될 수 있습니다.)
@@ -170,7 +170,7 @@ CREATE TABLE standby_req_tbl (
   "name": "홍길동",
   "phone": "01012345678",
   "student_id": "202312345",
-  "role": "user",
+  "role": 200,
   "status": "active",
   "discord_id": null,
   "discord_name": null,
@@ -237,7 +237,7 @@ CREATE TABLE standby_req_tbl (
     "name": "홍길동",
     "phone": "01012345678",
     "student_id": "202512345",
-    "role": "executive",
+    "role": 500,
     "status": "active",
     "discord_id": null,
     "discord_name": null,
@@ -260,7 +260,7 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `GET`
 * **URL**: `/api/role_names`
-* **Description**: 각 role level의 명칭을 반환한다.
+* **Description**: 각 role level의 명칭을 반환한다. **만약 role name을 변경하더라도, 프론트엔드 로직과의 통일성을 위해 관리자는 500 이상, 비관리자는 500 미만의 role level을 가지고 있어야 한다.**
 * **Query Parameters**: optional (defaults to English)
     * `lang`: `str`
 * **Example Request**:

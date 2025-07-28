@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Check if a database file name is provided
 if [ -z "$1" ]; then
     echo "Usage: $0 <database_file_name>"
@@ -8,10 +10,10 @@ fi
 
 DB_FILE="$1"
 
-# Check if the database file already exists
-if [ -f "$DB_FILE" ]; then
-    echo "Error: Database file '$DB_FILE' already exists. Aborting."
-    exit 1
+# Check if the database file exists
+if [ ! -f "$DB_FILE" ]; then
+  echo "Error: Database file '$DB_FILE' does not exist."
+  exit 1
 fi
 
 # Execute SQL commands using a here-document
@@ -285,6 +287,11 @@ CREATE TABLE "comment" (
 	FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
 	FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL
 );
+
+-- Create index for Article and Comment
+CREATE INDEX idx_board_id ON article(board_id);
+CREATE INDEX idx_article_id ON comment(article_id);
+CREATE INDEX idx_parent_id ON comment(parent_id);
 
 -- Create standby request table
 CREATE TABLE standby_req_tbl (

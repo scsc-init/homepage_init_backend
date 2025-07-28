@@ -81,21 +81,21 @@ async def get_role_names(lang: Optional[str] = "en"):
 
 
 class BodyUpdateMyProfile(BaseModel):
-    name: str
-    phone: str
-    student_id: str
-    major_id: int
+    name: Optional[str]
+    phone: Optional[str]
+    student_id: Optional[str]
+    major_id: Optional[int]
 
 
 @user_router.post('/user/update', status_code=204)
 async def update_my_profile(session: SessionDep, request: Request, body: BodyUpdateMyProfile) -> None:
     current_user = get_user(request)
-    if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
-    if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
-    current_user.name = body.name
-    current_user.phone = body.phone
-    current_user.student_id = body.student_id
-    current_user.major_id = body.major_id
+    if body.phone and not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
+    if body.student_id and not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
+    if body.name: current_user.name = body.name
+    if body.phone: current_user.phone = body.phone
+    if body.student_id: current_user.student_id = body.student_id
+    if body.major_id: current_user.major_id = body.major_id
     session.add(current_user)
     try: session.commit()
     except IntegrityError:
@@ -107,12 +107,10 @@ async def update_my_profile(session: SessionDep, request: Request, body: BodyUpd
 @user_router.post('/user/delete', status_code=204)
 async def delete_my_profile(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
-    if current_user.role >= get_user_role_level('executive'): raise HTTPException(403, detail="user whose role is executive or above cannot delete their account")
-    session.delete(current_user)
-    try: session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="cannot delete user because of foreign key restriction")
+    if current_user.role >= get_user_role_level('executive'): raise HTTPException(403, detail="임원진 이상의 권한을 가진 사람은 휴회원으로 전환할 수 없습니다.")
+    current_user.role = get_user_role_level('dormant')
+    session.add(current_user)
+    session.commit()
     session.refresh(current_user)
     if current_user.discord_id: await change_discord_role(session, current_user.discord_id, 'dormant')
     return
@@ -150,7 +148,7 @@ class BodyUpdateUser(BaseModel):
     role: Optional[str] = None
     status: Optional[UserStatus] = None
     discord_id: Optional[int] = None
-    discord_name: Optional[str]= None
+    discord_name: Optional[str] = None
 
 
 @user_router.post('/executive/user/{id}', status_code=204)
@@ -159,7 +157,7 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
     user = session.get(User, id)
     if user is None: raise HTTPException(404, detail="no user exists")
 
-    if (current_user.role <= user.role) and not (current_user.role==user.role==1000): raise HTTPException(403, detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}")
+    if (current_user.role <= user.role) and not (current_user.role == user.role == 1000): raise HTTPException(403, detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}")
     if body.role:
         level = get_user_role_level(body.role)
         if current_user.role < level: raise HTTPException(403, detail="Cannot assign role higher than yours")

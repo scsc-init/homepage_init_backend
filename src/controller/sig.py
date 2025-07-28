@@ -18,8 +18,8 @@ class BodyCreateSIG(BaseModel):
     content: str
 
 
-async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, user_discord_id: int, scsc_global_status: SCSCGlobalStatus) -> SIG:
-    if scsc_global_status.status not in ctrl_status_available.create_sigpig: raise HTTPException(400, f"cannot create sig when sig global status is not in {ctrl_status_available.create_sigpig}")
+async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> SIG:
+    if scsc_global_status.status not in ctrl_status_available.create_sigpig: raise HTTPException(400, f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다")
 
     sig_article = await create_article_ctrl(
         session,
@@ -41,7 +41,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(409, detail="unique field already exists")
+        raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(sig)
 
     if sig.id is None: raise HTTPException(503, detail="sig primary key does not exist")
@@ -53,7 +53,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
     session.add(sig_member)
     session.commit()
     session.refresh(sig)
-    await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': body.title, 'user_id_list': [user_discord_id]})
+    await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': body.title, 'user_id_list': ([user_discord_id] if user_discord_id else [])})
     return sig
 
 
@@ -66,8 +66,8 @@ class BodyUpdateSIG(BaseModel):
 
 async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="sig not found")
-    if not is_executive and sig.owner != user_id: raise HTTPException(status_code=403, detail="cannot update sig of other")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not is_executive and sig.owner != user_id: raise HTTPException(status_code=403, detail="타인의 시그/피그를 변경할 수 없습니다")
 
     if body.title: sig.title = body.title
     if body.description: sig.description = body.description
@@ -80,12 +80,12 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
         )
         sig.content_id = sig_article.id
     if body.status:
-        if not is_executive: raise HTTPException(403, detail="Only executive and above can update status")
+        if not is_executive: raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
         sig.status = body.status
 
     session.add(sig)
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(409, detail="unique field already exists")
+        raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     return

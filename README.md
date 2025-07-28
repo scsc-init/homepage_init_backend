@@ -2,7 +2,12 @@
 
 2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
 
-> 최종개정일: 2025-07-03  
+> 최종개정일: 2025-07-21
+
+## 브랜치 설명
+
+- main: 배포된 코드를 저장하며 버전 별로 태그가 붙어 있습니다.
+- develop(default): 개발 중인 코드를 저장합니다.
 
 ## .env 파일 형식
 
@@ -46,6 +51,14 @@ NOTICE_CHANNEL_ID=0
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 
+## 기타 설정 파일
+
+### `script/init_db/president.csv`
+
+- DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
+- `script/init_db/president.example.csv`의 형식을 참고하여 작성합니다
+- 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
+
 ## 실행 방법(with docker)
 
 linux, docker가 요구됩니다. docker compose>=2.25.0가 요구됩니다.  
@@ -58,11 +71,6 @@ docker-compose up --build
 ```
 vscode의 `Dev Containers` extensions에서 `open folder in container`을 통해 위에서 실행한 컨테이너로 연결합니다.
 
-### Production 중
-
-```bash
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-```
 
 ## 실행 방법(without docker)
 
@@ -75,13 +83,12 @@ conda activate scsc_init_backend
 
 db 파일을 생성합니다.
 ```bash
-./script/init_db.sh YOUR_DB_FILENAME.db
+./script/init_db/index.sh ./db/YOUR_DB_FILENAME.db
 ```
 
 (선택) 예시 데이터를 db에 추가합니다. 
 ```bash
-./script/insert_majors.sh ./YOUR_DB_FILENAME.db ./docs/majors.csv
-./script/insert_sample_users.sh ./YOUR_DB_FILENAME.db
+./script/insert_sample_data/index.sh ./db/YOUR_DB_FILENAME.db
 ```
 
 (선택) 예시 데이터가 잘 추가되었는지 확인합니다. 
