@@ -5,8 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, ctrl_status_available
-from src.controller.scsc import _map_semester_name
+from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, ctrl_status_available, map_semester_name
 from src.db import SessionDep
 from src.model import PIG, PIGMember, User, SCSCStatus
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
@@ -49,7 +48,7 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
     year = pig.year
     semester = pig.semester
     await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
-                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
+                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     return
 
 
@@ -68,7 +67,7 @@ async def delete_pig(id: int, session: SessionDep) -> None:
     year = pig.year
     semester = pig.semester
     await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
-                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
+                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     return
 
 

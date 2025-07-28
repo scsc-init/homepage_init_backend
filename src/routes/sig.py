@@ -5,11 +5,11 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, ctrl_status_available
+from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, ctrl_status_available, map_semester_name
 from src.db import SessionDep
-from src.model import SIG, SIGMember, User, SCSCStatus, SCSCGlobalStatus
+from src.model import SIG, SIGMember, User, SCSCStatus
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
-from src.controller.scsc import _map_semester_name
+
 
 sig_router = APIRouter(tags=['sig'])
 
@@ -49,7 +49,7 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     year = sig.year
     semester = sig.semester
     await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
-                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
+                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     return
 
 
@@ -68,7 +68,7 @@ async def delete_sig(id: int, session: SessionDep) -> None:
     year = sig.year
     semester = sig.semester
     await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
-                                                                    "previous_semester": f"{year}-{_map_semester_name.get(semester)}"})
+                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     return
 
 
