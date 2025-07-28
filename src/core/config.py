@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     enrollment_fee: int
     cors_all_accept: bool
     rabbitmq_host: str
+    bot_host: str
     reply_queue: str
     discord_receive_queue: str
     notice_channel_id: int

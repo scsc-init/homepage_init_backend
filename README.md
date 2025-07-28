@@ -47,6 +47,7 @@ NOTICE_CHANNEL_ID=0
 | `ENROLLMENT_FEE`         | 동아리 가입비. |
 | `CORS_ALL_ACCEPT`        | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
 | `RABBITMQ_HOST`          | RabbitMQ가 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
+| `BOT_HOST`               | 디스코드 봇이 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
 | `REPLY_QUEUE`            | 봇 서버에서 결과를 반환하는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
