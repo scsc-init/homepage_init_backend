@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from src.db import SessionDep
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
 from src.util import (get_user_role_level, is_valid_phone, is_valid_student_id,
-                      sha256_hash, change_discord_role)
+                      sha256_hash, change_discord_role, DepositDTO)
 
 
 class BodyCreateUser(BaseModel):
@@ -40,7 +40,7 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     return user
 
 
-async def enroll_user_ctrl(session: SessionDep, user_id: str) -> None:
+async def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     user = session.get(User, user_id)
     if not user: raise HTTPException(404, detail="user not found")
     if user.status != UserStatus.pending: raise HTTPException(400, detail="Only user with pending status can enroll")
@@ -54,15 +54,17 @@ async def enroll_user_ctrl(session: SessionDep, user_id: str) -> None:
     )
     session.add(stby_req_tbl)
     session.commit()
-    return
+    session.refresh(stby_req_tbl)
+    return stby_req_tbl
 
 
-async def verify_enroll_user_ctrl(session: SessionDep, user: User, stby_tbl: StandbyReqTbl, deposit_time: datetime) -> None:
+async def verify_enroll_user_ctrl(session: SessionDep, user: User, stby_req: StandbyReqTbl, deposit: DepositDTO) -> None:
     user.status = UserStatus.active
-    stby_tbl.deposit_time = deposit_time
-    stby_tbl.is_checked = True
+    stby_req.deposit_time = deposit.deposit_time
+    stby_req.deposit_name = deposit.deposit_name
+    stby_req.is_checked = True
     session.add(user)
-    session.add(stby_tbl)
+    session.add(stby_req)
     session.commit()
     return
 
