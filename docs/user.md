@@ -1,5 +1,6 @@
 # 회원 관련 DB, API 명세서
-**최신개정일:** 2025-07-19
+
+> 최신개정일: 2025-07-30
 
 # DB 구조
 
@@ -579,13 +580,114 @@ ___
 
 ### Request
 
-**Request File**
+#### Request File
 
 업로드할 파일은 다음 구조를 가져야 합니다. 
 
 1. 5번째 줄은 "거래일시,적요,보낸분/받는분,송금메모,출금액,입금액,잔액,거래점,구분"이어야 합니다. 1~4줄은 무시합니다.
 2. 6번째 줄부터 마지막 직전 줄까지 위 형식에 맞는 입금 기록이 있어야 합니다.
-    - '보낸분/받는분'에는 회원의 이름과 전화번호 끝 2자리를 합친 형식(예 홍길동12)을 권장합니다. 
+    - `거래일시`는 `%Y.%m.%d %H:%M:%S` 형식의 시각(예 2025.06.02 08:33:28)이어야 하고, 한국 표준시(UTC+9)을 사용해야 합니다.
+    - `보낸분/받는분`에는 회원의 이름과 전화번호 끝 2자리를 합친 형식(예 홍길동12)을 권장합니다. 
     - 끝 2자리가 숫자이면 이름과 전화번호로 회원을 검색하고, 그렇지 않으면 이름으로 회원을 검색합니다. 
     - 검색 결과가 여러 건이면 해당 입금 기록은 처리되지 않습니다. 
 3. 마지막 줄은 합계를 나타내는 줄이므로 무시합니다. 
+
+### Response
+
+요청은 다음 과정에 따라 처리됩니다. 
+1. 파일의 확장자가 csv가 아니면 status code 400을 반환합니다.
+2. 파일의 용량을 확인하여 최대 크기를 초과하면 status code 413을 반환합니다.
+3. 파일을 읽고, 이에 실패하면 status code 400을 반환합니다.
+4. 위 과정을 정상적으로 통과한다면, status code 200을 response body와 함께 반환합니다. 
+
+#### Response Body
+
+response body는 각 입금 기록의 처리 결과를 포함하며 자세한 내용은 다음과 같습니다. 
+
+```json
+{
+    "cnt_succeeded_records": 0,
+    "cnt_failed_records": 3,
+    "results": [
+        {
+            "result_code": 412,
+            "result_msg": "해당 입금 기록에 대응하는 사용자의 상태는 UserStatus.standby로 pending 상태가 아닙니다.",
+            "record": {
+                "amount": 300000,
+                "deposit_time": "2025-06-01T23:33:28Z",
+                "deposit_name": "Bob Lee"
+            },
+            "users": [
+                {
+                    "id": "15e4c3b1b3006382a22241ea66d679c107bc9b15cf8e6a25b64f46ac559c50c9",
+                    "email": "exec@example.com",
+                    "name": "Bob Lee",
+                    "major_id": 1
+                }
+            ]
+        },
+        ...
+    ]
+}
+```
+
+- `cnt_succeeded_records`: 처리에 성공한 입금 기록의 개수
+- `cnt_failed_records`: 처리에 실패한 입금 기록의 개수
+- `results`: 입금 기록별 결과 리스트
+  - `result_code`: 결과 코드
+  - `result_msg`: 결과 메시지
+  - `record`: 해당 입금 기록
+    - `amount`: 입금액
+    - `deposit_time`: 입금 시각(UTC)
+    - `deposit_name`: 입금자명
+  - `users`: 해당 처리 결과에 대응하는 사용자 리스트. `/api/user/:id`의 결과와 동일한 정보만 포함한다. 
+
+상황별 결과 코드 등은 다음과 같습니다. 
+
+##### `standby_req_tbl` 테이블 중복 검색
+- `standby_req_tbl` 테이블에서 `is_checked`가 `false`인 것 중 입금자명에 대응하는 것이 2개 이상인 경우
+- `result_code`: 409
+- `result_msg`: "해당 입금 기록에 대응하는 사용자가 입금 대기자 명단에 ?건 존재합니다"
+- `users`: 해당 입금 기록에 대응하는 사용자 리스트
+
+##### `user` 테이블 중복 검색
+- `user` 테이블에 입금자명에 대응하는 것이 2개 이상인 경우
+- `result_code`: 409
+- `result_msg`: "해당 입금 기록에 대응하는 사용자가 사용자 테이블에 ?건 존재합니다"
+- `users`: 해당 입금 기록에 대응하는 사용자들 리스트
+
+##### `user` 테이블 검색 실패
+- `user` 테이블에 입금자명에 대응하는 것이 없는 경우
+- `result_code`: 404
+- `result_msg`: "해당 입금 기록에 대응하는 사용자가 사용자 테이블에 존재하지 않습니다"
+- `users`: `[]`
+
+##### `user` 테이블의 사용자 상태가 pending이 아님
+- `user` 테이블에 입금자명에 대응하는 것이 있지만, `status`가 `pending`이 아닌 경우
+- `result_code`: 412
+- `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 pending 상태가 아닙니다"
+- `users`: 해당 입금 기록에 대응하는 사용자 리스트
+
+##### 입금액 부족
+- 입금액이 기준보다 적은 경우
+- `result_code`: 402
+- `result_msg`: "입금액이 {get_settings().enrollment_fee}원보다 적습니다"
+- `users`: 해당 입금 기록에 대응하는 사용자 리스트
+
+##### 입금액 과다
+- 입금액이 기준보다 많은 경우
+- `result_code`: 413
+- `result_msg`: "입금액이 {get_settings().enrollment_fee}원보다 많습니다"
+- `users`: 해당 입금 기록에 대응하는 사용자 리스트
+
+##### 사용자 상태가 standby가 아님
+- 사용자의 `status`가 `standby`이 아닌 경우
+- `result_code`: 412
+- `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 standby 상태가 아닙니다"
+- `users`: 해당 입금 기록에 대응하는 사용자 리스트
+
+##### 성공
+- 입금 확인 및 status 변경이 정상적으로 처리된 경우
+- `result_code`: 200
+- `result_msg`: "성공"
+- `users`: 해당 입금 기록에 대응하는 사용자 리스트

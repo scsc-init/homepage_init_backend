@@ -319,7 +319,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                 cnt_failed_records += 1
                 results.append(ProcessStandbyListResponse.RecordResult(
                     result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 상태가 아닙니다.",
+                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 상태가 아닙니다",
                     record=deposit,
                     users=matching_users))
                 continue
@@ -330,7 +330,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
             cnt_failed_records += 1
             results.append(ProcessStandbyListResponse.RecordResult(
                 result_code=402,
-                result_msg=f"입금액이 {get_settings().enrollment_fee}보다 적습니다",
+                result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 적습니다",
                 record=deposit,
                 users=matching_users))
             continue
@@ -338,7 +338,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
             cnt_failed_records += 1
             results.append(ProcessStandbyListResponse.RecordResult(
                 result_code=413,
-                result_msg=f"입금액이 {get_settings().enrollment_fee}보다 많습니다",
+                result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 많습니다",
                 record=deposit,
                 users=matching_users))
             continue
@@ -357,7 +357,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
             cnt_failed_records += 1
             results.append(ProcessStandbyListResponse.RecordResult(
                 result_code=412,
-                result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다.",
+                result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다",
                 record=deposit,
                 users=matching_users))
             continue
