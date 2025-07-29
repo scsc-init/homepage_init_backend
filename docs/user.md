@@ -149,7 +149,7 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `POST`
 * **URL**: `/api/user/enroll`
-* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
+* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록하고 상태를 `standby`로 변경합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
 * **Status Codes**:
   * `204 No Content`: 사용자가 성공적으로 `standby_req_tbl` 대기열에 등록되었습니다.
   * `400 Bad Request`: 현재 로그인된 사용자의 상태가 `pending`이 아닌 경우
@@ -642,7 +642,7 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
     - `deposit_name`: 입금자명
   - `users`: 해당 처리 결과에 대응하는 사용자 리스트. `/api/user/:id`의 결과와 동일한 정보만 포함한다. 
 
-상황별 결과 코드 등은 다음과 같습니다. 
+입금 기록은 하나씩 순서대로 처리됩니다. 실행 과정에 따라 나열된 상황별 결과 코드 등은 다음과 같습니다. 
 
 ##### `standby_req_tbl` 테이블 중복 검색
 - `standby_req_tbl` 테이블에서 `is_checked`가 `false`인 것 중 입금자명에 대응하는 것이 2개 이상인 경우
@@ -667,6 +667,10 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - `result_code`: 412
 - `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 pending 상태가 아닙니다"
 - `users`: 해당 입금 기록에 대응하는 사용자 리스트
+
+##### `standby_req_tbl` 데이터 추가 관련
+- 이 단계까지 도달한다면 `user` 테이블에 입금자명에 대응하는 사용자가 `standby_req_tbl` 테이블에 없을 경우 해당 사용자를 enroll(`/api/user/enroll`과 동일한 효과)합니다.
+- 따라서 `standby_req_tbl`에 데이터가 생성되고 사용자의 상태가 `standby`로 변경됩니다. 
 
 ##### 입금액 부족
 - 입금액이 기준보다 적은 경우
