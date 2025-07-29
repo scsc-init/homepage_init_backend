@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import httpx
 
 from src.util import send_discord_bot_request, send_discord_bot_request_no_reply
+from src.core import get_settings
 
 
 bot_router = APIRouter(tags=['bot'])
@@ -23,3 +25,19 @@ class BodySendMessageToID(BaseModel):
 @bot_router.post('/bot/discord/general/send_message_to_id', status_code=201)
 async def send_message_to_id(body: BodySendMessageToID):
     await send_discord_bot_request_no_reply(action_code=1002, body=body.model_dump())
+    
+    
+@bot_router.get('/bot/discord/status', status_code=200)
+async def get_status():
+    async with httpx.AsyncClient() as client:
+        res = await client.get(f"http://{get_settings().bot_host}:8081/status")
+        if res.status_code != 200: raise HTTPException(400, res.text)
+        return res.json()
+    
+    
+@bot_router.post('/executive/bot/discord/login', status_code=204)
+async def login():
+    async with httpx.AsyncClient() as client:
+        res = await client.post(f"http://{get_settings().bot_host}:8081/login")
+        if res.status_code != 204: raise HTTPException(400, res.text)
+        return

@@ -83,8 +83,14 @@ async def handover_pig(id: int, session: SessionDep, request: Request, body: Bod
 
 
 @pig_router.get('/pig/{id}/members')
-async def get_pig_members(id: int, session: SessionDep) -> Sequence[PIGMember]:
-    return session.exec(select(PIGMember).where(PIGMember.ig_id == id)).all()
+async def get_pig_members(id: int, session: SessionDep) -> list:
+    res = []
+    for member in session.exec(select(PIGMember).where(PIGMember.ig_id == id)).all():
+        user = session.get(User, member.user_id)
+        member_dict = member.model_dump()
+        member_dict["user"] = user.model_dump() if user else {}
+        res.append(member_dict)
+    return res
 
 
 @pig_router.post('/pig/{id}/member/join', status_code=204)
