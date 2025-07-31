@@ -2,7 +2,7 @@
 
 2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
 
-> 최종개정일: 2025-07-21
+> 최신개정일: 2025-07-21
 
 ## 브랜치 설명
 
@@ -27,6 +27,7 @@ USER_CHECK=TRUE
 ENROLLMENT_FEE=300000
 CORS_ALL_ACCEPT=FALSE
 RABBITMQ_HOST="rabbitmq"
+BOT_HOST="bot"
 REPLY_QUEUE="main_response_queue"
 DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 NOTICE_CHANNEL_ID=0

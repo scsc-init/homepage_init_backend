@@ -12,7 +12,7 @@ from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, r
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, change_discord_role
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, change_discord_role, DepositDTO
 
 user_router = APIRouter(tags=['user'])
 
@@ -25,7 +25,8 @@ async def create_user(session: SessionDep, body: BodyCreateUser) -> User:
 @user_router.post('/user/enroll', status_code=204)
 async def enroll_user(session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
-    return await enroll_user_ctrl(session, current_user.id)
+    await enroll_user_ctrl(session, current_user.id)
+    return
 
 
 @user_router.get('/user/profile')
@@ -235,54 +236,151 @@ async def get_standby_list(session: SessionDep) -> Sequence[StandbyReqTbl]:
     return session.exec(select(StandbyReqTbl)).all()
 
 
-@user_router.post('/executive/user/standby/process', status_code=204)
-async def process_standby_list(session: SessionDep, file: UploadFile = File(...)):
+class ProcessStandbyListResponse(BaseModel):
+    class RecordResult(BaseModel):
+        result_code: int
+        result_msg: str
+        record: DepositDTO
+        users: list[UserResponse]
+
+    cnt_succeeded_records: int
+    cnt_failed_records: int
+    results: list[RecordResult]
+
+    model_config = {
+        "from_attributes": True  # enables reading from ORM objects
+    }
+
+
+@user_router.post('/executive/user/standby/process', response_model=ProcessStandbyListResponse)
+async def process_standby_list(session: SessionDep, file: UploadFile = File(...)) -> ProcessStandbyListResponse:
     if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
     ext_whitelist = ('csv',)
 
-    if file.filename is None or get_file_extension(file.filename) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
+    if file.filename is None or get_file_extension(file.filename) not in ext_whitelist: raise HTTPException(400, detail=f"{ext_whitelist} 확장자만 업로드할 수 있습니다")
 
     content = await file.read()
-    if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"cannot upload file larger than {get_settings().file_max_size} bytes")
+    if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"{get_settings().file_max_size} 바이트보다 큰 용량의 파일은 업로드할 수 없습니다")
 
     try: deposit_array = await process_standby_user('utf-8', content)
-    except UnicodeDecodeError: deposit_array = await process_standby_user('euc-kr', content)
-    except Exception as e: raise HTTPException(400, detail=f"csv file reading failed with following error: {e}")
+    except UnicodeDecodeError:
+        try: deposit_array = await process_standby_user('euc-kr', content)
+        except UnicodeDecodeError: raise HTTPException(400, detail="파일 읽기 실패: utf-8, euc-kr 인코딩만 읽을 수 있습니다")
+        except Exception as e: raise HTTPException(400, detail=f"파일 읽기 실패: {e}")
+    except Exception as e: raise HTTPException(400, detail=f"파일 읽기 실패: {e}")
 
+    cnt_succeeded_records = 0
+    cnt_failed_records = 0
+    results: list[ProcessStandbyListResponse.RecordResult] = []
     for deposit in deposit_array:
-        query_matching_users = select(StandbyReqTbl)
-        if deposit.deposit_name[-2:].isdigit(): query_matching_users = query_matching_users.where(StandbyReqTbl.deposit_name == deposit.deposit_name)  # search on deposit_name, which is "name+last 2 phone number" form
-        else: query_matching_users = query_matching_users.where(StandbyReqTbl.user_name == deposit.deposit_name)  # search on user_name, which is "name" form
-        matching_users = session.exec(query_matching_users).all()
+        try:
+            query_standbyreq = select(StandbyReqTbl).where(StandbyReqTbl.is_checked == False)
+            if deposit.deposit_name[-2:].isdigit(): query_standbyreq = query_standbyreq.where(StandbyReqTbl.deposit_name == deposit.deposit_name)  # search on deposit_name, which is "name+last 2 phone number" form
+            else: query_standbyreq = query_standbyreq.where(StandbyReqTbl.user_name == deposit.deposit_name)  # search on user_name, which is "name" form
+            matching_standbyreqs = session.exec(query_standbyreq).all()
+            matching_users = [UserResponse.model_validate(session.get(User, u.standby_user_id)) for u in matching_standbyreqs]
 
-        if len(matching_users) > 1: raise HTTPException(400, f"more than one matching user in standby request db for deposit {deposit}")
+            if len(matching_standbyreqs) > 1:  # multiple standby request found
+                cnt_failed_records += 1
+                results.append(ProcessStandbyListResponse.RecordResult(
+                    result_code=409,
+                    result_msg=f"해당 입금 기록에 대응하는 사용자가 입금 대기자 명단에 {len(matching_standbyreqs)}건 존재합니다",
+                    record=deposit,
+                    users=matching_users))
+                continue
 
-        if len(matching_users) == 1:
-            if deposit.amount < get_settings().enrollment_fee: raise HTTPException(400, f"Insufficient funds from {deposit}")
-            if deposit.amount > get_settings().enrollment_fee: raise HTTPException(400, f"Oversufficient funds from {deposit}")
+            if len(matching_standbyreqs) == 0:
+                query_matching_users_error = select(User)
+                if deposit.deposit_name[-2:].isdigit():
+                    query_matching_users_error = query_matching_users_error.where(
+                        User.name == deposit.deposit_name[:-2],
+                        func.substring(User.phone, func.length(User.phone) - 1, 2) == deposit.deposit_name[-2:]
+                    )
+                else:
+                    query_matching_users_error = query_matching_users_error.where(User.name == deposit.deposit_name)
+                matching_users_error = session.exec(query_matching_users_error).all()
+                matching_users = [UserResponse.model_validate(u) for u in matching_users_error]
 
-            stby_user = matching_users[0]
-            if stby_user.is_checked: return
+                if len(matching_users_error) != 1:
+                    cnt_failed_records += 1
+                    if len(matching_users_error) > 1: results.append(ProcessStandbyListResponse.RecordResult(
+                        result_code=409,
+                        result_msg=f"해당 입금 기록에 대응하는 사용자가 사용자 테이블에 {len(matching_users_error)}건 존재합니다",
+                        record=deposit,
+                        users=matching_users))
+                    else: results.append(ProcessStandbyListResponse.RecordResult(
+                        result_code=404,
+                        result_msg="해당 입금 기록에 대응하는 사용자가 사용자 테이블에 존재하지 않습니다",
+                        record=deposit,
+                        users=matching_users))
+                    continue
+
+                user = matching_users_error[0]
+                if user.status != UserStatus.pending:
+                    cnt_failed_records += 1
+                    results.append(ProcessStandbyListResponse.RecordResult(
+                        result_code=412,
+                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 상태가 아닙니다",
+                        record=deposit,
+                        users=matching_users))
+                    continue
+                matching_standbyreqs = [await enroll_user_ctrl(session, user.id)]
+
+            # len(matching_standbyreqs) == 1:
+            if deposit.amount < get_settings().enrollment_fee:
+                cnt_failed_records += 1
+                results.append(ProcessStandbyListResponse.RecordResult(
+                    result_code=402,
+                    result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 적습니다",
+                    record=deposit,
+                    users=matching_users))
+                continue
+            if deposit.amount > get_settings().enrollment_fee:
+                cnt_failed_records += 1
+                results.append(ProcessStandbyListResponse.RecordResult(
+                    result_code=413,
+                    result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 많습니다",
+                    record=deposit,
+                    users=matching_users))
+                continue
+
+            stby_user = matching_standbyreqs[0]
             user = session.get(User, stby_user.standby_user_id)
-            if not user: raise HTTPException(503, detail="user does not exist")
-            await verify_enroll_user_ctrl(session, user, stby_user, deposit.deposit_time)
+            if not user:
+                cnt_failed_records += 1
+                results.append(ProcessStandbyListResponse.RecordResult(
+                    result_code=500,
+                    result_msg="알 수 없는 오류: user not found in user table",
+                    record=deposit,
+                    users=matching_users))
+                continue
+            if user.status != UserStatus.standby:
+                cnt_failed_records += 1
+                results.append(ProcessStandbyListResponse.RecordResult(
+                    result_code=412,
+                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다",
+                    record=deposit,
+                    users=matching_users))
+                continue
+            await verify_enroll_user_ctrl(session, user, stby_user, deposit)
+            cnt_succeeded_records += 1
+            results.append(ProcessStandbyListResponse.RecordResult(
+                result_code=200,
+                result_msg="성공",
+                record=deposit,
+                users=matching_users))
+            continue
+        except Exception as e:
+            cnt_failed_records += 1
+            results.append(ProcessStandbyListResponse.RecordResult(
+                result_code=500,
+                result_msg=f"알 수 없는 오류: {e}",
+                record=deposit,
+                users=matching_users))
+            continue
 
-        elif len(matching_users) == 0:
-            query_matching_users_error = select(User)
-            if deposit.deposit_name[-2:].isdigit():
-                query_matching_users_error = query_matching_users_error.where(
-                    User.name == deposit.deposit_name[:-2],
-                    func.substring(User.phone, func.length(User.phone) - 1, 2) == deposit.deposit_name[-2:]
-                )
-            else:
-                query_matching_users_error = query_matching_users_error.where(User.name == deposit.deposit_name)
-            matching_users_error = session.exec(query_matching_users_error).all()
-
-            if len(matching_users_error) != 1: raise HTTPException(400, detail=f"no matching user in standby request db for deposit {deposit}")
-
-            user = matching_users_error[0]
-            await enroll_user_ctrl(session, user.id)
-            stby_tbl = session.get(StandbyReqTbl, user.id)
-            if not stby_tbl: raise HTTPException(503, detail="stby_tbl does not exist")
-            await verify_enroll_user_ctrl(session, user, stby_tbl, deposit.deposit_time)
-    return
+    return ProcessStandbyListResponse(
+        cnt_succeeded_records=cnt_succeeded_records,
+        cnt_failed_records=cnt_failed_records,
+        results=results
+    )

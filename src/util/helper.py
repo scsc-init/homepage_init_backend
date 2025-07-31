@@ -1,10 +1,8 @@
 import csv
 import io
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, Request
-from sqlmodel import select
-
+from pydantic import field_validator, BaseModel
 from src.model import User
 
 
@@ -24,11 +22,21 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
     return utc_dt_aware
 
 
-@dataclass
-class DepositDTO:
+class DepositDTO(BaseModel):
     amount: int
     deposit_time: datetime  # should be utc
     deposit_name: str
+
+    model_config = {
+        "from_attributes": True  # enables reading from ORM objects
+    }
+
+    @field_validator('deposit_time')
+    @classmethod
+    def must_be_utc(cls, v):
+        if v.tzinfo != timezone.utc:
+            raise ValueError("deposit_time must be in UTC")
+        return v
 
 
 async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO]:
@@ -44,4 +52,3 @@ async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO
         deposit_name=line["보낸분/받는분"]
     ) for line in reader]
     return result
-
