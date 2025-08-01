@@ -2,7 +2,7 @@
 
 2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
 
-> 최종개정일: 2025-07-21
+> 최신개정일: 2025-07-21
 
 ## 브랜치 설명
 
@@ -27,6 +27,7 @@ USER_CHECK=TRUE
 ENROLLMENT_FEE=300000
 CORS_ALL_ACCEPT=FALSE
 RABBITMQ_HOST="rabbitmq"
+BOT_HOST="bot"
 REPLY_QUEUE="main_response_queue"
 DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 NOTICE_CHANNEL_ID=0
@@ -47,6 +48,7 @@ NOTICE_CHANNEL_ID=0
 | `ENROLLMENT_FEE`         | 동아리 가입비. |
 | `CORS_ALL_ACCEPT`        | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
 | `RABBITMQ_HOST`          | RabbitMQ가 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
+| `BOT_HOST`               | 디스코드 봇이 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
 | `REPLY_QUEUE`            | 봇 서버에서 결과를 반환하는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |

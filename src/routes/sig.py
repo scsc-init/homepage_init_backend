@@ -83,8 +83,14 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
 
 
 @sig_router.get('/sig/{id}/members')
-async def get_sig_members(id: int, session: SessionDep) -> Sequence[SIGMember]:
-    return session.exec(select(SIGMember).where(SIGMember.ig_id == id)).all()
+async def get_sig_members(id: int, session: SessionDep) -> list:
+    res = []
+    for member in session.exec(select(SIGMember).where(SIGMember.ig_id == id)).all():
+        user = session.get(User, member.user_id)
+        member_dict = member.model_dump()
+        member_dict["user"] = user.model_dump() if user else {}
+        res.append(member_dict)
+    return res
 
 
 @sig_router.post('/sig/{id}/member/join', status_code=204)
