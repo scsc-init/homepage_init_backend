@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     reply_queue: str
     discord_receive_queue: str
     notice_channel_id: int
+    grant_channel_id: int
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

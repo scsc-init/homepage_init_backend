@@ -117,6 +117,7 @@ INSERT INTO board (id, name, description, writing_permission_level, reading_perm
 INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (3, 'Project Archive', 'archive of various projects held in the club', 300, 0);
 INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (4, 'Album', 'photos of club members and activities', 500, 0);
 INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (5, 'Notice', 'notices from club executive', 500, 100);
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES (6, 'Grant', 'applications for sig/pig grant', 200, 500);
 ```
 
 
