@@ -31,6 +31,7 @@ CREATE TABLE user (
 - id는 email의 hash 사용. hash는 sha256을 사용. 
 - phone은 `01012345678`처럼 대시 없는 숫자 문자열 형식. (`/^010\d{8}$/`)
 - student_id는 `202512345`처럼 대시 없는 숫자 문자열 형식. (`/^(\d{4})\d{5}$/`, group 1 should be valid year)
+- profile_picture에는 파일 위치(ex. `static/image/pfps/asdf.png`) 또는 이미지 URL이 들어가며, 전자의 경우 profile_picture_is_url이 false, 후자의 경우 true이다. 단, default값은 null이며 이 경우 프론트엔드에서 default 이미지로 처리한다.
 
 ### SQL 관련
 ```sql
@@ -118,9 +119,12 @@ CREATE TABLE standby_req_tbl (
   "name": "홍길동",
   "phone": "01012345678",
   "student_id": "202312345",
-  "major_id": 1
+  "major_id": 1,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true
 }
 ```
+- `profile_picture`은 구글 oauth에서 반환된 프로필 사진 URL이 기본으로 전송된다.
 - **Response**:
 ```json
 {
@@ -134,6 +138,8 @@ CREATE TABLE standby_req_tbl (
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true,
   "last_login": "2025-04-01T12:00:00",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00"
@@ -178,6 +184,8 @@ CREATE TABLE standby_req_tbl (
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true,
   "last_login": "2025-05-01T09:00:00",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-30T12:00:00"
@@ -245,6 +253,8 @@ CREATE TABLE standby_req_tbl (
     "discord_id": null,
     "discord_name": null,
     "major_id": 1,
+    "profile_picture": "https://google.oauth.etc",
+    "profile_picture_is_url": true,
     "last_login": "2025-05-01T09:00:00",
     "created_at": "2025-04-01T12:00:00",
     "updated_at": "2025-04-30T12:00:00"
@@ -316,29 +326,44 @@ CREATE TABLE standby_req_tbl (
   "name": "김철수",
   "phone": "01056781234", 
   "student_id": "202312345", 
-  "major_id": 2
+  "major_id": 2,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true
 }
 ```
+- 모든 field는 optional
+- 이 route로는 profile_picture을 url로만 변경할 수 있으며, file로 변경하려면 후술될 별도의 route를 사용해야 한다. 
+
+## Update My Profile Picture With File (내 프로필 사진을 파일로 변경)
+
+- **Method**: `POST`  
+- **URL**: `/api/user/update`  
+- **설명**: 로그인한 사용자의 정보 수정  
+- **Request**:
+  * **Content-Type**: `multipart/form-data`
+  * **Form Fields**:
+
+    | 필드명  | 타입   | 필수 여부 | 설명                    |
+    | ---- | ---- | ----- | --------------------- |
+    | file | File | O   | 업로드할 파일 (png, jpg, jpeg) |
 
 - **Status Codes**:
   - `204 No Content`
   - `401 Unauthorized`
-  - `409 Conflict` (UNIQUE 필드 중복)
   - `422 Unprocessable Content`
 
 ---
 
-## Delete My Profile (회원 탈퇴)
+## Delete My Profile (휴회원으로 변경)
 
 - **Method**: `POST`  
 - **URL**: `/api/user/delete`  
-- **설명**: 로그인한 사용자의 계정을 삭제함  
+- **설명**: 로그인한 사용자의 계정을 휴회원으로 변경함  
 
 - **Status Codes**:
   - `204 No Content`
   - `401 Unauthorized`
-  - `403 Forbidden` (관리자 계정은 자기 삭제 불가 등)
-  - `409 Conflict` : 외래 키 제약으로 인한 삭제 불가
+  - `403 Forbidden` (관리자 계정은 휴회원 처리 불가 등)
 
 ---
 
