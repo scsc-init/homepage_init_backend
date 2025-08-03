@@ -36,6 +36,9 @@ class User(SQLModel, table=True):
 
     discord_id: Optional[int] = Field(default=None, nullable=True, unique=True)
     discord_name: Optional[str] = Field(default=None, nullable=True, unique=True)
+    
+    profile_picture: Optional[str] = Field(default=None, nullable=True)
+    profile_picture_is_url: bool = Field(default=False, nullable=False)
 
     last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

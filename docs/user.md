@@ -16,6 +16,8 @@ CREATE TABLE user (
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
     discord_id INTEGER UNIQUE DEFAULT NULL,
     discord_name TEXT UNIQUE DEFAULT NULL,
+    profile_picture TEXT,
+    profile_picture_is_url BOOLEAN NOT NULL DEFAULT FALSE,
 
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
