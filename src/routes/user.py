@@ -248,7 +248,12 @@ async def process_standby_list_manually(session: SessionDep, request: Request, b
     if user.status == UserStatus.active: raise HTTPException(409, detail="the user is already active")
     user.status = UserStatus.active
     session.add(user)
-    standbyreq = StandbyReqTbl(standby_user_id=user.id, user_name=user.name, deposit_name=f"Manually by {current_user.name}", deposit_time=datetime.now(timezone.utc), is_checked=True)
+    standbyreq = session.exec(select(StandbyReqTbl).where(StandbyReqTbl.standby_user_id == body.id).where(StandbyReqTbl.is_checked == False)).first()
+    if standbyreq:
+        standbyreq.is_checked = True
+        standbyreq.deposit_name = f"Manually by {current_user.name}"
+        standbyreq.deposit_time = datetime.now(timezone.utc)
+    else: standbyreq = StandbyReqTbl(standby_user_id=user.id, user_name=user.name, deposit_name=f"Manually by {current_user.name}", deposit_time=datetime.now(timezone.utc), is_checked=True)
     session.add(standbyreq)
     session.commit()
     return
