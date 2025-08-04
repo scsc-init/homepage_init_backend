@@ -582,6 +582,26 @@ ___
 
 ---
 
+## Manually Process Standby Request
+
+- **Method**: `POST`
+- **URL**: `/api/executive/user/standby/process/manual`
+- **Request Body**:
+```json
+{
+  "id": "b36a83701f1c3191e19722d6f90274bc1b5501fe69ebf33313e440fe4b0fe210"
+}
+```
+
+- **Status Codes**:
+  - `204 No Content`: 성공
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (관리자(executive) 권한 없음)
+  - `404 Not Found` (사용자가 없음)
+  - `409 Conflict` (이미 active인 사용자에 대해 요청함)
+
+---
+
 ## Process Standby Request List with File
 
 - **Method**: `POST`
@@ -595,7 +615,7 @@ ___
     | file | File | O    | 업로드할 파일 (csv(UTF-8 or EUC-KR)) |
 
 - **Status Codes**:
-  - `200 No Content`: 성공
+  - `200 OK`: 성공
   - `400 Bad Request`: 파일 누락 또는 유효하지 않은 파일 또는 기타 인코딩 문제 또는 입금 내역 오류
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
