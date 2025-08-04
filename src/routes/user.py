@@ -236,6 +236,24 @@ async def get_standby_list(session: SessionDep) -> Sequence[StandbyReqTbl]:
     return session.exec(select(StandbyReqTbl)).all()
 
 
+class ProcessStandbyListManuallyBody(BaseModel):
+    id: str
+
+
+@user_router.post('/executive/user/standby/process/manual', status_code=204)
+async def process_standby_list_manually(session: SessionDep, request: Request, body: ProcessStandbyListManuallyBody) -> None:
+    current_user = get_user(request)
+    user = session.get(User, body.id)
+    if not user: raise HTTPException(404, detail="user not found")
+    if user.status == UserStatus.active: raise HTTPException(409, detail="the user is already active")
+    user.status = UserStatus.active
+    session.add(user)
+    standbyreq = StandbyReqTbl(standby_user_id=user.id, user_name=user.name, deposit_name=f"Manually by {current_user.name}", deposit_time=datetime.now(timezone.utc), is_checked=True)
+    session.add(standbyreq)
+    session.commit()
+    return
+
+
 class ProcessStandbyListResponse(BaseModel):
     class RecordResult(BaseModel):
         result_code: int
