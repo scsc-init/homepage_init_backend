@@ -8,6 +8,9 @@ from src.core import get_settings
 from src.middleware import APISecretMiddleware, AssertPermissionMiddleware, UserAuthMiddleware
 # Route
 from src.routes import root_router
+# Mount Static Files
+from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI()
 
@@ -27,3 +30,5 @@ app.add_middleware(UserAuthMiddleware)
 app.add_middleware(APISecretMiddleware)
 
 app.include_router(root_router)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")

@@ -82,10 +82,12 @@ async def get_role_names(lang: Optional[str] = "en"):
 
 
 class BodyUpdateMyProfile(BaseModel):
-    name: Optional[str]
-    phone: Optional[str]
-    student_id: Optional[str]
-    major_id: Optional[int]
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    student_id: Optional[str] = None
+    major_id: Optional[int] = None
+    profile_picture: Optional[str] = None
+    profile_picture_is_url: Optional[bool] = None
 
 
 @user_router.post('/user/update', status_code=204)
@@ -97,6 +99,32 @@ async def update_my_profile(session: SessionDep, request: Request, body: BodyUpd
     if body.phone: current_user.phone = body.phone
     if body.student_id: current_user.student_id = body.student_id
     if body.major_id: current_user.major_id = body.major_id
+    if body.profile_picture: current_user.profile_picture = body.profile_picture
+    if body.profile_picture_is_url: current_user.profile_picture_is_url = body.profile_picture_is_url
+    session.add(current_user)
+    try: session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, detail="unique field already exists")
+    return
+
+class BodyUpdateMyPfpFile(BaseModel):
+    profile_picture: str
+
+
+@user_router.post('/user/update-pfp-file', status_code=204)
+async def update_my_pfp_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> None:
+    current_user = get_user(request)
+    if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
+    ext_whitelist = ('png', 'jpg', 'jpeg')
+    if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
+    filename = f"{current_user.id}.{ext}"
+    path = f"static/image/pfps/{filename}"
+    content = await file.read()
+    with open(path, "wb") as fp:
+        fp.write(content)
+    current_user.profile_picture = path
+    current_user.profile_picture_is_url = False
     session.add(current_user)
     try: session.commit()
     except IntegrityError:
@@ -376,7 +404,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                 result_code=500,
                 result_msg=f"알 수 없는 오류: {e}",
                 record=deposit,
-                users=matching_users))
+                users=[]))
             continue
 
     return ProcessStandbyListResponse(

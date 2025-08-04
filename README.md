@@ -147,6 +147,7 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | ├── `/majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
 | `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
 | `/static/image/photo/` | 업로드된 이미지 보관 폴더 |
+| `/static/image/pfps/`  | 업로드된 프로필 이미지 보관 폴더 |
 | `/download/`        | 업로드된 이미지 외 파일 보관 폴더 |
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
 | ├── `/controller/`  | 여러 테이블을 조작하는 중요 로직 |
