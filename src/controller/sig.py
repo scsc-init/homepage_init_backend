@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.db import SessionDep
 from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus
-from src.util import get_user_role_level, send_discord_bot_request_no_reply
+from src.util import get_user_role_level, send_discord_bot_request_no_reply, send_discord_bot_request
 
 from .article import BodyCreateArticle, create_article_ctrl
 from .scsc import ctrl_status_available
@@ -53,7 +53,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
     session.add(sig_member)
     session.commit()
     session.refresh(sig)
-    await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': body.title, 'user_id_list': ([user_discord_id] if user_discord_id else [])})
+    await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': body.title, 'user_id_list': ([user_discord_id] if user_discord_id else []), "sig_description": sig.description})
     return sig
 
 
@@ -68,7 +68,7 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if not is_executive and sig.owner != user_id: raise HTTPException(status_code=403, detail="타인의 시그/피그를 변경할 수 없습니다")
-
+    old_title = sig.title
     if body.title: sig.title = body.title
     if body.description: sig.description = body.description
     if body.content:
@@ -88,4 +88,12 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+
+    response = await send_discord_bot_request(action_code=1004, body={"channel_name": old_title})
+    if response is not None:
+        channel_id = response['channel_id']
+        bot_body = {"channel_id": channel_id}
+        if body.title: bot_body['new_channel_name'] = body.title
+        if body.description: bot_body['new_topic'] = body.description
+        await send_discord_bot_request_no_reply(action_code=3007, body=bot_body)
     return
