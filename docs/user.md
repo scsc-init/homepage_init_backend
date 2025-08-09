@@ -16,6 +16,8 @@ CREATE TABLE user (
     status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
     discord_id INTEGER UNIQUE DEFAULT NULL,
     discord_name TEXT UNIQUE DEFAULT NULL,
+    profile_picture TEXT,
+    profile_picture_is_url BOOLEAN NOT NULL DEFAULT FALSE,
 
     last_login DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -29,6 +31,7 @@ CREATE TABLE user (
 - id는 email의 hash 사용. hash는 sha256을 사용. 
 - phone은 `01012345678`처럼 대시 없는 숫자 문자열 형식. (`/^010\d{8}$/`)
 - student_id는 `202512345`처럼 대시 없는 숫자 문자열 형식. (`/^(\d{4})\d{5}$/`, group 1 should be valid year)
+- profile_picture에는 파일 위치(ex. `static/image/pfps/asdf.png`) 또는 이미지 URL이 들어가며, 전자의 경우 profile_picture_is_url이 false, 후자의 경우 true이다. 단, default값은 null이며 이 경우 프론트엔드에서 default 이미지로 처리한다.
 
 ### SQL 관련
 ```sql
@@ -116,9 +119,12 @@ CREATE TABLE standby_req_tbl (
   "name": "홍길동",
   "phone": "01012345678",
   "student_id": "202312345",
-  "major_id": 1
+  "major_id": 1,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true
 }
 ```
+- `profile_picture`은 구글 oauth에서 반환된 프로필 사진 URL이 기본으로 전송된다.
 - **Response**:
 ```json
 {
@@ -132,6 +138,8 @@ CREATE TABLE standby_req_tbl (
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true,
   "last_login": "2025-04-01T12:00:00",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00"
@@ -176,6 +184,8 @@ CREATE TABLE standby_req_tbl (
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true,
   "last_login": "2025-05-01T09:00:00",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-30T12:00:00"
@@ -243,6 +253,8 @@ CREATE TABLE standby_req_tbl (
     "discord_id": null,
     "discord_name": null,
     "major_id": 1,
+    "profile_picture": "https://google.oauth.etc",
+    "profile_picture_is_url": true,
     "last_login": "2025-05-01T09:00:00",
     "created_at": "2025-04-01T12:00:00",
     "updated_at": "2025-04-30T12:00:00"
@@ -314,29 +326,44 @@ CREATE TABLE standby_req_tbl (
   "name": "김철수",
   "phone": "01056781234", 
   "student_id": "202312345", 
-  "major_id": 2
+  "major_id": 2,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true
 }
 ```
+- 모든 field는 optional
+- 이 route로는 profile_picture을 url로만 변경할 수 있으며, file로 변경하려면 후술될 별도의 route를 사용해야 한다. 
+
+## Update My Profile Picture With File (내 프로필 사진을 파일로 변경)
+
+- **Method**: `POST`  
+- **URL**: `/api/user/update`  
+- **설명**: 로그인한 사용자의 정보 수정  
+- **Request**:
+  * **Content-Type**: `multipart/form-data`
+  * **Form Fields**:
+
+    | 필드명  | 타입   | 필수 여부 | 설명                    |
+    | ---- | ---- | ----- | --------------------- |
+    | file | File | O   | 업로드할 파일 (png, jpg, jpeg) |
 
 - **Status Codes**:
   - `204 No Content`
   - `401 Unauthorized`
-  - `409 Conflict` (UNIQUE 필드 중복)
   - `422 Unprocessable Content`
 
 ---
 
-## Delete My Profile (회원 탈퇴)
+## Delete My Profile (휴회원으로 변경)
 
 - **Method**: `POST`  
 - **URL**: `/api/user/delete`  
-- **설명**: 로그인한 사용자의 계정을 삭제함  
+- **설명**: 로그인한 사용자의 계정을 휴회원으로 변경함  
 
 - **Status Codes**:
   - `204 No Content`
   - `401 Unauthorized`
-  - `403 Forbidden` (관리자 계정은 자기 삭제 불가 등)
-  - `409 Conflict` : 외래 키 제약으로 인한 삭제 불가
+  - `403 Forbidden` (관리자 계정은 휴회원 처리 불가 등)
 
 ---
 
@@ -555,6 +582,26 @@ ___
 
 ---
 
+## Manually Process Standby Request
+
+- **Method**: `POST`
+- **URL**: `/api/executive/user/standby/process/manual`
+- **Request Body**:
+```json
+{
+  "id": "b36a83701f1c3191e19722d6f90274bc1b5501fe69ebf33313e440fe4b0fe210"
+}
+```
+
+- **Status Codes**:
+  - `204 No Content`: 성공
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (관리자(executive) 권한 없음)
+  - `404 Not Found` (사용자가 없음)
+  - `409 Conflict` (이미 active인 사용자에 대해 요청함)
+
+---
+
 ## Process Standby Request List with File
 
 - **Method**: `POST`
@@ -568,7 +615,7 @@ ___
     | file | File | O    | 업로드할 파일 (csv(UTF-8 or EUC-KR)) |
 
 - **Status Codes**:
-  - `200 No Content`: 성공
+  - `200 OK`: 성공
   - `400 Bad Request`: 파일 누락 또는 유효하지 않은 파일 또는 기타 인코딩 문제 또는 입금 내역 오류
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
@@ -700,4 +747,4 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - 입금 확인 및 status 변경이 정상적으로 처리된 경우
 - `result_code`: 500
 - `result_msg`: "알 수 없는 오류: ..."
-- `users`: 해당 입금 기록에 대응하는 사용자 리스트
+- `users`: `[]`

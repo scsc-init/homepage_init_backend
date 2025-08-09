@@ -16,6 +16,8 @@ class BodyCreateUser(BaseModel):
     phone: str
     student_id: str
     major_id: int
+    profile_picture: str
+    profile_picture_is_url: bool
 
 
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
@@ -28,7 +30,9 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
         phone=body.phone,
         student_id=body.student_id,
         role=get_user_role_level('newcomer'),
-        major_id=body.major_id
+        major_id=body.major_id,
+        profile_picture=body.profile_picture,
+        profile_picture_is_url=body.profile_picture_is_url,
     )
     session.add(user)
     try: session.commit()
