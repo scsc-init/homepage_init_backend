@@ -1,15 +1,18 @@
 # homepage_init_backend
 
-2025년 4월 30일에 시작한 SCSC 홈페이지 제작 프로젝트의 백엔드 부분입니다. 이 문서는 백엔드 실행 방법과 프로젝트 구조를 다룹니다.
+SCSC 홈페이지 Main BE 문서
 
-> 최종개정일: 2025-07-21
+> 최초작성알: 2025-04-30  
+> 최신개정일: 2025-08-04  
+> 최신개정자: [강명석](tomskang@naver.com)  
+> 작성자: [강명석](tomskang@naver.com), 이한경, 윤영우
 
-## 브랜치 설명
+## 브랜치
 
 - main: 배포된 코드를 저장하며 버전 별로 태그가 붙어 있습니다.
 - develop(default): 개발 중인 코드를 저장합니다.
 
-## .env 파일 형식
+## .env 파일
 
 .env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 
 
@@ -27,9 +30,11 @@ USER_CHECK=TRUE
 ENROLLMENT_FEE=300000
 CORS_ALL_ACCEPT=FALSE
 RABBITMQ_HOST="rabbitmq"
+BOT_HOST="bot"
 REPLY_QUEUE="main_response_queue"
 DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 NOTICE_CHANNEL_ID=0
+GRANT_CHANNEL_ID=0
 ```
 
 | Key Name             | Description                                                      |
@@ -47,9 +52,11 @@ NOTICE_CHANNEL_ID=0
 | `ENROLLMENT_FEE`         | 동아리 가입비. |
 | `CORS_ALL_ACCEPT`        | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
 | `RABBITMQ_HOST`          | RabbitMQ가 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
+| `BOT_HOST`               | 디스코드 봇이 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
 | `REPLY_QUEUE`            | 봇 서버에서 결과를 반환하는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
+| `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 
 ## 기타 설정 파일
 
@@ -143,6 +150,7 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | ├── `/majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
 | `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
 | `/static/image/photo/` | 업로드된 이미지 보관 폴더 |
+| `/static/image/pfps/`  | 업로드된 프로필 이미지 보관 폴더 |
 | `/download/`        | 업로드된 이미지 외 파일 보관 폴더 |
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
 | ├── `/controller/`  | 여러 테이블을 조작하는 중요 로직 |

@@ -333,7 +333,13 @@ END;
   {
     "id": 1,
     "ig_id": 1,
-    "user_id": "hash_of_user"
+    "user_id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+    "user": {
+      "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+      "email": "user@example.com",
+      "name": "홍길동",
+      "major_id": 1
+    }
   },
   ...
 ]

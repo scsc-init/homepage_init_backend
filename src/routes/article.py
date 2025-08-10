@@ -23,6 +23,8 @@ async def create_article(session: SessionDep, request: Request, body: BodyCreate
     ret = await create_article_ctrl(session, body, current_user.id, current_user.role)
     if body.board_id == 5: # notice
         await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().notice_channel_id, 'content': body.content})
+    elif body.board_id == 6: # grant
+        await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().grant_channel_id, 'content': body.content})
     return ret
 
 

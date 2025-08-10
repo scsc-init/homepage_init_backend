@@ -53,7 +53,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
     session.add(sig_member)
     session.commit()
     session.refresh(sig)
-    await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': body.title, 'user_id_list': ([user_discord_id] if user_discord_id else []), "sig_description": sig.description})
+    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'sig_name': body.title, 'user_id_list': [user_discord_id], "pig_description": sig.description})
     return sig
 
 
