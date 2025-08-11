@@ -12,7 +12,7 @@ from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, r
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, change_discord_role, DepositDTO
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url
 
 user_router = APIRouter(tags=['user'])
 
@@ -99,7 +99,9 @@ async def update_my_profile(session: SessionDep, request: Request, body: BodyUpd
     if body.phone: current_user.phone = body.phone
     if body.student_id: current_user.student_id = body.student_id
     if body.major_id: current_user.major_id = body.major_id
-    if body.profile_picture: current_user.profile_picture = body.profile_picture
+    if body.profile_picture:
+        if not is_valid_img_url(body.profile_picture): raise HTTPException(400, detail="invalid image url")
+        current_user.profile_picture = body.profile_picture
     if body.profile_picture_is_url: current_user.profile_picture_is_url = body.profile_picture_is_url
     session.add(current_user)
     try: session.commit()
@@ -107,6 +109,7 @@ async def update_my_profile(session: SessionDep, request: Request, body: BodyUpd
         session.rollback()
         raise HTTPException(409, detail="unique field already exists")
     return
+
 
 class BodyUpdateMyPfpFile(BaseModel):
     profile_picture: str
