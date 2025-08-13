@@ -119,6 +119,7 @@ class BodyUpdateMyPfpFile(BaseModel):
 async def update_my_pfp_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> None:
     current_user = get_user(request)
     if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
+    if not file.content_type.startswith("image/"): raise HTTPException(400, detail="cannot upload file without content_type image/")
     ext_whitelist = ('png', 'jpg', 'jpeg')
     if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
     filename = f"{current_user.id}.{ext}"
