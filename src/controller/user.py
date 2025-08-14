@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from src.db import SessionDep
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
 from src.util import (get_user_role_level, is_valid_phone, is_valid_student_id,
-                      sha256_hash, change_discord_role, DepositDTO)
+                      sha256_hash, change_discord_role, DepositDTO, is_valid_img_url)
 
 
 class BodyCreateUser(BaseModel):
@@ -23,6 +23,8 @@ class BodyCreateUser(BaseModel):
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
     if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
+    if not is_valid_img_url(body.profile_picture): raise HTTPException(400, detail="invalid image url")
+
     user = User(
         id=sha256_hash(body.email.lower()),
         email=body.email,

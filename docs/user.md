@@ -147,6 +147,7 @@ CREATE TABLE standby_req_tbl (
 ```
 - **Status Codes**:
   - `201 Created`
+  - `400 Bad Request` (유효하지 않은 이미지 url)
   - `401 Unauthorized` (인증 실패 시)
   - `409 Conflict` (UNIQUE 필드 중복)
   - `422 Unprocessable Content` (오류, 제약 위반 등)
@@ -333,6 +334,13 @@ CREATE TABLE standby_req_tbl (
 ```
 - 모든 field는 optional
 - 이 route로는 profile_picture을 url로만 변경할 수 있으며, file로 변경하려면 후술될 별도의 route를 사용해야 한다. 
+
+- **Status Codes**:
+  - `204 No Content`
+  - `400 Bad Request` (유효하지 않은 이미지 url)
+  - `401 Unauthorized`
+  - `422 Unprocessable Content`
+
 
 ## Update My Profile Picture With File (내 프로필 사진을 파일로 변경)
 

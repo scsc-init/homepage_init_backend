@@ -41,6 +41,7 @@ dependencies:
       - anyio==4.9.0
       - attrs==25.3.0
       - certifi==2025.4.26
+      - charset-normalizer==3.4.3
       - click==8.1.8
       - discord-py==2.5.2
       - dnspython==2.7.0
@@ -71,6 +72,7 @@ dependencies:
       - python-dotenv==1.1.0
       - python-multipart==0.0.20
       - pyyaml==6.0.2
+      - requests==2.32.4
       - rich==14.0.0
       - rich-toolkit==0.14.5
       - shellingham==1.5.4
@@ -81,6 +83,7 @@ dependencies:
       - typer==0.15.3
       - typing-extensions==4.13.2
       - typing-inspection==0.4.0
+      - urllib3==2.5.0
       - uvicorn==0.34.2
       - uvloop==0.21.0
       - watchfiles==1.0.5
