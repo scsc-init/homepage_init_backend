@@ -74,7 +74,6 @@ async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCSt
         # check if current semester archive category exists
         sig_res = await send_discord_bot_request(action_code=3005, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"})
         pig_res = await send_discord_bot_request(action_code=3005, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"})
-        print(sig_res, pig_res)
         if not sig_res:
             await send_discord_bot_request_no_reply(action_code=3002, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"})
         if not pig_res:
