@@ -221,7 +221,7 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
         raise HTTPException(409, detail="unique field already exists")
     if body.role:
         session.refresh(user)
-        logger.info(f'\ninfo_type=user_role_updated \nuser_id={id} \nold_role={old_role} \nnew_role={get_user_role_level(body.role)} \nexecutor={current_user.id}')
+        logger.info(f'info_type=user_role_updated ; user_id={id} ; old_role={old_role} ; new_role={get_user_role_level(body.role)} ; executor={current_user.id}')
         if user.discord_id: await change_discord_role(session, user.discord_id, body.role)
     return
 
@@ -348,7 +348,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                     result_msg=f"해당 입금 기록에 대응하는 사용자가 입금 대기자 명단에 {len(matching_standbyreqs)}건 존재합니다",
                     record=deposit,
                     users=matching_users))
-                logger.error(f"\nerr_type=deposit \nerr_code=409 \nmsg={len(matching_standbyreqs)}users match the following deposit record \ndeposit={deposit} \nusers={matching_users}")
+                logger.error(f"err_type=deposit err_code=409 ; msg={len(matching_standbyreqs)}users match the following deposit record ; deposit={deposit} ; users={matching_users}")
                 continue
 
             if len(matching_standbyreqs) == 0:
@@ -372,7 +372,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                             record=deposit,
                             users=matching_users
                         ))
-                        logger.error(f"\nerr_type=deposit \nerr_code=409 \nmsg={len(matching_standbyreqs)}users match the following deposit record \ndeposit={deposit} \nusers={matching_users}")
+                        logger.error(f"err_type=deposit err_code=409 ; msg={len(matching_standbyreqs)}users match the following deposit record ; deposit={deposit} ; users={matching_users}")
                     
                     else: 
                         results.append(ProcessStandbyListResponse.RecordResult(
@@ -381,7 +381,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                             record=deposit,
                             users=matching_users
                         ))
-                        logger.error(f"\nerr_type=deposit \nerr_code=404 \nmsg=no users match the following deposit record \ndeposit={deposit} \nusers={matching_users}")
+                        logger.error(f"err_type=deposit err_code=404 ; msg=no users match the following deposit record ; deposit={deposit} ; users={matching_users}")
                     continue
 
                 user = matching_users_error[0]
@@ -392,7 +392,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                         result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 상태가 아닙니다",
                         record=deposit,
                         users=matching_users))
-                    logger.error(f"\nerr_type=deposit \nerr_code=412 \nmsg=user is not in pending status but in {user.status} status \ndeposit={deposit} \nusers={matching_users}")
+                    logger.error(f"err_type=deposit err_code=412 ; msg=user is not in pending status but in {user.status} status ; deposit={deposit} ; users={matching_users}")
                     continue
                 matching_standbyreqs = [await enroll_user_ctrl(session, user.id)]
 
@@ -404,7 +404,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                     result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 적습니다",
                     record=deposit,
                     users=matching_users))
-                logger.error(f"\nerr_type=deposit \nerr_code=412 \nmsg=deposit amount is less than the required {get_settings().enrollment_fee} won \ndeposit={deposit} \nusers={matching_users}")
+                logger.error(f"err_type=deposit err_code=412 ; msg=deposit amount is less than the required {get_settings().enrollment_fee} won ; deposit={deposit} ; users={matching_users}")
                 continue
             if deposit.amount > get_settings().enrollment_fee:
                 cnt_failed_records += 1
@@ -413,7 +413,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                     result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 많습니다",
                     record=deposit,
                     users=matching_users))
-                logger.error(f"\nerr_type=deposit \nerr_code=412 \nmsg=deposit amount is more than the required {get_settings().enrollment_fee} won \ndeposit={deposit} \nusers={matching_users}")
+                logger.error(f"err_type=deposit err_code=412 ; msg=deposit amount is more than the required {get_settings().enrollment_fee} won ; deposit={deposit} ; users={matching_users}")
                 continue
 
             stby_user = matching_standbyreqs[0]
@@ -425,7 +425,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                     result_msg="알 수 없는 오류: user not found in user table",
                     record=deposit,
                     users=matching_users))
-                logger.error(f"\nerr_type=deposit \nerr_code=412 \nmsg=unexpected error: user not found in user table \ndeposit={deposit} \nusers={matching_users}")
+                logger.error(f"err_type=deposit err_code=412 ; msg=unexpected error: user not found in user table ; deposit={deposit} ; users={matching_users}")
                 continue
             if user.status != UserStatus.standby:
                 cnt_failed_records += 1
@@ -434,7 +434,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                     result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다",
                     record=deposit,
                     users=matching_users))
-                logger.error(f"\nerr_type=deposit \nerr_code=412 \nmsg=user is not in pending status but in {user.status} status \ndeposit={deposit} \nusers={matching_users}")
+                logger.error(f"err_type=deposit err_code=412 ; msg=user is not in pending status but in {user.status} status ; deposit={deposit} ; users={matching_users}")
                 continue
             await verify_enroll_user_ctrl(session, user, stby_user, deposit)
             cnt_succeeded_records += 1
@@ -443,7 +443,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                 result_msg="성공",
                 record=deposit,
                 users=matching_users))
-            logger.info(f'info_type=deposit \ndeposit={deposit} \nusers={matching_users}')
+            logger.info(f'info_type=deposit ; deposit={deposit} ; users={matching_users}')
             continue
         except Exception as e:
             cnt_failed_records += 1
@@ -452,7 +452,7 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
                 result_msg=f"알 수 없는 오류: {e}",
                 record=deposit,
                 users=[]))
-            logger.error(f"\nerr_type=deposit \nerr_code=412 \nmsg=unexpected error: {e} \ndeposit={deposit}")
+            logger.error(f"err_type=deposit err_code=412 ; msg=unexpected error: {e} ; deposit={deposit}")
             continue
 
     return ProcessStandbyListResponse(

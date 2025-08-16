@@ -82,7 +82,7 @@ async def update_article_by_author(id: int, session: SessionDep, request: Reques
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
-    logger.info(f'\ninfo_type=article_updated \narticle_id={article.id} \ntitle={body.title} \nrevisioner_id={current_user.id} \nboard_id={body.board_id}')
+    logger.info(f'info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}')
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
@@ -101,7 +101,7 @@ async def update_article_by_executive(id: int, session: SessionDep, request: Req
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
-    logger.info(f'\ninfo_type=article_updated \narticle_id={article.id} \ntitle={body.title} \nrevisioner_id={current_user.id} \nboard_id={body.board_id}')
+    logger.info(f'info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}')
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
@@ -117,7 +117,7 @@ async def delete_article_by_author(id: int, session: SessionDep, request: Reques
         remove(path.join(get_settings().article_dir, f"{article.id}.md"))
     except:
         pass
-    logger.info(f'\ninfo_type=article_deleted \narticle_id={article.id} \ntitle={article.title} \nremover_id={current_user.id} \nboard_id={article.board_id}')
+    logger.info(f'info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}')
     session.commit()
 
 
@@ -131,7 +131,7 @@ async def delete_article_by_executive(id: int, session: SessionDep, request: Req
         remove(path.join(get_settings().article_dir, f"{article.id}.md"))
     except:
         pass
-    logger.info(f'\ninfo_type=article_deleted \narticle_id={article.id} \ntitle={article.title} \nremover_id={current_user.id} \nboard_id={article.board_id}')
+    logger.info(f'info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}')
     session.commit()
 
 article_router.include_router(article_general_router)

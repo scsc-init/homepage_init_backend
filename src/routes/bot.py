@@ -17,10 +17,10 @@ async def get_discord_invite():
         result = await send_discord_bot_request(action_code=1001)
         return {"result": result}
     except TimeoutError:
-        logger.error(f'\nerr_type=bot_discord_get_invite \n err_code=504 \nmsg=timeout')
+        logger.error(f'err_type=bot_discord_get_invite ; err_code=504 ; msg=timeout')
         raise HTTPException(status_code=504, detail="Bot did not respond")
     except Exception as e:
-        logger.error(f'\nerr_type=bot_discord_get_invite \n err_code=500 \nmsg=unexpected error: {e}')   
+        logger.error(f'err_type=bot_discord_get_invite ; err_code=500 ; msg=unexpected error: {e}')   
 
 class BodySendMessageToID(BaseModel):
     id: int
@@ -36,7 +36,7 @@ async def get_status():
     async with httpx.AsyncClient() as client:
         res = await client.get(f"http://{get_settings().bot_host}:8081/status")
         if res.status_code != 200:
-            logger.error(f'\nerr_type=bot_discord_status \n err_code=400 \nmsg=fetch failed: {res.text}')
+            logger.error(f'err_type=bot_discord_status ; err_code=400 ; msg=fetch failed: {res.text}')
             raise HTTPException(400, res.text)
         return res.json()
     
@@ -46,6 +46,6 @@ async def login():
     async with httpx.AsyncClient() as client:
         res = await client.post(f"http://{get_settings().bot_host}:8081/login")
         if res.status_code != 204: 
-            logger.error(f'\nerr_type=bot_discord_login \n err_code=400 \nmsg=login failed: {res.text}')
+            logger.error(f'err_type=bot_discord_login ; err_code=400 ; msg=login failed: {res.text}')
             raise HTTPException(400, res.text)
         return

@@ -3,7 +3,7 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성알: 2025-04-30  
-> 최신개정일: 2025-08-04  
+> 최신개정일: 2025-08-16  
 > 최신개정자: [강명석](tomskang@naver.com)  
 > 작성자: [강명석](tomskang@naver.com), 이한경, 윤영우
 
@@ -65,6 +65,10 @@ GRANT_CHANNEL_ID=0
 - DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
 - `script/init_db/president.example.csv`의 형식을 참고하여 작성합니다
 - 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
+
+### `logs/`
+
+- 루트에 `logs/` 폴더를 추가합니다
 
 ## 실행 방법(with docker)
 
@@ -146,6 +150,7 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | `/environment.yml`  | Conda 환경 설정 파일 |
 | `/.env`             | 환경 변수 설정 파일 |
 | `/docs/`            | API 문서 등 프로젝트 관련 문서 |
+| `/logs/`            | 로그 파일이 저장되는 폴더 |
 | ├── `/common.md`    | 여러 라우터에서 사용되거나 중요한 로직 관련 문서 |
 | ├── `/majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
 | `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |

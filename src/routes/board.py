@@ -36,10 +36,10 @@ async def create_board(session: SessionDep, request: Request, body: BodyCreateBo
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        logger.warning(f'\nerr_type=board_update \nerr_code=409 \nmsg=unique field already exists \nexecutor={current_user.id}')
+        logger.warning(f'err_type=board_update err_code=409 ; msg=unique field already exists ; executor={current_user.id}')
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(board)
-    logger.info(f'\ninfo_type=board_update \nboard_id={board.id} \nname={body.name} \ndescription={body.description} \nwriting_permission={body.writing_permission_level} \nreading_permission={body.reading_permission_level} \nexecutor={current_user.id}')
+    logger.info(f'info_type=board_update ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}')
     return board
 
 
@@ -78,9 +78,9 @@ async def update_board(id: int, session: SessionDep, request: Request, body: Bod
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        logger.warning(f'\nerr_type=board_update \nerr_code=409 \nmsg=unique field already exists \nboard_id={id} \nexecutor={current_user.id}')
+        logger.warning(f'err_type=board_update err_code=409 ; msg=unique field already exists ; board_id={id} ; executor={current_user.id}')
         raise HTTPException(409, detail="unique field already exists")
-    logger.info(f'\ninfo_type=board_update \nboard_id={id} \nname={body.name} \ndescription={body.description} \nwriting_permission={body.writing_permission_level} \nreading_permission={body.reading_permission_level} \nexecutor={current_user.id}')
+    logger.info(f'info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}')
 
 
 @board_router.post('/executive/board/delete/{id}', status_code=204)
@@ -94,8 +94,8 @@ async def delete_board(id: int, session: SessionDep, request: Request) -> None:
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        logger.warning(f'\nerr_type=board_delete \nerr_code=409 \nmsg=Cannot delete board because of foreign key restriction \nboard_id={id} \nexecutor={current_user.id}')
+        logger.warning(f'err_type=board_delete err_code=409 ; msg=Cannot delete board because of foreign key restriction ; board_id={id} ; executor={current_user.id}')
         raise HTTPException(409, detail="Cannot delete board because of foreign key restriction")
     session.refresh(board)
-    logger.info(f'\ninfo_type=board_delete \nboard_id={id} \nexecutor={current_user.id}')
+    logger.info(f'info_type=board_delete ; board_id={id} ; executor={current_user.id}')
     

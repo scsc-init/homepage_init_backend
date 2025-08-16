@@ -56,7 +56,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
     session.commit()
     session.refresh(sig)
     if user_discord_id: await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': body.title, 'user_id_list': [user_discord_id], "sig_description": sig.description})
-    logger.info(f'\ninfo_type=sig_created \nsig_id={sig.id} \ntitle={body.title} \nowner_id={user_id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_created ; sig_id={sig.id} ; title={body.title} ; owner_id={user_id} ; year={sig.year} ; semester={sig.semester}')
     return sig
 
 
@@ -99,5 +99,5 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
         if body.title: bot_body['new_channel_name'] = body.title
         if body.description: bot_body['new_topic'] = body.description
         await send_discord_bot_request_no_reply(action_code=3007, body=bot_body)
-    logger.info(f'\ninfo_type=sig_updated \nsig_id={id} \ntitle={body.title} \nrevisioner_id={user_id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_updated ; sig_id={id} ; title={body.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester}')
     return

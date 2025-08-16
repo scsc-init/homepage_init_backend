@@ -46,7 +46,7 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
         raise HTTPException(
             status_code=409, detail="unique field already exists")
     session.refresh(user)
-    logger.info(f'info_type=user_created \nuser_id={user.id}')
+    logger.info(f'info_type=user_created ; user_id={user.id}')
     return user
 
 
@@ -65,7 +65,7 @@ async def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     session.add(stby_req_tbl)
     session.commit()
     session.refresh(stby_req_tbl)
-    logger.info(f'info_type=user_enrolled \nuser_id={user_id}')
+    logger.info(f'info_type=user_enrolled ; user_id={user_id}')
     return stby_req_tbl
 
 

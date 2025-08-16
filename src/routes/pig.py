@@ -48,11 +48,12 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
     if pig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
     pig.status = SCSCStatus.inactive
     session.commit()
+    session.refresh(pig)
     year = pig.year
     semester = pig.semester
     await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
-    logger.info(f'\ninfo_type=pig_deleted \npig_id={pig.id} \ntitle={pig.title} \nremover_id={current_user.id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_deleted ; pig_id={pig.id} ; title={pig.title} ; remover_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -69,11 +70,12 @@ async def delete_pig(id: int, session: SessionDep, request: Request) -> None:
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     pig.status = SCSCStatus.inactive
     session.commit()
+    session.refresh(pig)
     year = pig.year
     semester = pig.semester
     await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
-    logger.info(f'\ninfo_type=pig_deleted \npig_id={pig.id} \ntitle={pig.title} \nremover_id={current_user.id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_deleted ; pig_id={pig.id} ; title={pig.title} ; remover_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -93,7 +95,7 @@ async def handover_pig(id: int, session: SessionDep, request: Request, body: Bod
     old_owner = pig.owner
     pig.owner = body.new_owner
     session.add(pig)
-    logger.info(f'\ninfo_type=pig_handover \npig_id={pig.id} \ntitle={pig.title} \nexecutor_id={current_user.id} \nold_owner_id={old_owner} \nnew_owner_id={body.new_owner} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_handover ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; year={pig.year} ; semester={pig.semester}')
     session.commit()
     return
 
@@ -127,7 +129,7 @@ async def join_pig(id: int, session: SessionDep, request: Request):
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(pig)
     if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': pig.title})
-    logger.info(f'\ninfo_type=pig_join \npig_id={pig.id} \ntitle={pig.title} \nexecutor_id={current_user.id} \njoined_user_id={current_user.id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -143,7 +145,7 @@ async def leave_pig(id: int, session: SessionDep, scsc_global_status: SCSCGlobal
     session.commit()
     session.refresh(pig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': pig.title})
-    logger.info(f'\ninfo_type=pig_leave \npig_id={pig.id} \ntitle={pig.title} \nexecutor_id={current_user.id} \nleft_user_id={current_user.id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -171,7 +173,7 @@ async def executive_join_pig(id: int, session: SessionDep, request: Request, bod
     session.refresh(user)
     session.refresh(pig)
     if user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': pig.title})
-    logger.info(f'\ninfo_type=pig_join \npig_id={pig.id} \ntitle={pig.title} \nexecutor_id={current_user.id} \njoined_user_id={body.user_id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -195,5 +197,5 @@ async def executive_leave_pig(id: int, session: SessionDep, request: Request, bo
     session.refresh(user)
     session.refresh(pig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': pig.title})
-    logger.info(f'\ninfo_type=pig_leave \npig_id={pig.id} \ntitle={pig.title} \nexecutor_id={current_user.id} \nleft_user_id={body.user_id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}')
     return

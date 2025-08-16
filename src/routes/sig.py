@@ -53,7 +53,7 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     semester = sig.semester
     await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
-    logger.info(f'\ninfo_type=sig_deleted \nsig_id={sig.id} \ntitle={sig.title} \nremover_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
 
@@ -75,7 +75,7 @@ async def delete_sig(id: int, session: SessionDep, request: Request) -> None:
     semester = sig.semester
     await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
-    logger.info(f'\ninfo_type=sig_deleted \nsig_id={sig.id} \ntitle={sig.title} \nremover_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
 
@@ -95,7 +95,7 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
     old_owner = sig.owner
     sig.owner = body.new_owner
     session.add(sig)
-    logger.info(f'\ninfo_type=sig_handover \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \nold_owner_id={old_owner} \nnew_owner_id={body.new_owner} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_handover ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; year={sig.year} ; semester={sig.semester}')
     session.commit()
     return
 
@@ -129,7 +129,7 @@ async def join_sig(id: int, session: SessionDep, request: Request):
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(sig)
     if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': sig.title})
-    logger.info(f'\ninfo_type=sig_join \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \njoined_user_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
 
@@ -145,7 +145,7 @@ async def leave_sig(id: int, session: SessionDep, scsc_global_status: SCSCGlobal
     session.commit()
     session.refresh(sig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': sig.title})
-    logger.info(f'\ninfo_type=sig_leave \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \nleft_user_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
 
@@ -173,7 +173,7 @@ async def executive_join_sig(id: int, session: SessionDep, request: Request, bod
     session.refresh(user)
     session.refresh(sig)
     if user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': sig.title})
-    logger.info(f'\ninfo_type=sig_join \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \njoined_user_id={body.user_id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}')
     return
 
 
@@ -197,5 +197,5 @@ async def executive_leave_sig(id: int, session: SessionDep, request: Request, bo
     session.refresh(user)
     session.refresh(sig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': sig.title})
-    logger.info(f'\ninfo_type=sig_leave \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \nleft_user_id={body.user_id} \nyear={sig.year} \nsemester={sig.semester}')
+    logger.info(f'info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}')
     return

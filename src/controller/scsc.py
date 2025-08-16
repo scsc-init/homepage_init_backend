@@ -41,7 +41,7 @@ ctrl_status_available = _CtrlStatusAvailable(
 )
 
 
-async def update_scsc_global_status_ctrl(session: SessionDep, request: Request, new_status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
+async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: str, new_status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
     # VALIDATE SCSC GLOBAL STATUS UPDATE
     if (scsc_global_status.status, new_status) not in _valid_scsc_global_status_update: raise HTTPException(400, "invalid sig global status update")
 
@@ -118,6 +118,6 @@ async def update_scsc_global_status_ctrl(session: SessionDep, request: Request, 
     old_status = scsc_global_status.status
     scsc_global_status.status = new_status
     session.add(scsc_global_status)
-    logger.info(f'\ninfo_type=scsc_global_status_updated \nold_status={old_status} \nnew_status={new_status} \nexecutor={get_user(request).id}')
+    logger.info(f'info_type=scsc_global_status_updated ; old_status={old_status} ; new_status={new_status} ; executor={current_user_id}')
     session.commit()
     return

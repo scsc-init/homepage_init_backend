@@ -56,7 +56,7 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
     session.commit()
     session.refresh(pig)
     if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': body.title, 'user_id_list': [user_discord_id], "pig_description": pig.description})
-    logger.info(f'\ninfo_type=pig_created \npig_id={pig.id} \ntitle={body.title} \nowner_id={user_id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_created ; pig_id={pig.id} ; title={body.title} ; owner_id={user_id} ; year={pig.year} ; semester={pig.semester}')
     return pig
 
 
@@ -91,7 +91,7 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
-
+    session.refresh(pig)
     response = await send_discord_bot_request(action_code=1004, body={"channel_name": old_title})
     if response is not None:
         channel_id = response['channel_id']
@@ -99,5 +99,5 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
         if body.title: bot_body['new_channel_name'] = body.title
         if body.description: bot_body['new_topic'] = body.description
         await send_discord_bot_request_no_reply(action_code=3007, body=bot_body)
-    logger.info(f'\ninfo_type=pig_updated \npig_id={id} \ntitle={body.title} \nrevisioner_id={user_id} \nyear={pig.year} \nsemester={pig.semester}')
+    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={body.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester}')
     return
