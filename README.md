@@ -3,8 +3,8 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성알: 2025-04-30  
-> 최신개정일: 2025-08-16  
-> 최신개정자: [강명석](tomskang@naver.com)  
+> 최신개정일: 2025-08-17
+> 최신개정자: 윤영우
 > 작성자: [강명석](tomskang@naver.com), 이한경, 윤영우
 
 ## 브랜치
@@ -149,8 +149,8 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | `/requirements.txt` | 필요한 Python 패키지 목록 (pip용) |
 | `/environment.yml`  | Conda 환경 설정 파일 |
 | `/.env`             | 환경 변수 설정 파일 |
-| `/docs/`            | API 문서 등 프로젝트 관련 문서 |
 | `/logs/`            | 로그 파일이 저장되는 폴더 |
+| `/docs/`            | API 문서 등 프로젝트 관련 문서 |
 | ├── `/common.md`    | 여러 라우터에서 사용되거나 중요한 로직 관련 문서 |
 | ├── `/majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
 | `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |

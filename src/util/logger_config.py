@@ -1,7 +1,6 @@
 from contextvars import ContextVar
 import logging
-from datetime import datetime
-import pytz
+import time
 
 request_id_var = ContextVar("request_id", default='')
 
@@ -15,22 +14,8 @@ class InfoFilter(logging.Filter):
         return record.levelno == logging.INFO
     
 class UTCFormatter(logging.Formatter):
-    """override logging.Formatter to use an aware datetime object"""
-
-    def convert(self, timestamp):
-        dt = datetime.fromtimestamp(timestamp, tz=pytz.UTC)
-        return dt.astimezone(pytz.timezone('Asia/Seoul'))
-
-    def formatTime(self, record, datefmt=None):
-        dt = self.convert(record.created)
-        if datefmt:
-            s = dt.strftime(datefmt)
-        else:
-            try:
-                s = dt.isoformat(timespec='milliseconds')
-            except TypeError:
-                s = dt.isoformat()
-        return s
+    converter = time.gmtime
+        
 
 LOGGING_CONFIG = {
     "version": 1,
