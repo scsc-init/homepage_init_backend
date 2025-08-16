@@ -10,6 +10,7 @@ class Comment(SQLModel, table=True):
     author_id: str = Field(foreign_key="user.id")
     article_id: int = Field(foreign_key="article.id")
     parent_id: int = Field(foreign_key="comment.id")
+    is_deleted: bool = Field(default=False, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
+    deleted_at: datetime = Field()

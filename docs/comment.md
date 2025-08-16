@@ -11,8 +11,10 @@ CREATE TABLE "comment" (
 	"author_id"	TEXT NOT NULL,
 	"article_id"	INTEGER NOT NULL,
 	"parent_id"	INTEGER,
+    "is_deleted" INTEGER NOT NULL,
 	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	"deleted_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
 	FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
@@ -156,7 +158,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 - **Status Codes**:
   - `204 No Content`
   - `401 Unauthorized` (로그인하지 않음)
-  - `403 Forbidden` (댓글의 작성자가 아님)
+  - `403 Forbidden` (댓글의 작성자가 아니거나 이미 삭제됨)
   - `404 Not Found` (댓글이 존재하지 않음)
 
 ---
@@ -170,7 +172,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 - **Status Codes**:
   - `204 No Content`
   - `401 Unauthorized` (로그인하지 않음)
-  - `403 Forbidden` (권한 없음)
+  - `403 Forbidden` (권한이 없거나 이미 삭제됨)
   - `404 Not Found` (댓글이 존재하지 않음)
 
 ---
