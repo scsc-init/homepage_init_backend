@@ -1,4 +1,5 @@
 from typing import Sequence
+import logging
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -9,6 +10,8 @@ from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update
 from src.db import SessionDep
 from src.model import PIG, PIGMember, User, SCSCStatus
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
+
+logger = logging.getLogger("app")
 
 pig_router = APIRouter(tags=['pig'])
 
@@ -45,10 +48,12 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
     if pig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
     pig.status = SCSCStatus.inactive
     session.commit()
+    session.refresh(pig)
     year = pig.year
     semester = pig.semester
     await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    logger.info(f'info_type=pig_deleted ; pig_id={pig.id} ; title={pig.title} ; remover_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -59,15 +64,18 @@ async def update_pig(id: int, session: SessionDep, request: Request, body: BodyU
 
 
 @pig_router.post('/executive/pig/{id}/delete', status_code=204)
-async def delete_pig(id: int, session: SessionDep) -> None:
+async def delete_pig(id: int, session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     pig.status = SCSCStatus.inactive
     session.commit()
+    session.refresh(pig)
     year = pig.year
     semester = pig.semester
     await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    logger.info(f'info_type=pig_deleted ; pig_id={pig.id} ; title={pig.title} ; remover_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -84,8 +92,10 @@ async def handover_pig(id: int, session: SessionDep, request: Request, body: Bod
         PIGMember.user_id == body.new_owner)).first()
     if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
     if current_user.role < get_user_role_level('executive') and current_user.id != pig.owner: raise HTTPException(403, "타인의 시그/피그를 변경할 수 없습니다")
+    old_owner = pig.owner
     pig.owner = body.new_owner
     session.add(pig)
+    logger.info(f'info_type=pig_handover ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; year={pig.year} ; semester={pig.semester}')
     session.commit()
     return
 
@@ -119,6 +129,7 @@ async def join_pig(id: int, session: SessionDep, request: Request):
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(pig)
     if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': pig.title})
+    logger.info(f'info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -134,6 +145,7 @@ async def leave_pig(id: int, session: SessionDep, scsc_global_status: SCSCGlobal
     session.commit()
     session.refresh(pig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': pig.title})
+    logger.info(f'info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -142,7 +154,8 @@ class BodyExecutiveJoinPIG(BaseModel):
 
 
 @pig_router.post('/executive/pig/{id}/member/join', status_code=204)
-async def executive_join_pig(id: int, session: SessionDep, body: BodyExecutiveJoinPIG):
+async def executive_join_pig(id: int, session: SessionDep, request: Request, body: BodyExecutiveJoinPIG):
+    current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
@@ -160,6 +173,7 @@ async def executive_join_pig(id: int, session: SessionDep, body: BodyExecutiveJo
     session.refresh(user)
     session.refresh(pig)
     if user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': pig.title})
+    logger.info(f'info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}')
     return
 
 
@@ -168,7 +182,8 @@ class BodyExecutiveLeavePIG(BaseModel):
 
 
 @pig_router.post('/executive/pig/{id}/member/leave', status_code=204)
-async def executive_leave_pig(id: int, session: SessionDep, body: BodyExecutiveLeavePIG):
+async def executive_leave_pig(id: int, session: SessionDep, request: Request, body: BodyExecutiveLeavePIG):
+    current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
@@ -182,4 +197,5 @@ async def executive_leave_pig(id: int, session: SessionDep, body: BodyExecutiveL
     session.refresh(user)
     session.refresh(pig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': pig.title})
+    logger.info(f'info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}')
     return

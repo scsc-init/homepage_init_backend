@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import logging
 
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -9,6 +10,8 @@ from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
 from src.util import (get_user_role_level, is_valid_phone, is_valid_student_id,
                       sha256_hash, change_discord_role, DepositDTO, is_valid_img_url)
 
+
+logger = logging.getLogger("app")
 
 class BodyCreateUser(BaseModel):
     email: str
@@ -43,6 +46,7 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
         raise HTTPException(
             status_code=409, detail="unique field already exists")
     session.refresh(user)
+    logger.info(f'info_type=user_created ; user_id={user.id}')
     return user
 
 
@@ -61,6 +65,7 @@ async def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     session.add(stby_req_tbl)
     session.commit()
     session.refresh(stby_req_tbl)
+    logger.info(f'info_type=user_enrolled ; user_id={user_id}')
     return stby_req_tbl
 
 

@@ -5,12 +5,15 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
+import logging
 
 from src.controller import BodyCreateArticle, create_article_ctrl
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import Article, ArticleResponse, Board
 from src.util import get_user, send_discord_bot_request_no_reply
+
+logger = logging.getLogger("app")
 
 article_router = APIRouter(tags=['article'])
 article_general_router = APIRouter(prefix="/article")
@@ -79,11 +82,13 @@ async def update_article_by_author(id: int, session: SessionDep, request: Reques
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
+    logger.info(f'info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}')
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
 @article_executive_router.post('/update/{id}', status_code=204)
-async def update_article_by_executive(id: int, session: SessionDep, body: BodyUpdateArticle) -> None:
+async def update_article_by_executive(id: int, session: SessionDep, request: Request, body: BodyUpdateArticle) -> None:
+    current_user = get_user(request)
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     board = session.get(Board, body.board_id)
@@ -96,6 +101,7 @@ async def update_article_by_executive(id: int, session: SessionDep, body: BodyUp
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
+    logger.info(f'info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}')
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
 
 
@@ -111,11 +117,13 @@ async def delete_article_by_author(id: int, session: SessionDep, request: Reques
         remove(path.join(get_settings().article_dir, f"{article.id}.md"))
     except:
         pass
+    logger.info(f'info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}')
     session.commit()
 
 
 @article_executive_router.post('/delete/{id}', status_code=204)
-async def delete_article_by_executive(id: int, session: SessionDep) -> None:
+async def delete_article_by_executive(id: int, session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
     article = session.get(Article, id)
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     session.delete(article)
@@ -123,6 +131,7 @@ async def delete_article_by_executive(id: int, session: SessionDep) -> None:
         remove(path.join(get_settings().article_dir, f"{article.id}.md"))
     except:
         pass
+    logger.info(f'info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}')
     session.commit()
 
 article_router.include_router(article_general_router)

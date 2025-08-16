@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import httpx
+import logging
 
 from src.util import send_discord_bot_request, send_discord_bot_request_no_reply
 from src.core import get_settings
 
+logger = logging.getLogger("app")
 
 bot_router = APIRouter(tags=['bot'])
 
@@ -15,8 +17,10 @@ async def get_discord_invite():
         result = await send_discord_bot_request(action_code=1001)
         return {"result": result}
     except TimeoutError:
+        logger.error(f'err_type=bot_discord_get_invite ; err_code=504 ; msg=timeout')
         raise HTTPException(status_code=504, detail="Bot did not respond")
-    
+    except Exception as e:
+        logger.error(f'err_type=bot_discord_get_invite ; err_code=500 ; msg=unexpected error: {e}')   
 
 class BodySendMessageToID(BaseModel):
     id: int
@@ -31,7 +35,9 @@ async def send_message_to_id(body: BodySendMessageToID):
 async def get_status():
     async with httpx.AsyncClient() as client:
         res = await client.get(f"http://{get_settings().bot_host}:8081/status")
-        if res.status_code != 200: raise HTTPException(400, res.text)
+        if res.status_code != 200:
+            logger.error(f'err_type=bot_discord_status ; err_code=400 ; msg=fetch failed: {res.text}')
+            raise HTTPException(400, res.text)
         return res.json()
     
     
@@ -39,5 +45,7 @@ async def get_status():
 async def login():
     async with httpx.AsyncClient() as client:
         res = await client.post(f"http://{get_settings().bot_host}:8081/login")
-        if res.status_code != 204: raise HTTPException(400, res.text)
+        if res.status_code != 204: 
+            logger.error(f'err_type=bot_discord_login ; err_code=400 ; msg=login failed: {res.text}')
+            raise HTTPException(400, res.text)
         return
