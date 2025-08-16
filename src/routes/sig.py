@@ -1,4 +1,5 @@
 from typing import Sequence
+import logging
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -10,6 +11,7 @@ from src.db import SessionDep
 from src.model import SIG, SIGMember, User, SCSCStatus
 from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
 
+logger = logging.getLogger("app")
 
 sig_router = APIRouter(tags=['sig'])
 
@@ -46,10 +48,12 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     if sig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
     sig.status = SCSCStatus.inactive
     session.commit()
+    session.refresh(sig)
     year = sig.year
     semester = sig.semester
     await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    logger.info(f'\ninfo_type=sig_deleted \nsig_id={sig.id} \ntitle={sig.title} \nremover_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
     return
 
 
@@ -60,15 +64,18 @@ async def update_sig(id: int, session: SessionDep, request: Request, body: BodyU
 
 
 @sig_router.post('/executive/sig/{id}/delete', status_code=204)
-async def delete_sig(id: int, session: SessionDep) -> None:
+async def delete_sig(id: int, session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     sig.status = SCSCStatus.inactive
     session.commit()
+    session.refresh(sig)
     year = sig.year
     semester = sig.semester
     await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
                                                                     "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    logger.info(f'\ninfo_type=sig_deleted \nsig_id={sig.id} \ntitle={sig.title} \nremover_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
     return
 
 
@@ -85,8 +92,10 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
         SIGMember.user_id == body.new_owner)).first()
     if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
     if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner: raise HTTPException(403, "타인의 시그/피그를 변경할 수 없습니다")
+    old_owner = sig.owner
     sig.owner = body.new_owner
     session.add(sig)
+    logger.info(f'\ninfo_type=sig_handover \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \nold_owner_id={old_owner} \nnew_owner_id={body.new_owner} \nyear={sig.year} \nsemester={sig.semester}')
     session.commit()
     return
 
@@ -120,6 +129,7 @@ async def join_sig(id: int, session: SessionDep, request: Request):
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(sig)
     if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': sig.title})
+    logger.info(f'\ninfo_type=sig_join \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \njoined_user_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
     return
 
 
@@ -135,6 +145,7 @@ async def leave_sig(id: int, session: SessionDep, scsc_global_status: SCSCGlobal
     session.commit()
     session.refresh(sig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': sig.title})
+    logger.info(f'\ninfo_type=sig_leave \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \nleft_user_id={current_user.id} \nyear={sig.year} \nsemester={sig.semester}')
     return
 
 
@@ -143,7 +154,8 @@ class BodyExecutiveJoinSIG(BaseModel):
 
 
 @sig_router.post('/executive/sig/{id}/member/join', status_code=204)
-async def executive_join_sig(id: int, session: SessionDep, body: BodyExecutiveJoinSIG):
+async def executive_join_sig(id: int, session: SessionDep, request: Request, body: BodyExecutiveJoinSIG):
+    current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
@@ -161,6 +173,7 @@ async def executive_join_sig(id: int, session: SessionDep, body: BodyExecutiveJo
     session.refresh(user)
     session.refresh(sig)
     if user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': sig.title})
+    logger.info(f'\ninfo_type=sig_join \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \njoined_user_id={body.user_id} \nyear={sig.year} \nsemester={sig.semester}')
     return
 
 
@@ -169,7 +182,8 @@ class BodyExecutiveLeaveSIG(BaseModel):
 
 
 @sig_router.post('/executive/sig/{id}/member/leave', status_code=204)
-async def executive_leave_sig(id: int, session: SessionDep, body: BodyExecutiveLeaveSIG):
+async def executive_leave_sig(id: int, session: SessionDep, request: Request, body: BodyExecutiveLeaveSIG):
+    current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
@@ -183,4 +197,5 @@ async def executive_leave_sig(id: int, session: SessionDep, body: BodyExecutiveL
     session.refresh(user)
     session.refresh(sig)
     await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': sig.title})
+    logger.info(f'\ninfo_type=sig_leave \nsig_id={sig.id} \ntitle={sig.title} \nexecutor_id={current_user.id} \nleft_user_id={body.user_id} \nyear={sig.year} \nsemester={sig.semester}')
     return

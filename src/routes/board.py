@@ -1,13 +1,17 @@
 from datetime import datetime, timezone
 from typing import Optional, Sequence
+import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.db import SessionDep
 from src.model import Board
+from src.util import get_user
+
+logger = logging.getLogger("app")
 
 board_router = APIRouter(tags=['board'])
 
@@ -20,7 +24,8 @@ class BodyCreateBoard(BaseModel):
 
 
 @board_router.post('/executive/board/create', status_code=201)
-async def create_board(session: SessionDep, body: BodyCreateBoard) -> Board:
+async def create_board(session: SessionDep, request: Request, body: BodyCreateBoard) -> Board:
+    current_user = get_user(request)
     board = Board(
         name=body.name,
         description=body.description,
@@ -31,8 +36,10 @@ async def create_board(session: SessionDep, body: BodyCreateBoard) -> Board:
     try: session.commit()
     except IntegrityError:
         session.rollback()
+        logger.warning(f'\nerr_type=board_update \nerr_code=409 \nmsg=unique field already exists \nexecutor={current_user.id}')
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(board)
+    logger.info(f'\ninfo_type=board_update \nboard_id={board.id} \nname={body.name} \ndescription={body.description} \nwriting_permission={body.writing_permission_level} \nreading_permission={body.reading_permission_level} \nexecutor={current_user.id}')
     return board
 
 
@@ -57,7 +64,8 @@ class BodyUpdateArticle(BaseModel):
 
 
 @board_router.post('/executive/board/update/{id}', status_code=204)
-async def update_board(id: int, session: SessionDep, body: BodyUpdateArticle) -> None:
+async def update_board(id: int, session: SessionDep, request: Request, body: BodyUpdateArticle) -> None:
+    current_user = get_user(request)
     board = session.get(Board, id)
     if not board:
         raise HTTPException(status_code=404, detail="Board not found",)
@@ -70,11 +78,14 @@ async def update_board(id: int, session: SessionDep, body: BodyUpdateArticle) ->
     try: session.commit()
     except IntegrityError:
         session.rollback()
+        logger.warning(f'\nerr_type=board_update \nerr_code=409 \nmsg=unique field already exists \nboard_id={id} \nexecutor={current_user.id}')
         raise HTTPException(409, detail="unique field already exists")
+    logger.info(f'\ninfo_type=board_update \nboard_id={id} \nname={body.name} \ndescription={body.description} \nwriting_permission={body.writing_permission_level} \nreading_permission={body.reading_permission_level} \nexecutor={current_user.id}')
 
 
 @board_router.post('/executive/board/delete/{id}', status_code=204)
-async def delete_board(id: int, session: SessionDep) -> None:
+async def delete_board(id: int, session: SessionDep, request: Request) -> None:
+    current_user = get_user(request)
     board = session.get(Board, id)
     if not board:
         raise HTTPException(status_code=404, detail="Board not found",)
@@ -83,4 +94,8 @@ async def delete_board(id: int, session: SessionDep) -> None:
     try: session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(409, detail="Cannot delete user because of foreign key restriction")
+        logger.warning(f'\nerr_type=board_delete \nerr_code=409 \nmsg=Cannot delete board because of foreign key restriction \nboard_id={id} \nexecutor={current_user.id}')
+        raise HTTPException(409, detail="Cannot delete board because of foreign key restriction")
+    session.refresh(board)
+    logger.info(f'\ninfo_type=board_delete \nboard_id={id} \nexecutor={current_user.id}')
+    

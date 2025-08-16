@@ -3,11 +3,13 @@ from os import path
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
+import logging
 
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import Article, ArticleResponse, Board
 
+logger = logging.getLogger("app")
 
 class BodyCreateArticle(BaseModel):
     title: str
@@ -28,5 +30,6 @@ async def create_article_ctrl(session: SessionDep, body: BodyCreateArticle, user
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
     with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
+    logger.info(f'\ninfo_type=article_created \narticle_id={article.id} \ntitle={body.title} \nauthor_id={user_id} \nboard_id={body.board_id}')
     article_response = ArticleResponse(**article.model_dump(), content=body.content)
     return article_response

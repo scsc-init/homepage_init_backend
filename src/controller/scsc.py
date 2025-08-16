@@ -1,14 +1,17 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+import logging
 
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from sqlmodel import select
 
 from src.db import SessionDep
 from src.model import PIG, SIG, OldboyApplicant, SCSCGlobalStatus, SCSCStatus, User, UserStatus, StandbyReqTbl
-from src.util import get_user_role_level, change_discord_role, send_discord_bot_request_no_reply, send_discord_bot_request
+from src.util import get_user_role_level, change_discord_role, send_discord_bot_request_no_reply, send_discord_bot_request, get_user
 
 from .user import process_oldboy_applicant_ctrl
+
+logger = logging.getLogger("app")
 
 _valid_scsc_global_status_update = (
     (SCSCStatus.inactive, SCSCStatus.surveying),
@@ -38,7 +41,7 @@ ctrl_status_available = _CtrlStatusAvailable(
 )
 
 
-async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
+async def update_scsc_global_status_ctrl(session: SessionDep, request: Request, new_status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
     # VALIDATE SCSC GLOBAL STATUS UPDATE
     if (scsc_global_status.status, new_status) not in _valid_scsc_global_status_update: raise HTTPException(400, "invalid sig global status update")
 
@@ -112,7 +115,9 @@ async def update_scsc_global_status_ctrl(session: SessionDep, new_status: SCSCSt
         await send_discord_bot_request_no_reply(action_code=3002, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"})
         await send_discord_bot_request_no_reply(action_code=3004, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"})
 
+    old_status = scsc_global_status.status
     scsc_global_status.status = new_status
     session.add(scsc_global_status)
+    logger.info(f'\ninfo_type=scsc_global_status_updated \nold_status={old_status} \nnew_status={new_status} \nexecutor={get_user(request).id}')
     session.commit()
     return

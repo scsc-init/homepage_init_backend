@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from src.util import get_user_role_level, send_discord_bot_request_no_reply, sen
 from .article import BodyCreateArticle, create_article_ctrl
 from .scsc import ctrl_status_available
 
+logger = logging.getLogger("app")
 
 class BodyCreatePIG(BaseModel):
     title: str
@@ -54,6 +56,7 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
     session.commit()
     session.refresh(pig)
     if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': body.title, 'user_id_list': [user_discord_id], "pig_description": pig.description})
+    logger.info(f'\ninfo_type=pig_created \npig_id={pig.id} \ntitle={body.title} \nowner_id={user_id} \nyear={pig.year} \nsemester={pig.semester}')
     return pig
 
 
@@ -96,4 +99,5 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
         if body.title: bot_body['new_channel_name'] = body.title
         if body.description: bot_body['new_topic'] = body.description
         await send_discord_bot_request_no_reply(action_code=3007, body=bot_body)
+    logger.info(f'\ninfo_type=pig_updated \npig_id={id} \ntitle={body.title} \nrevisioner_id={user_id} \nyear={pig.year} \nsemester={pig.semester}')
     return
