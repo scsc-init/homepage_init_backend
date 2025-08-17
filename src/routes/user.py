@@ -1,18 +1,21 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
+import logging
 
 import jwt
 from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl, verify_enroll_user_ctrl
+from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl, ProcessDepositResult, process_deposit_ctrl
 from src.core import get_settings
 from src.db import SessionDep
-from src.model import User, UserStatus, StandbyReqTbl, OldboyApplicant
+from src.model import User, UserResponse, UserStatus, StandbyReqTbl, OldboyApplicant
 from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url
+
+
+logger = logging.getLogger("app")
 
 user_router = APIRouter(tags=['user'])
 
@@ -32,17 +35,6 @@ async def enroll_user(session: SessionDep, request: Request) -> None:
 @user_router.get('/user/profile')
 async def get_my_profile(request: Request) -> User:
     return get_user(request)
-
-
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-    major_id: int
-
-    model_config = {
-        "from_attributes": True  # enables reading from ORM objects
-    }
 
 
 @user_router.get('/user/{id}', response_model=UserResponse)
@@ -77,8 +69,7 @@ async def get_users(session: SessionDep, email: Optional[str] = None, name: Opti
 async def get_role_names(lang: Optional[str] = "en"):
     if lang == "ko":
         return {"role_names": {"0": "최저권한", "100": "휴회원", "200": "준회원", "300": "정회원", "400": "졸업생", "500": "운영진", "1000": "회장", }}
-    else:
-        return {"role_names": {"0": "lowest", "100": "dormant", "200": "newcomer", "300": "member", "400": "oldboy", "500": "executive", "1000": "president", }}
+    return {"role_names": {"0": "lowest", "100": "dormant", "200": "newcomer", "300": "member", "400": "oldboy", "500": "executive", "1000": "president", }}
 
 
 class BodyUpdateMyProfile(BaseModel):
@@ -189,6 +180,7 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
     current_user = get_user(request)
     user = session.get(User, id)
     if user is None: raise HTTPException(404, detail="no user exists")
+    old_role = user.role
 
     if (current_user.role <= user.role) and not (current_user.role == user.role == 1000): raise HTTPException(403, detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}")
     if body.role:
@@ -216,6 +208,7 @@ async def update_user(id: str, session: SessionDep, request: Request, body: Body
         raise HTTPException(409, detail="unique field already exists")
     if body.role:
         session.refresh(user)
+        logger.info(f'info_type=user_role_updated ; user_id={id} ; old_role={old_role} ; new_role={get_user_role_level(body.role)} ; executor={current_user.id}')
         if user.discord_id: await change_discord_role(session, user.discord_id, body.role)
     return
 
@@ -292,15 +285,9 @@ async def process_standby_list_manually(session: SessionDep, request: Request, b
 
 
 class ProcessStandbyListResponse(BaseModel):
-    class RecordResult(BaseModel):
-        result_code: int
-        result_msg: str
-        record: DepositDTO
-        users: list[UserResponse]
-
     cnt_succeeded_records: int
     cnt_failed_records: int
-    results: list[RecordResult]
+    results: list[ProcessDepositResult]
 
     model_config = {
         "from_attributes": True  # enables reading from ORM objects
@@ -326,116 +313,29 @@ async def process_standby_list(session: SessionDep, file: UploadFile = File(...)
 
     cnt_succeeded_records = 0
     cnt_failed_records = 0
-    results: list[ProcessStandbyListResponse.RecordResult] = []
+    results: list[ProcessDepositResult] = []
     for deposit in deposit_array:
-        try:
-            query_standbyreq = select(StandbyReqTbl).where(StandbyReqTbl.is_checked == False)
-            if deposit.deposit_name[-2:].isdigit(): query_standbyreq = query_standbyreq.where(StandbyReqTbl.deposit_name == deposit.deposit_name)  # search on deposit_name, which is "name+last 2 phone number" form
-            else: query_standbyreq = query_standbyreq.where(StandbyReqTbl.user_name == deposit.deposit_name)  # search on user_name, which is "name" form
-            matching_standbyreqs = session.exec(query_standbyreq).all()
-            matching_users = [UserResponse.model_validate(session.get(User, u.standby_user_id)) for u in matching_standbyreqs]
-
-            if len(matching_standbyreqs) > 1:  # multiple standby request found
-                cnt_failed_records += 1
-                results.append(ProcessStandbyListResponse.RecordResult(
-                    result_code=409,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자가 입금 대기자 명단에 {len(matching_standbyreqs)}건 존재합니다",
-                    record=deposit,
-                    users=matching_users))
-                continue
-
-            if len(matching_standbyreqs) == 0:
-                query_matching_users_error = select(User)
-                if deposit.deposit_name[-2:].isdigit():
-                    query_matching_users_error = query_matching_users_error.where(
-                        User.name == deposit.deposit_name[:-2],
-                        func.substring(User.phone, func.length(User.phone) - 1, 2) == deposit.deposit_name[-2:]
-                    )
-                else:
-                    query_matching_users_error = query_matching_users_error.where(User.name == deposit.deposit_name)
-                matching_users_error = session.exec(query_matching_users_error).all()
-                matching_users = [UserResponse.model_validate(u) for u in matching_users_error]
-
-                if len(matching_users_error) != 1:
-                    cnt_failed_records += 1
-                    if len(matching_users_error) > 1: results.append(ProcessStandbyListResponse.RecordResult(
-                        result_code=409,
-                        result_msg=f"해당 입금 기록에 대응하는 사용자가 사용자 테이블에 {len(matching_users_error)}건 존재합니다",
-                        record=deposit,
-                        users=matching_users))
-                    else: results.append(ProcessStandbyListResponse.RecordResult(
-                        result_code=404,
-                        result_msg="해당 입금 기록에 대응하는 사용자가 사용자 테이블에 존재하지 않습니다",
-                        record=deposit,
-                        users=matching_users))
-                    continue
-
-                user = matching_users_error[0]
-                if user.status != UserStatus.pending:
-                    cnt_failed_records += 1
-                    results.append(ProcessStandbyListResponse.RecordResult(
-                        result_code=412,
-                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 상태가 아닙니다",
-                        record=deposit,
-                        users=matching_users))
-                    continue
-                matching_standbyreqs = [await enroll_user_ctrl(session, user.id)]
-
-            # len(matching_standbyreqs) == 1:
-            if deposit.amount < get_settings().enrollment_fee:
-                cnt_failed_records += 1
-                results.append(ProcessStandbyListResponse.RecordResult(
-                    result_code=402,
-                    result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 적습니다",
-                    record=deposit,
-                    users=matching_users))
-                continue
-            if deposit.amount > get_settings().enrollment_fee:
-                cnt_failed_records += 1
-                results.append(ProcessStandbyListResponse.RecordResult(
-                    result_code=413,
-                    result_msg=f"입금액이 {get_settings().enrollment_fee}원보다 많습니다",
-                    record=deposit,
-                    users=matching_users))
-                continue
-
-            stby_user = matching_standbyreqs[0]
-            user = session.get(User, stby_user.standby_user_id)
-            if not user:
-                cnt_failed_records += 1
-                results.append(ProcessStandbyListResponse.RecordResult(
-                    result_code=500,
-                    result_msg="알 수 없는 오류: user not found in user table",
-                    record=deposit,
-                    users=matching_users))
-                continue
-            if user.status != UserStatus.standby:
-                cnt_failed_records += 1
-                results.append(ProcessStandbyListResponse.RecordResult(
-                    result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다",
-                    record=deposit,
-                    users=matching_users))
-                continue
-            await verify_enroll_user_ctrl(session, user, stby_user, deposit)
-            cnt_succeeded_records += 1
-            results.append(ProcessStandbyListResponse.RecordResult(
-                result_code=200,
-                result_msg="성공",
-                record=deposit,
-                users=matching_users))
-            continue
-        except Exception as e:
-            cnt_failed_records += 1
-            results.append(ProcessStandbyListResponse.RecordResult(
-                result_code=500,
-                result_msg=f"알 수 없는 오류: {e}",
-                record=deposit,
-                users=[]))
-            continue
+        result = await process_deposit_ctrl(session, deposit)
+        if result.result_code == 200: cnt_succeeded_records += 1
+        else: cnt_failed_records += 1
+        results.append(result)
 
     return ProcessStandbyListResponse(
         cnt_succeeded_records=cnt_succeeded_records,
         cnt_failed_records=cnt_failed_records,
         results=results
     )
+
+
+class ProcessDepositResponse(BaseModel):
+    result: ProcessDepositResult
+
+    model_config = {
+        "from_attributes": True  # enables reading from ORM objects
+    }
+
+
+@user_router.post('/executive/user/standby/process/deposit', response_model=ProcessDepositResponse)
+async def process_deposit(session: SessionDep, body: DepositDTO) -> ProcessDepositResponse:
+    result = await process_deposit_ctrl(session, body)
+    return ProcessDepositResponse(result=result)

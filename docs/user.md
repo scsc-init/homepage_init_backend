@@ -756,3 +756,50 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - `result_code`: 500
 - `result_msg`: "알 수 없는 오류: ..."
 - `users`: `[]`
+
+
+## Process Deposit
+
+- **Method**: `POST`
+- **URL**: `/api/executive/user/standby/process/deposit`
+- **Request Body**:
+```json
+{
+    "amount":300000,
+    "deposit_time":"2025-08-17T15:23:23Z",
+    "deposit_name":"Discord Bot"
+}
+```
+- `deposit_time`은 UTC 형식을 지켜야 합니다
+
+
+- **Response**:
+```json
+{
+    "result": {
+        "result_code": 412,
+        "result_msg": "해당 입금 기록에 대응하는 사용자의 상태는 UserStatus.active로 pending 상태가 아닙니다",
+        "record": {
+            "amount": 300000,
+            "deposit_time": "2025-08-17T15:23:23Z",
+            "deposit_name": "Discord Bot"
+        },
+        "users": [
+            {
+                "id": "a44946fbf09c326520c2ca0a324b19100381911c9afe5af06a90b636d8f35dd5",
+                "email": "bot@discord.com",
+                "name": "Discord Bot",
+                "major_id": 1
+            }
+        ]
+    }
+}
+```
+- `Process Standby Request List with File`과 동일한 과정으로 처리되며 결과가 `result` 안에 담겨 반환됩니다
+
+- **Status Codes**:
+  - `200 OK`
+  - `401 Unauthorized` (로그인하지 않음)
+  - `403 Forbidden` (관리자(executive) 권한 없음)
+
+---
