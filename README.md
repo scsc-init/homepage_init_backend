@@ -65,6 +65,7 @@ GRANT_CHANNEL_ID=0
 - DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
 - `script/init_db/president.example.csv`의 형식을 참고하여 작성합니다
 - 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
+- 예시 파일에 포함된 `deposit.app@scsc.dev`를 포함해야 `homepage_init_deposit_app`이 정상적으로 작동합니다
 
 ### `logs/`
 

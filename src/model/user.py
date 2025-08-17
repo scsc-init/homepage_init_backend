@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
+from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 
 
@@ -36,7 +37,7 @@ class User(SQLModel, table=True):
 
     discord_id: Optional[int] = Field(default=None, nullable=True, unique=True)
     discord_name: Optional[str] = Field(default=None, nullable=True, unique=True)
-    
+
     profile_picture: Optional[str] = Field(default=None, nullable=True)
     profile_picture_is_url: bool = Field(default=False, nullable=False)
 
@@ -45,6 +46,17 @@ class User(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     major_id: int = Field(foreign_key="major.id", nullable=False)
+
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    name: str
+    major_id: int
+
+    model_config = {
+        "from_attributes": True  # enables reading from ORM objects
+    }
 
 
 class StandbyReqTbl(SQLModel, table=True):
