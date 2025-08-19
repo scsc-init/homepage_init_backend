@@ -50,10 +50,9 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 {
   "id": 1,
   "content": "Nice.",
-  "board_id": 1,
+  "author_id": "",
   "article_id": 1,
   "parent_id": null,
-  "author_id": "",
   "is_deleted": 0,
   "created_at": "2025-07-01T12:00:00",
   "updated_at": "2025-07-01T12:00:00",
@@ -78,16 +77,15 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 ```json
 [
   {
-    "id": 1,
-    "content": "Nice.",
-    "board_id": 1,
-    "article_id": 1,
-    "parent_id": null,
-    "author_id": "",
-    "is_deleted": 0,
-    "created_at": "2025-07-01T12:00:00",
-    "updated_at": "2025-07-01T12:00:00",
-    "deleted_at": null
+  "id": 1,
+  "content": "Nice.",
+  "author_id": "",
+  "article_id": 1,
+  "parent_id": null,
+  "is_deleted": 0,
+  "created_at": "2025-07-01T12:00:00",
+  "updated_at": "2025-07-01T12:00:00",
+  "deleted_at": null
   }
 ]
 ```
@@ -107,10 +105,9 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 {
   "id": 1,
   "content": "Nice.",
-  "board_id": 1,
+  "author_id": "",
   "article_id": 1,
   "parent_id": null,
-  "author_id": "",
   "is_deleted": 0,
   "created_at": "2025-07-01T12:00:00",
   "updated_at": "2025-07-01T12:00:00",
@@ -132,21 +129,6 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 ```json
 {
   "content": "Isn't nice."
-}
-```
-- **Response**:
-```json
-{
-  "id": 1,
-  "content": "Nice.",
-  "board_id": 1,
-  "article_id": 1,
-  "parent_id": null,
-  "author_id": "",
-  "is_deleted": 0,
-  "created_at": "2025-07-01T12:00:00",
-  "updated_at": "2025-07-01T12:00:00",
-  "deleted_at": null
 }
 ```
 - **Status Codes**:
