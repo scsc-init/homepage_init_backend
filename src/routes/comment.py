@@ -71,6 +71,8 @@ async def update_comment_by_author(id: int, session: SessionDep, request: Reques
     current_user = get_user(request)
     comment = session.get(Comment, id)
     if not comment: raise HTTPException(status_code=404, detail="Comment not found",)
+    if comment.is_deleted:
+        raise HTTPException(status_code=410, detail=f"Comment has been deleted")
     if current_user.id != comment.author_id:
         raise HTTPException(status_code=403, detail="You are not the author of this comment",)
     comment.content = body.content

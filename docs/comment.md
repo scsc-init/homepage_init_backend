@@ -6,15 +6,15 @@
 ## 댓글 DB
 ```sql
 CREATE TABLE "comment" (
-	"id"	INTEGER,
-	"content"	TEXT NOT NULL,
-	"author_id"	TEXT NOT NULL,
+	"id"	        INTEGER,
+	"content"	    TEXT NOT NULL,
+	"author_id"	    TEXT NOT NULL,
 	"article_id"	INTEGER NOT NULL,
-	"parent_id"	INTEGER,
-    "is_deleted" INTEGER NOT NULL,
+	"parent_id"	    INTEGER,
+    "is_deleted"    INTEGER NOT NULL DEFAULT 0,
 	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"deleted_at"	DATETIME NOT NULL,
+	"deleted_at"	DATETIME,
   	PRIMARY KEY("id" AUTOINCREMENT),
 	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
 	FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
@@ -54,8 +54,10 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
   "article_id": 1,
   "parent_id": null,
   "author_id": "",
+  "is_deleted": 0,
   "created_at": "2025-07-01T12:00:00",
-  "updated_at": "2025-07-01T12:00:00"
+  "updated_at": "2025-07-01T12:00:00",
+  "deleted_at": null
 }
 ```
 - **Status Codes**:
@@ -67,7 +69,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
   
 ---
 
-## Get Comments List (댓글 목록 조희)
+## Get Comments List (댓글 목록 조회)
 
 - **Method**: `GET`
 - **URL**: `/api/comments/:article_id`
@@ -82,8 +84,10 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
     "article_id": 1,
     "parent_id": null,
     "author_id": "",
+    "is_deleted": 0,
     "created_at": "2025-07-01T12:00:00",
-    "updated_at": "2025-07-01T12:00:00"
+    "updated_at": "2025-07-01T12:00:00",
+    "deleted_at": null
   }
 ]
 ```
@@ -107,8 +111,10 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
   "article_id": 1,
   "parent_id": null,
   "author_id": "",
+  "is_deleted": 0,
   "created_at": "2025-07-01T12:00:00",
-  "updated_at": "2025-07-01T12:00:00"
+  "updated_at": "2025-07-01T12:00:00",
+  "deleted_at": null
 }
 ```
 - **Status Codes**:
@@ -132,13 +138,15 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 ```json
 {
   "id": 1,
-  "content": "Isn't nice.",
+  "content": "Nice.",
   "board_id": 1,
   "article_id": 1,
   "parent_id": null,
   "author_id": "",
+  "is_deleted": 0,
   "created_at": "2025-07-01T12:00:00",
-  "updated_at": "2025-07-01T13:00:00"
+  "updated_at": "2025-07-01T12:00:00",
+  "deleted_at": null
 }
 ```
 - **Status Codes**:
@@ -146,6 +154,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (댓글의 작성자가 아님)
   - `404 Not Found` (댓글이 존재하지 않음)
+  - `410 Gone` (댓글이 삭제됨)
   
 ---
 
