@@ -46,6 +46,7 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if sig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
+    if sig.status == SCSCStatus.inactive: raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
     sig.status = SCSCStatus.inactive
     session.commit()
     session.refresh(sig)
@@ -68,6 +69,7 @@ async def delete_sig(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if sig.status == SCSCStatus.inactive: raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
     sig.status = SCSCStatus.inactive
     session.commit()
     session.refresh(sig)

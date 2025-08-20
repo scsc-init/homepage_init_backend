@@ -46,6 +46,7 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if pig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
+    if pig.status == SCSCStatus.inactive: raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
     pig.status = SCSCStatus.inactive
     session.commit()
     session.refresh(pig)
@@ -69,6 +70,7 @@ async def delete_pig(id: int, session: SessionDep, request: Request) -> None:
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     pig.status = SCSCStatus.inactive
+    if pig.status == SCSCStatus.inactive: raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
     session.commit()
     session.refresh(pig)
     year = pig.year
