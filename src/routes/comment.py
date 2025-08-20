@@ -48,6 +48,9 @@ async def get_comments_by_article(article_id: int, session: SessionDep, request:
     board = session.get(Board, article.board_id)
     if user.role < board.reading_permission_level: raise HTTPException(status_code=403, detail="You are not allowed to read these comments", )
     comments = session.exec(select(Comment).where(Comment.article_id == article_id)).all()
+    for comment in comments:
+        if comment.is_deleted:
+            comment.content = None
     return comments
 
 
@@ -59,6 +62,8 @@ async def get_comment_by_id(id: int, session: SessionDep, request: Request) -> C
     article = session.get(Article, comment.article_id)
     board = session.get(Board, article.board_id)
     if user.role < board.reading_permission_level: raise HTTPException(status_code=403, detail="You are not allowed to read this comment", )
+    if comment.is_deleted:
+        comment.content = None
     return comment
 
 
