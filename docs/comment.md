@@ -6,19 +6,19 @@
 ## 댓글 DB
 ```sql
 CREATE TABLE "comment" (
-	"id"	        INTEGER,
-	"content"	    TEXT NOT NULL,
-	"author_id"	    TEXT NOT NULL,
-	"article_id"	INTEGER NOT NULL,
-	"parent_id"	    INTEGER,
-    "is_deleted"    INTEGER NOT NULL DEFAULT 0,
-	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"deleted_at"	DATETIME,
-  	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
-	FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
-	FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL 
+    "id" INTEGER,
+    "content" TEXT NOT NULL,
+    "author_id" TEXT NOT NULL,
+    "article_id" INTEGER NOT NULL,
+    "parent_id" INTEGER,
+    "is_deleted" INTEGER NOT NULL DEFAULT 0,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" DATETIME,
+    PRIMARY KEY("id" AUTOINCREMENT),
+    FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
+    FOREIGN KEY("article_id") REFERENCES "article"("id") ON DELETE CASCADE,
+    FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL
 );
 ```
 ```sqlite
