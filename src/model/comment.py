@@ -25,3 +25,4 @@ class CommentResponse(SQLModel, table=False):
     is_deleted: bool
     created_at: datetime
     updated_at: datetime
+    deleted_at: datetime | None
