@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime, timezone
 from typing import Optional, Sequence
 
@@ -7,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.db import SessionDep
-from src.model import Article, Board, Comment
+from src.model import Article, Board, Comment, CommentResponse
 from src.util import get_user
 
 comment_router = APIRouter(tags=['comment'])
@@ -20,6 +21,7 @@ class BodyCreateComment(BaseModel):
     article_id: int
     parent_id: Optional[int]
 
+DELETED = "(삭제됨)"
 
 @comment_general_router.post('/create', status_code=201)
 async def create_comment(session: SessionDep, request: Request, body: BodyCreateComment) -> Comment:
@@ -40,30 +42,33 @@ async def create_comment(session: SessionDep, request: Request, body: BodyCreate
 
 
 # This works as "api/comment" + "s/{article_id}" (="api/comments/{article_id}")
-@comment_general_router.get('s/{article_id}')
-async def get_comments_by_article(article_id: int, session: SessionDep, request: Request) -> Sequence[Comment]:
+@comment_general_router.get('s/{article_id}', response_model=Sequence[CommentResponse])
+async def get_comments_by_article(article_id: int, session: SessionDep, request: Request) -> Sequence[CommentResponse]:
     user = get_user(request)
     article = session.get(Article, article_id)
     if not article: raise HTTPException(status_code=404, detail=f"Article {article_id} does not exist")
     board = session.get(Board, article.board_id)
     if user.role < board.reading_permission_level: raise HTTPException(status_code=403, detail="You are not allowed to read these comments", )
     comments = session.exec(select(Comment).where(Comment.article_id == article_id)).all()
+    result = []
     for comment in comments:
+        comment = CommentResponse.model_validate(comment)
         if comment.is_deleted:
-            comment.content = None
-    return comments
+            comment.content = DELETED
+        result.append(comment)
+    return result
 
-
-@comment_general_router.get('/{id}')
-async def get_comment_by_id(id: int, session: SessionDep, request: Request) -> Comment:
+@comment_general_router.get('/{id}', response_model=CommentResponse)
+async def get_comment_by_id(id: int, session: SessionDep, request: Request) -> CommentResponse:
     user = get_user(request)
     comment = session.get(Comment, id)
     if not comment: raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
     article = session.get(Article, comment.article_id)
     board = session.get(Board, article.board_id)
     if user.role < board.reading_permission_level: raise HTTPException(status_code=403, detail="You are not allowed to read this comment", )
+    comment = CommentResponse.model_validate(comment)
     if comment.is_deleted:
-        comment.content = None
+        comment.content = DELETED
     return comment
 
 
