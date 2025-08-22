@@ -32,6 +32,7 @@ CREATE TABLE user (
 - phone은 `01012345678`처럼 대시 없는 숫자 문자열 형식. (`/^010\d{8}$/`)
 - student_id는 `202512345`처럼 대시 없는 숫자 문자열 형식. (`/^(\d{4})\d{5}$/`, group 1 should be valid year)
 - profile_picture에는 파일 위치(ex. `static/image/pfps/asdf.png`) 또는 이미지 URL이 들어가며, 전자의 경우 profile_picture_is_url이 false, 후자의 경우 true이다. 단, default값은 null이며 이 경우 프론트엔드에서 default 이미지로 처리한다.
+- status는 [`check_user_status_rule`](./common.md) 테이블에서도 사용한다. 
 
 ### SQL 관련
 ```sql

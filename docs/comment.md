@@ -21,7 +21,7 @@ CREATE TABLE "comment" (
     FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL
 );
 ```
-```sqlite
+```sql
 CREATE INDEX idx_article_id ON comment(article_id);
 CREATE INDEX idx_parent_id ON comment(parent_id);
 ```

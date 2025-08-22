@@ -7,7 +7,8 @@
 
 ### 인증 관련
 
-모든 경로에는 header에 `x-api-secret`을 포함해야 한다. 
+- 모든 경로에는 header에 `x-api-secret`을 포함해야 한다. 
+- `APISecretMiddleware`가 이를 처리한다. 
 
 ```http
 x-api-secret: YOUR_SECRET_KEY
@@ -18,7 +19,8 @@ x-api-secret: YOUR_SECRET_KEY
 
 ### 로그인 관련
 
-사용자 정보가 필요한 경로에는 header에 `x-jwt`를 포함해야 한다. 이 값은 `/api/user/login`의 응답에서 얻는다. 
+- 사용자 정보가 필요한 경로에는 header에 `x-jwt`를 포함해야 한다. 이 값은 `/api/user/login`의 응답에서 얻는다. 
+- `UserAuthMiddleware`가 이를 처리한다. 
 
 
 ```http
@@ -27,6 +29,22 @@ x-jwt: USER_JWT
 
 - **Status Codes**:
   - `401 Unauthorized` (인증 실패 시)
+
+### 접속 차단 관련
+
+- `check_user_status_rule`에 등록된 `status`와 경로에 대해 해당 `status`의 사용자가 해당 경로로 요청을 보내는 것을 차단한다. 
+- `CheckUserStatusMiddleware`가 이를 처리한다.
+- 해당 경로에 로그인하지 않은 상태로 요청하면 401 상태 코드를, 규칙에 의해 요청이 차단되면 403 상태 코드를 반환한다. 
+
+```sql
+CREATE TABLE check_user_status_rule (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_status TEXT NOT NULL CHECK (user_status IN ('active', 'pending', 'standby', 'banned')),
+    method TEXT NOT NULL CHECK (method IN ('GET', 'POST')),
+    path TEXT NOT NULL,
+    UNIQUE (user_status, method, path)
+);
+```
 
 ## 코딩 스타일
 
