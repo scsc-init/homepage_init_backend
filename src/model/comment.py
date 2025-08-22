@@ -18,7 +18,7 @@ class Comment(SQLModel, table=True):
 
 class CommentResponse(SQLModel, table=False):
     id: int
-    content: str | None
+    content: str
     author_id: str
     article_id: int
     parent_id: int | None
