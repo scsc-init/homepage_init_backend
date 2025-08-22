@@ -6,31 +6,31 @@
 ## 게시판 DB
 ```sql
 CREATE TABLE "board" (
-	"id"	INTEGER,
-	"name"	TEXT NOT NULL,
-	"description"	TEXT NOT NULL,
-	"writing_permission_level"	INTEGER NOT NULL DEFAULT 0,
-	"reading_permission_level"	INTEGER NOT NULL DEFAULT 0,
-  "created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT),
-  FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
-  FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
+    "id" INTEGER,
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "writing_permission_level" INTEGER NOT NULL DEFAULT 0,
+    "reading_permission_level" INTEGER NOT NULL DEFAULT 0,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY("id" AUTOINCREMENT),
+    FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT,
+    FOREIGN KEY (reading_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 ```
 
 ## 게시글 DB
 ```sql
 CREATE TABLE "article" (
-	"id"	INTEGER,
-	"title"	TEXT NOT NULL,
-	"author_id"	TEXT NOT NULL,
-	"board_id"	INTEGER NOT NULL,
-	"created_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	"updated_at"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	PRIMARY KEY("id" AUTOINCREMENT),
-	FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
-	FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
+    "id" INTEGER,
+    "title" TEXT NOT NULL,
+    "author_id" TEXT NOT NULL,
+    "board_id" INTEGER NOT NULL,
+    "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY("id" AUTOINCREMENT),
+    FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
+    FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
 );
 ```
 ```sqlite
