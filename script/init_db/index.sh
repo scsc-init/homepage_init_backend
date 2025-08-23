@@ -42,5 +42,6 @@ trap cleanup EXIT
 "$SCRIPT_DIR/insert_majors.sh" "$DB_FILE" "$SCRIPT_DIR/majors.csv"
 "$SCRIPT_DIR/insert_boards.sh" "$DB_FILE"
 "$SCRIPT_DIR/insert_president_users.sh" "$DB_FILE" "$SCRIPT_DIR/presidents.csv"
+"$SCRIPT_DIR/insert_check_user_status_rules.sh" "$DB_FILE" "$SCRIPT_DIR/check_user_status_rules.csv"
 
 echo "Database initialization and inserts completed successfully."

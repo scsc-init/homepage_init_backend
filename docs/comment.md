@@ -21,7 +21,7 @@ CREATE TABLE "comment" (
     FOREIGN KEY("parent_id") REFERENCES "comment"("id") ON DELETE SET NULL
 );
 ```
-```sqlite
+```sql
 CREATE INDEX idx_article_id ON comment(article_id);
 CREATE INDEX idx_parent_id ON comment(parent_id);
 ```
@@ -72,7 +72,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 
 - **Method**: `GET`
 - **URL**: `/api/comments/:article_id`
-- **설명**: 댓글 목록 조회
+- **설명**: 댓글 목록 조회, 댓글이 삭제된 경우 `content`=`(삭제됨)`
 - **Response**:
 ```json
 [
@@ -99,7 +99,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
 
 - **Method**: `GET`
 - **URL**: `/api/comment/:id`
-- **설명**: 해당 ID의 댓글 조회
+- **설명**: 해당 ID의 댓글 조회, 댓글이 삭제된 경우 `content`=`(삭제됨)`
 - **Response**:
 ```json
 {

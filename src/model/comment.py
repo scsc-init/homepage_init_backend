@@ -14,3 +14,15 @@ class Comment(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     deleted_at: datetime | None = Field(default=None, nullable=True)
+
+
+class CommentResponse(SQLModel, table=False):
+    id: int
+    content: str
+    author_id: str
+    article_id: int
+    parent_id: int | None
+    is_deleted: bool
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime | None

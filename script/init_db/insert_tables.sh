@@ -237,6 +237,17 @@ BEGIN
     WHERE id = OLD.id;
 END;
 
+-- check_user_status_rule
+CREATE TABLE check_user_status_rule (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_status TEXT NOT NULL CHECK (user_status IN ('active', 'pending', 'standby', 'banned')),
+    method TEXT NOT NULL CHECK (method IN ('GET', 'POST')),
+    path TEXT NOT NULL,
+    UNIQUE (user_status, method, path)
+);
+
+CREATE INDEX idx_check_user_status_rule_method ON check_user_status_rule(method);
+
 
 -- File metadata table
 CREATE TABLE file_metadata (

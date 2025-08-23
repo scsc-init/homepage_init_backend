@@ -2,3 +2,4 @@ from .api_secret import APISecretMiddleware
 from .assert_permission import AssertPermissionMiddleware
 from .user_auth import UserAuthMiddleware
 from .http_logger import HTTPLoggerMiddleware
+from .check_user_status import CheckUserStatusMiddleware
