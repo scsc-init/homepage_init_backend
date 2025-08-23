@@ -92,12 +92,12 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(sig)
-    response = await send_discord_bot_request(action_code=1004, body={"channel_name": old_title})
-    if response is not None:
-        channel_id = response['channel_id']
-        bot_body = {"channel_id": channel_id}
-        if body.title: bot_body['new_channel_name'] = body.title
-        if body.description: bot_body['new_topic'] = body.description
-        await send_discord_bot_request_no_reply(action_code=3007, body=bot_body)
+    
+    bot_body = {}
+    bot_body['sig_name'] = old_title
+    if body.title: bot_body['new_sig_name'] = body.title
+    if body.description: bot_body['new_topic'] = body.description
+    await send_discord_bot_request_no_reply(action_code=4005, body=bot_body)
+    
     logger.info(f'info_type=sig_updated ; sig_id={id} ; title={body.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester}')
     return
