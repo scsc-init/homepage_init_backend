@@ -246,6 +246,8 @@ CREATE TABLE check_user_status_rule (
     UNIQUE (user_status, method, path)
 );
 
+CREATE INDEX idx_check_user_status_rule_method ON check_user_status_rule(method);
+
 
 -- File metadata table
 CREATE TABLE file_metadata (

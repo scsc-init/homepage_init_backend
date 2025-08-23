@@ -1,5 +1,6 @@
 # 백엔드 공통 DB, API 명세서
-**최신개정일:** 2025-06-28
+
+> 최신개정일: 2025-08-23
 
 # API 구조
 
@@ -7,7 +8,7 @@
 
 ### 인증 관련
 
-- 모든 경로에는 header에 `x-api-secret`을 포함해야 한다. 
+- 모든 /api 경로의 GET/POST 요청에는 header에 `x-api-secret`을 포함해야 한다. 
 - `APISecretMiddleware`가 이를 처리한다. 
 
 ```http
@@ -19,7 +20,7 @@ x-api-secret: YOUR_SECRET_KEY
 
 ### 로그인 관련
 
-- 사용자 정보가 필요한 경로에는 header에 `x-jwt`를 포함해야 한다. 이 값은 `/api/user/login`의 응답에서 얻는다. 
+- 사용자 정보가 필요한 /api 경로에는 header에 `x-jwt`를 포함해야 한다. 이 값은 `/api/user/login`의 응답에서 얻는다. 
 - `UserAuthMiddleware`가 이를 처리한다. 
 
 
@@ -32,9 +33,9 @@ x-jwt: USER_JWT
 
 ### 접속 차단 관련
 
-- `check_user_status_rule`에 등록된 `status`와 경로에 대해 해당 `status`의 사용자가 해당 경로로 요청을 보내는 것을 차단한다. 
-- `CheckUserStatusMiddleware`가 이를 처리한다.
-- 해당 경로에 로그인하지 않은 상태로 요청하면 401 상태 코드를, 규칙에 의해 요청이 차단되면 403 상태 코드를 반환한다. 
+- `check_user_status_rule`에 등록된 `user_status`, `method`, `path` 조합에 대해 해당 `status`의 사용자가 해당 경로로 요청을 보내는 것을 차단한다. `path`는 SQL LIKE 패턴을 사용한다(예: `/api/sig/%`).
+- `CheckUserStatusMiddleware`가 이를 처리한다. 이 미들웨어는 사용자 컨텍스트 설정(UserAuth) 이후에 실행된다.
+- 로그인하지 않은 상태에서 규칙이 적용되는 경로로 요청하면 401, 규칙에 의해 요청이 차단되면 403을 반환한다.
 
 ```sql
 CREATE TABLE check_user_status_rule (
@@ -44,6 +45,8 @@ CREATE TABLE check_user_status_rule (
     path TEXT NOT NULL,
     UNIQUE (user_status, method, path)
 );
+
+CREATE INDEX idx_check_user_status_rule_method ON check_user_status_rule(method);
 ```
 
 ## 코딩 스타일
