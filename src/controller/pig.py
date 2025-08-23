@@ -92,12 +92,12 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(pig)
-    response = await send_discord_bot_request(action_code=1004, body={"channel_name": old_title})
-    if response is not None:
-        channel_id = response['channel_id']
-        bot_body = {"channel_id": channel_id}
-        if body.title: bot_body['new_channel_name'] = body.title
-        if body.description: bot_body['new_topic'] = body.description
-        await send_discord_bot_request_no_reply(action_code=3007, body=bot_body)
+    
+    bot_body = {}
+    bot_body['pig_name'] = old_title
+    if body.title: bot_body['new_pig_name'] = body.title
+    if body.description: bot_body['new_topic'] = body.description
+    await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
+    
     logger.info(f'info_type=pig_updated ; pig_id={id} ; title={body.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester}')
     return
