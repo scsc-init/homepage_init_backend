@@ -20,11 +20,12 @@
 {"result": "invitation-url"}
 ```
 - **Status Codes**:
+  - `500 Internal Server Error`: 예기치 못한 오류
   - `504 Gateway Timeout`: 봇이 시간 안에 응답하지 않음
 
 ---
 
-## Send Message to Id
+## Send Message to ID
 
 - **Method**: `POST`
 - **URL**: `/api/bot/discord/general/send_message_to_id`
@@ -56,19 +57,7 @@
 - **Status Codes**:
   - `200 OK`
   - `400 Bad Request`: 봇이 정상적으로 응답하지 않음
-
----
-
-## ~~Login~~ *deprecated*
-- 아래 `/api/bot/discord/login` 요청으로 대체하여 사용한다. 
-
-- **Method**: `POST`
-- **URL**: `/api/executive/bot/discord/login`
-- 봇에 `/login` 경로로 요청을 보내 봇을 로그인시킨다.
-
-- **Status Codes**:
-  - `204 No Content`
-  - `400 Bad Request`: 봇이 정상적으로 응답하지 않음
+  - `504 Gateway Timeout`: 봇이 시간 안에 응답하지 않음
 
 ---
 
@@ -81,5 +70,6 @@
 - **Status Codes**:
   - `204 No Content`
   - `400 Bad Request`: 봇이 정상적으로 응답하지 않음
+  - `504 Gateway Timeout`: 봇이 시간 안에 응답하지 않음
 
 ---
