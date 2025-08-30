@@ -280,8 +280,10 @@ CREATE TABLE "article" (
     "title" TEXT NOT NULL,
     "author_id" TEXT NOT NULL,
     "board_id" INTEGER NOT NULL,
+    "is_deleted" INTEGER NOT NULL DEFAULT 0,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" DATETIME,
     PRIMARY KEY("id" AUTOINCREMENT),
     FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
     FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE

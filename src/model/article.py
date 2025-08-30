@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from pydantic import BaseModel
 from sqlmodel import Field, SQLModel
 
 
@@ -20,8 +19,10 @@ class Article(SQLModel, table=True):
     title: str = Field()
     author_id: str = Field(foreign_key="user.id")
     board_id: int = Field(foreign_key="board.id")
+    is_deleted: bool = Field(default=False, nullable=False)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    deleted_at: datetime | None = Field(default=None, nullable=True)
 
 
 class ArticleResponse(Article):

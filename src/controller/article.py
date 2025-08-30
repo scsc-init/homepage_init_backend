@@ -11,6 +11,7 @@ from src.model import Article, ArticleResponse, Board
 
 logger = logging.getLogger("app")
 
+
 class BodyCreateArticle(BaseModel):
     title: str
     content: str
@@ -29,7 +30,11 @@ async def create_article_ctrl(session: SessionDep, body: BodyCreateArticle, user
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
-    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
+    try:
+        file_path = path.join(get_settings().article_dir, f"{article.id}.md")
+        with open(file_path, "w", encoding="utf-8") as fp: fp.write(body.content)
+    except Exception:
+        logger.error(f'err_type=create_article_ctrl ; failed to write file ; {article.id=}', exc_info=True)
     logger.info(f'info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}')
     article_response = ArticleResponse(**article.model_dump(), content=body.content)
     return article_response
