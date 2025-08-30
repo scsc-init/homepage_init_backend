@@ -29,7 +29,7 @@ async def create_article(session: SessionDep, request: Request, body: BodyCreate
             await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().notice_channel_id, 'content': body.content})
         elif body.board_id == 6:  # grant
             await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().grant_channel_id, 'content': body.content})
-    except Exception: logger.error(f'err_type=create_article ; error occured during connecting to discord ; {body=}', exc_info=True)
+    except Exception: logger.error(f'err_type=create_article ; error occurred during connecting to discord ; {body=}', exc_info=True)
     return ret
 
 
@@ -51,7 +51,7 @@ async def get_article_list_by_board(board_id: int, session: SessionDep, request:
                 with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
                     content = fp.read()
             except Exception:
-                logger.error(f'err_type=get_article_list_by_board ; error occured during reading a file ; {board_id=} ; {article.id=}', exc_info=True)
+                logger.error(f'err_type=get_article_list_by_board ; error occurred during reading a file ; {board_id=} ; {article.id=}', exc_info=True)
                 content = ""
             result.append(ArticleResponse(**article.model_dump(), content=content))
 
@@ -72,7 +72,7 @@ async def get_article_by_id(id: int, session: SessionDep, request: Request) -> A
         with open(path.join(get_settings().article_dir, f"{article.id}.md"), "r", encoding="utf-8") as fp:
             content = fp.read()
     except Exception:
-        logger.error(f'err_type=get_article_by_id ; error occured during reading a file ; {article.id=}', exc_info=True)
+        logger.error(f'err_type=get_article_by_id ; error occurred during reading a file ; {article.id=}', exc_info=True)
         content = ""
     return ArticleResponse(**article.model_dump(), content=content)
 
@@ -103,7 +103,11 @@ async def update_article_by_author(id: int, session: SessionDep, request: Reques
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
     logger.info(f'info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}')
-    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
+    try:
+        file_path = path.join(get_settings().article_dir, f"{article.id}.md")
+        with open(file_path, "w", encoding="utf-8") as fp: fp.write(body.content)
+    except Exception:
+        logger.error(f'err_type=update_article_by_author ; failed to write file ; {article.id=}', exc_info=True)
 
 
 @article_executive_router.post('/update/{id}', status_code=204)
@@ -124,9 +128,12 @@ async def update_article_by_executive(id: int, session: SessionDep, request: Req
         session.rollback()
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(article)
-    current_user = get_user(request)
     logger.info(f'info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}')
-    with open(path.join(get_settings().article_dir, f"{article.id}.md"), "w", encoding="utf-8") as fp: fp.write(body.content)
+    try:
+        file_path = path.join(get_settings().article_dir, f"{article.id}.md")
+        with open(file_path, "w", encoding="utf-8") as fp: fp.write(body.content)
+    except Exception:
+        logger.error(f'err_type=update_article_by_author ; failed to write file ; {article.id=}', exc_info=True)
 
 
 @article_general_router.post('/delete/{id}', status_code=204)
