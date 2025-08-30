@@ -91,7 +91,7 @@ async def update_article_by_author(id: int, session: SessionDep, request: Reques
     if current_user.id != article.author_id: raise HTTPException(status_code=403, detail="You are not the author of this article",)
     if article.is_deleted: raise HTTPException(status_code=410, detail="Article has been deleted")
     board = session.get(Board, body.board_id)
-    if not board: raise HTTPException(404, detail="Board not found")
+    if not board: raise HTTPException(503, detail="board does not exist")
     if current_user.role < board.writing_permission_level: raise HTTPException(403, detail="You are not allowed to write to this board")
 
     article.title = body.title
@@ -116,7 +116,7 @@ async def update_article_by_executive(id: int, session: SessionDep, request: Req
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     if article.is_deleted: raise HTTPException(status_code=410, detail="Article has been deleted")
     board = session.get(Board, body.board_id)
-    if not board: raise HTTPException(404, detail="Board not found")
+    if not board: raise HTTPException(503, detail="board does not exist")
     current_user = get_user(request)
     if current_user.role < board.writing_permission_level: raise HTTPException(403, detail="You are not allowed to write to this board")
 
@@ -143,6 +143,7 @@ async def delete_article_by_author(id: int, session: SessionDep, request: Reques
     current_user = get_user(request)
     if current_user.id != article.author_id: raise HTTPException(status_code=403, detail="You are not the author of this article",)
     if article.is_deleted: raise HTTPException(status_code=410, detail="Article has been deleted")
+    if article.board_id in (1, 2): raise HTTPException(status_code=400, detail="cannot delete article of sig/pig")
 
     article.is_deleted = True
     article.deleted_at = datetime.now(timezone.utc)

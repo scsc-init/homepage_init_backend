@@ -345,6 +345,7 @@ ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
 
 - **Status Codes**:
   - `204 No Content`
+  - `400 Bad Request` (board_id=1,2(sig/pig)일 때)
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (게시글의 작성자가 아님)
   - `404 Not Found` (게시글이 존재하지 않음)
