@@ -1,5 +1,5 @@
 # 게시글 관련 DB, API 명세서
-**최신개정일:** 2025-06-28
+**최신개정일:** 2025-08-30
 
 # DB 구조
 
@@ -26,8 +26,10 @@ CREATE TABLE "article" (
     "title" TEXT NOT NULL,
     "author_id" TEXT NOT NULL,
     "board_id" INTEGER NOT NULL,
+    "is_deleted" INTEGER NOT NULL DEFAULT 0,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deleted_at" DATETIME,
     PRIMARY KEY("id" AUTOINCREMENT),
     FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
     FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
@@ -37,6 +39,12 @@ CREATE TABLE "article" (
 CREATE INDEX idx_board_id ON article(board_id);
 ```
 - article의 content는 `ARTICLE_DIR(static/article/)`에 md 파일로 저장된다. 
+
+2025-08-30 migration:
+```sql
+ALTER TABLE article ADD COLUMN "is_deleted" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
+```
 
 # API 구조
 
@@ -291,6 +299,7 @@ CREATE INDEX idx_board_id ON article(board_id);
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (게시글의 작성자가 아님)
   - `404 Not Found` (게시판이나 게시글이 존재하지 않음)
+  - `410 Gone` (게시글이 삭제됨)
   
 ---
 
@@ -324,6 +333,7 @@ CREATE INDEX idx_board_id ON article(board_id);
   - `401 Unauthorized` 
   - `403 Forbidden` 
   - `404 Not Found` (게시판이나 게시글이 존재하지 않음)
+  - `410 Gone` (게시글이 삭제됨)
   
 ---
 
@@ -338,6 +348,7 @@ CREATE INDEX idx_board_id ON article(board_id);
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (게시글의 작성자가 아님)
   - `404 Not Found` (게시글이 존재하지 않음)
+  - `410 Gone` (이미 삭제됨)
 
 ---
 
@@ -352,5 +363,6 @@ CREATE INDEX idx_board_id ON article(board_id);
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (권한 없음)
   - `404 Not Found` (게시글이 존재하지 않음)
+  - `410 Gone` (이미 삭제됨)
 
 ---
