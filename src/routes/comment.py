@@ -9,7 +9,7 @@ from sqlmodel import select
 
 from src.db import SessionDep
 from src.model import Article, Board, Comment, CommentResponse
-from src.util import get_user
+from src.util import get_user, DELETED
 
 logger = logging.getLogger("app")
 
@@ -24,13 +24,11 @@ class BodyCreateComment(BaseModel):
     parent_id: Optional[int]
 
 
-DELETED = "(삭제됨)"
-
-
 @comment_general_router.post('/create', status_code=201)
 async def create_comment(session: SessionDep, request: Request, body: BodyCreateComment) -> Comment:
     article = session.get(Article, body.article_id)
     if not article: raise HTTPException(status_code=404, detail=f"Article {body.article_id} does not exist")
+    if article.is_deleted: raise HTTPException(status_code=410, detail="Article has been deleted")
     board = session.get(Board, article.board_id)
     if not board: raise HTTPException(503, detail="board does not exist")
 
@@ -45,7 +43,7 @@ async def create_comment(session: SessionDep, request: Request, body: BodyCreate
         raise HTTPException(status_code=409, detail="unique field already exists")
     session.refresh(comment)
 
-    logger.info(f'info_type=comment_created ; content={body.content} ; author_id={current_user.id} ; article_id={article.id} ; parent_id={body.parent_id}')
+    logger.info(f'info_type=comment_created ; content={body.content[:100]} ; author_id={current_user.id} ; article_id={article.id} ; parent_id={body.parent_id}')
     return comment
 
 
@@ -101,7 +99,7 @@ async def update_comment_by_author(id: int, session: SessionDep, request: Reques
 
     comment.content = body.content
     comment.updated_at = datetime.now(timezone.utc)
-    logger.info(f'info_type=comment_updated ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; content={body.content} ; revisioner_id={current_user.id}')
+    logger.info(f'info_type=comment_updated ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; content={body.content[:100]} ; revisioner_id={current_user.id}')
     try: session.commit()
     except IntegrityError:
         session.rollback()
