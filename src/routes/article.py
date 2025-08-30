@@ -133,7 +133,7 @@ async def update_article_by_executive(id: int, session: SessionDep, request: Req
         file_path = path.join(get_settings().article_dir, f"{article.id}.md")
         with open(file_path, "w", encoding="utf-8") as fp: fp.write(body.content)
     except Exception:
-        logger.error(f'err_type=update_article_by_author ; failed to write file ; {article.id=}', exc_info=True)
+        logger.error(f'err_type=update_article_by_executive ; failed to write file ; {article.id=}', exc_info=True)
 
 
 @article_general_router.post('/delete/{id}', status_code=204)
