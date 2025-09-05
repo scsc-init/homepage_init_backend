@@ -472,13 +472,32 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
+## Get Oldboy Applicant(Self)
+
+- **Method**: `GET`
+- **URL**: `/api/user/oldboy/applicant`
+- **Description**: 로그인된 사용자에 대해 새로운 졸업 신청자 기록을 조회합니다. 
+- **Response**:
+```json
+{
+  "id": "user_id_from_user_table",
+  "processed": false,
+  "created_at": "2023-10-27T10:00:00Z",
+  "updated_at": "2023-10-27T10:00:00Z"
+}
+```
+- **Status Codes**:
+  - `200 OK`
+  - `404 Not Found`: oldboy 신청 기록 없음
+  - `401 Unauthorized` (로그인하지 않음)
+
+---
+
 ## Get All Oldboy Applicants
 
 - **Method**: `GET`
 - **URL**: `/api/executive/user/oldboy/applicants`
 - **Description**: 졸업 신청자 기록을 조회합니다.
-- **Query Parameters**:
-    - `processed`: Allowed values: `true`, `false`
 - **Response**:
 ```json
 [

@@ -219,9 +219,17 @@ async def create_oldboy_applicant(session: SessionDep, request: Request) -> Oldb
     return await register_oldboy_applicant_ctrl(session, current_user)
 
 
+@user_router.get('/user/oldboy/applicant')
+async def get_oldboy_applicant_self(session: SessionDep, request: Request) -> OldboyApplicant:
+    current_user = get_user(request)
+    applicant = session.get(OldboyApplicant, current_user.id)
+    if applicant is None: raise HTTPException(404, detail="applicant not found for the user")
+    return applicant
+
+
 @user_router.get('/executive/user/oldboy/applicants')
-async def get_oldboy_applicants(session: SessionDep, processed: bool) -> Sequence[OldboyApplicant]:
-    return session.exec(select(OldboyApplicant).where(OldboyApplicant.processed == processed)).all()
+async def get_oldboy_applicants(session: SessionDep) -> Sequence[OldboyApplicant]:
+    return session.exec(select(OldboyApplicant)).all()
 
 
 @user_router.post('/executive/user/oldboy/{id}/process', status_code=204)
