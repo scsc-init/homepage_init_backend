@@ -218,7 +218,6 @@ CREATE TABLE standby_req_tbl (
 ```
 - **Status Codes**:
   - `200 OK`
-  - `401 Unauthorized` (인증 실패 시)
   - `404 Not Found` (유효하지 않은 ID)
 
 ---
@@ -349,7 +348,7 @@ CREATE TABLE standby_req_tbl (
 ## Update My Profile Picture With File (내 프로필 사진을 파일로 변경)
 
 - **Method**: `POST`  
-- **URL**: `/api/user/update`  
+- **URL**: `/api/user/update-pfp-file`  
 - **설명**: 로그인한 사용자의 정보 수정  
 - **Request**:
   * **Content-Type**: `multipart/form-data`
