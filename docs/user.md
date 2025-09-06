@@ -470,7 +470,7 @@ CREATE TABLE standby_req_tbl (
   - `201 Created`: 생성 성공
   - `400 Bad Request`: oldboy 신청 자격 없음
   - `401 Unauthorized` (로그인하지 않음)
-  - `409 Conflict`: 이미 존재하는 `id`로 신청을 시도
+  - `409 Conflict`: 이미 신청 기록이 존재하는 `id`로 신청을 시도
 
 ---
 
@@ -490,7 +490,7 @@ CREATE TABLE standby_req_tbl (
 ```
 - **Status Codes**:
   - `200 OK`
-  - `401 Unauthorized` (로그인하지 않음)
+  - `401 Unauthorized`: (로그인하지 않음)
   - `404 Not Found`: 졸업생 전환 신청 기록 없음
 
 ---
@@ -530,11 +530,11 @@ CREATE TABLE standby_req_tbl (
 - **URL**: `/api/executive/user/oldboy/:id/process`
 - **Description**: 특정 `id`를 가진 사용자의 졸업생 전환 신청 `processed` 상태를 업데이트하고 신청자의 권한을 `oldboy`로 변경합니다. 
 - **Status Codes**:
-  - `204 No Content`: 업데이트 성공 (응답 본문 없음)
+  - `204 No Content`: 업데이트 성공
   - `401 Unauthorized`: 로그인하지 않음
   - `403 Forbidden`: 권한 없음 (예: 관리자가 아님)
   - `404 Not Found`: 해당 ID의 졸업생 전환 신청 기록 없음
-  - `409 Conflict` 이미 oldboy인 사용자에 대해 요청함
+  - `409 Conflict`: 이미 oldboy인 사용자에 대해 요청함
 
 ---
 
