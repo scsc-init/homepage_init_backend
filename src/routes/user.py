@@ -242,6 +242,7 @@ async def delete_oldboy_applicant_self(session: SessionDep, request: Request) ->
     current_user = get_user(request)
     oldboy_applicant = session.get(OldboyApplicant, current_user.id)
     if not oldboy_applicant: raise HTTPException(404, detail="oldboy_applicant not found")
+    if oldboy_applicant.processed: raise HTTPException(409, detail="oldboy_applicant already processed")
     session.delete(oldboy_applicant)
     session.commit()
     return
