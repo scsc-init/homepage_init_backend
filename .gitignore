@@ -1,6 +1,5 @@
 *.db
 *.env
-.vscode/
 *.pem
 
 # user uploaded files
