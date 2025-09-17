@@ -18,7 +18,6 @@ class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
-    should_extend: bool
 
 
 async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> SIG:
@@ -39,7 +38,6 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         semester=scsc_global_status.semester,
         owner=user_id,
         status=scsc_global_status.status,
-        should_extend=body.should_extend
     )
     session.add(sig)
     try: session.commit()

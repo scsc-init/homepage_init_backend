@@ -21,6 +21,9 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
     utc_dt_aware = utc_dt.replace(tzinfo=timezone.utc)
     return utc_dt_aware
 
+def get_new_year_semester(old_year: int, old_semester: int) -> tuple[int, int]:
+    return old_year + old_semester // 4, old_semester % 4 + 1
+
 
 class DepositDTO(BaseModel):
     amount: int
