@@ -18,6 +18,7 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
+    should_extend: bool
 
 
 async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> PIG:
@@ -37,7 +38,8 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
         year=scsc_global_status.year,
         semester=scsc_global_status.semester,
         owner=user_id,
-        status=scsc_global_status.status
+        status=scsc_global_status.status,
+        should_extend=body.should_extend
     )
     session.add(pig)
     try: session.commit()
@@ -65,6 +67,7 @@ class BodyUpdatePIG(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
+    should_extend: Optional[bool] = None
 
 
 async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, user_id: str, is_executive: bool) -> None:
@@ -85,6 +88,7 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
     if body.status:
         if not is_executive: raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
         pig.status = body.status
+    if body.should_extend is not None: pig.should_extend = body.should_extend
 
     session.add(pig)
     try: session.commit()

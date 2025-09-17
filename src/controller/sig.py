@@ -18,6 +18,7 @@ class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
+    should_extend: bool
 
 
 async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> SIG:
@@ -37,7 +38,8 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         year=scsc_global_status.year,
         semester=scsc_global_status.semester,
         owner=user_id,
-        status=scsc_global_status.status
+        status=scsc_global_status.status,
+        should_extend=body.should_extend
     )
     session.add(sig)
     try: session.commit()
@@ -65,6 +67,7 @@ class BodyUpdateSIG(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
+    should_extend: Optional[bool] = None
 
 
 async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
@@ -85,6 +88,7 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     if body.status:
         if not is_executive: raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
         sig.status = body.status
+    if body.should_extend is not None: sig.should_extend = body.should_extend
 
     session.add(sig)
     try: session.commit()

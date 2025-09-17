@@ -83,10 +83,22 @@ async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: s
             await send_discord_bot_request_no_reply(action_code=3004, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"})
             
         for sig in session.exec(select(SIG).where(SIG.year == scsc_global_status.year, SIG.semester == scsc_global_status.semester, SIG.status != SCSCStatus.inactive)).all():
+            if sig.should_extend:
+                sig.year = scsc_global_status.year + scsc_global_status.semester // 4
+                sig.semester = scsc_global_status.semester % 4 + 1
+                sig.status = SCSCStatus.recruiting
+                session.add(sig)
+                continue
             sig.status = SCSCStatus.inactive
             session.add(sig)
             await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title, "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"})
         for pig in session.exec(select(PIG).where(PIG.year == scsc_global_status.year, PIG.semester == scsc_global_status.semester, PIG.status != SCSCStatus.inactive)).all():
+            if pig.should_extend:
+                pig.year = scsc_global_status.year + scsc_global_status.semester // 4
+                pig.semester = scsc_global_status.semester % 4 + 1
+                pig.status = SCSCStatus.recruiting
+                session.add(pig)
+                continue
             pig.status = SCSCStatus.inactive
             session.add(pig)
             await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title, "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"})

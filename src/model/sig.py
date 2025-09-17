@@ -23,6 +23,8 @@ class SIG(SQLModel, table=True):
 
     year: int = Field(nullable=False)
     semester: int = Field(nullable=False)
+    
+    should_extend: bool = Field(default=False, nullable=False)
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
