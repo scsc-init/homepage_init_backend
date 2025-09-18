@@ -82,7 +82,8 @@ WHEN
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
+    OLD.owner != NEW.owner OR
+    OLD.should_extend != NEW.should_extend
 BEGIN
     UPDATE sig
     SET updated_at = CURRENT_TIMESTAMP
@@ -99,7 +100,8 @@ WHEN
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
+    OLD.owner != NEW.owner OR
+    OLD.should_extend != NEW.should_extend
 BEGIN
     UPDATE pig
     SET updated_at = CURRENT_TIMESTAMP
@@ -229,6 +231,7 @@ END;
   "title": "AI SIG",
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
+  "should_extend": true,
 }
 ```
 

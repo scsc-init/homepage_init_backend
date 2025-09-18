@@ -101,5 +101,5 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
     if body.description: bot_body['new_topic'] = body.description
     await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
     
-    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={body.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester}')
+    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester}')
     return
