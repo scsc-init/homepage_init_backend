@@ -1,6 +1,5 @@
 import csv
 import io
-import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, Request
@@ -8,7 +7,6 @@ from pydantic import BaseModel, field_validator
 
 from src.model import User
 
-logger = logging.getLogger("app")
 
 map_semester_name = {
     1: '1',
