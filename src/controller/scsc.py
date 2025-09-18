@@ -1,13 +1,14 @@
+from typing import Type
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import logging
 
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
 from sqlmodel import select
 
 from src.db import SessionDep
 from src.model import PIG, SIG, OldboyApplicant, SCSCGlobalStatus, SCSCStatus, User, UserStatus, StandbyReqTbl
-from src.util import map_semester_name, get_user_role_level, change_discord_role, send_discord_bot_request_no_reply, send_discord_bot_request, get_new_year_semester, process_igs
+from src.util import map_semester_name, get_user_role_level, change_discord_role, send_discord_bot_request_no_reply, send_discord_bot_request, get_new_year_semester
 
 from .user import process_oldboy_applicant_ctrl
 
@@ -34,6 +35,30 @@ ctrl_status_available = _CtrlStatusAvailable(
 )
 
 
+async def _process_igs_change_semester(session: SessionDep, model: Type[SIG | PIG], scsc_global_status: SCSCGlobalStatus):
+    action_code, name_key = (4002, 'sig_name') if model == SIG else (4004, 'pig_name')
+    igs = session.exec(
+        select(model).where(
+            model.year == scsc_global_status.year,
+            model.semester == scsc_global_status.semester,
+            model.status != SCSCStatus.inactive,
+        )
+    ).all()
+
+    for ig in igs:
+        try:
+            if ig.should_extend:
+                ig.year, ig.semester = get_new_year_semester(scsc_global_status.year, scsc_global_status.semester)
+                ig.status = SCSCStatus.recruiting
+                session.add(ig)
+            else:
+                ig.status = SCSCStatus.inactive
+                session.add(ig)
+                await send_discord_bot_request_no_reply(action_code=action_code, body={name_key: ig.title, "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"})
+        except Exception as e:
+            logger.error(f'err_type=process_igs ; ig_id={ig.id} ; ig_title={ig.title} ; msg=error processing {model.__name__}: {e}', exc_info=True)
+
+
 async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: str, new_status: SCSCStatus, scsc_global_status: SCSCGlobalStatus) -> None:
     # VALIDATE SCSC GLOBAL STATUS UPDATE
     if (scsc_global_status.status, new_status) not in _valid_scsc_global_status_update: raise HTTPException(400, "invalid sig global status update")
@@ -52,8 +77,7 @@ async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: s
                 user.role = get_user_role_level("dormant")
                 session.add(user)
                 if user.discord_id: await change_discord_role(session, user.discord_id, 'dormant')
-                
-    
+
     # start of recruiting
     if new_status == SCSCStatus.recruiting:
         for sig in session.exec(select(SIG).where(SIG.status == SCSCStatus.surveying)).all():
@@ -74,14 +98,13 @@ async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: s
             await send_discord_bot_request_no_reply(action_code=3002, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"})
         if not pig_res:
             await send_discord_bot_request_no_reply(action_code=3004, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"})
-        
-        await process_igs(session, SIG, scsc_global_status)
-        await process_igs(session, PIG, scsc_global_status)
-        
+
+        await _process_igs_change_semester(session, SIG, scsc_global_status)
+        await _process_igs_change_semester(session, PIG, scsc_global_status)
+
         # update current semester
         scsc_global_status.year, scsc_global_status.semester = get_new_year_semester(scsc_global_status.year, scsc_global_status.semester)
         session.add(scsc_global_status)
-        
 
     # start of inactive
     if new_status == SCSCStatus.inactive:
@@ -95,8 +118,7 @@ async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: s
             session.add(user)
         for applicant in session.exec(select(OldboyApplicant).where(OldboyApplicant.processed == False)).all():
             await process_oldboy_applicant_ctrl(session, applicant.id)
-        
-    
+
     # start of surveying
     if new_status == SCSCStatus.surveying:
         await send_discord_bot_request_no_reply(action_code=3002, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"})

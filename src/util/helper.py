@@ -1,15 +1,12 @@
 import csv
 import io
-from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException, Request
-from pydantic import field_validator, BaseModel
-from sqlmodel import select
-from typing import Type
 import logging
+from datetime import datetime, timedelta, timezone
 
-from src.model import User, SIG, PIG, SCSCStatus, SCSCGlobalStatus
-from src.db import SessionDep
-from src.util.rabbitmq import send_discord_bot_request_no_reply
+from fastapi import HTTPException, Request
+from pydantic import BaseModel, field_validator
+
+from src.model import User
 
 logger = logging.getLogger("app")
 
@@ -35,6 +32,7 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
     utc_dt = kst_naive_dt - timedelta(hours=9)
     utc_dt_aware = utc_dt.replace(tzinfo=timezone.utc)
     return utc_dt_aware
+
 
 def get_new_year_semester(old_year: int, old_semester: int) -> tuple[int, int]:
     return old_year + old_semester // 4, old_semester % 4 + 1
@@ -70,29 +68,3 @@ async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO
         deposit_name=line["보낸분/받는분"]
     ) for line in reader]
     return result
-
-
-async def process_igs(session: SessionDep, model: Type[SIG | PIG], scsc_global_status: SCSCGlobalStatus):
-    action_code, name_key = (4002, 'sig_name') if model==SIG else (4004, 'pig_name')
-    igs = session.exec(
-        select(model).where(
-            model.year == scsc_global_status.year,
-            model.semester == scsc_global_status.semester,
-            model.status != SCSCStatus.inactive,
-        )
-    ).all()
-
-    for ig in igs:
-        try:
-            if ig.should_extend:
-                ig.year, ig.semester = get_new_year_semester(scsc_global_status.year, scsc_global_status.semester)
-                ig.status = SCSCStatus.recruiting
-                session.add(ig)
-            else:
-                ig.status = SCSCStatus.inactive
-                session.add(ig)
-                await send_discord_bot_request_no_reply(action_code=action_code, body={name_key: ig.title, "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"})
-        except Exception as e:
-            logger.error(f'err_type=process_igs ; ig_id={ig.id} ; ig_title={ig.title} ; msg=error processing {model.__name__}: {e}', exc_info=True)
-
-
