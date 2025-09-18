@@ -9,7 +9,7 @@ import logging
 
 from src.model import User, SIG, PIG, SCSCStatus, SCSCGlobalStatus
 from src.db import SessionDep
-from src.util import send_discord_bot_request_no_reply
+from src.util.rabbitmq import send_discord_bot_request_no_reply
 
 logger = logging.getLogger("app")
 
