@@ -75,8 +75,8 @@ async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: s
         if not pig_res:
             await send_discord_bot_request_no_reply(action_code=3004, body={'category_name': f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"})
         
-        await process_igs(session, SIG, scsc_global_status, 4004, 'sig_name')
-        await process_igs(session, PIG, scsc_global_status, 4004, 'pig_name')
+        await process_igs(session, SIG, scsc_global_status)
+        await process_igs(session, PIG, scsc_global_status)
         
         # update current semester
         scsc_global_status.year, scsc_global_status.semester = get_new_year_semester(scsc_global_status.year, scsc_global_status.semester)

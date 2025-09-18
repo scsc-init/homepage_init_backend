@@ -72,7 +72,8 @@ async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO
     return result
 
 
-async def process_igs(session: SessionDep, model: Type[SIG | PIG], scsc_global_status: SCSCGlobalStatus, action_code: int, name_key: str):
+async def process_igs(session: SessionDep, model: Type[SIG | PIG], scsc_global_status: SCSCGlobalStatus):
+    action_code, name_key = (4002, 'sig_name') if model==SIG else (4004, 'pig_name')
     igs = session.exec(
         select(model).where(
             model.year == scsc_global_status.year,
