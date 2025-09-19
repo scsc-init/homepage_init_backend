@@ -37,7 +37,7 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
         year=scsc_global_status.year,
         semester=scsc_global_status.semester,
         owner=user_id,
-        status=scsc_global_status.status
+        status=scsc_global_status.status,
     )
     session.add(pig)
     try: session.commit()
@@ -65,6 +65,7 @@ class BodyUpdatePIG(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
+    should_extend: Optional[bool] = None
 
 
 async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, user_id: str, is_executive: bool) -> None:
@@ -85,6 +86,7 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
     if body.status:
         if not is_executive: raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
         pig.status = body.status
+    if body.should_extend is not None: pig.should_extend = body.should_extend
 
     session.add(pig)
     try: session.commit()
@@ -99,5 +101,5 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
     if body.description: bot_body['new_topic'] = body.description
     await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
     
-    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={body.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester}')
+    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester}')
     return

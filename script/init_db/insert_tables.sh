@@ -116,10 +116,12 @@ CREATE TABLE sig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_id INTEGER UNIQUE,
+    content_id INTEGER NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
+    should_extend BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -133,10 +135,12 @@ CREATE TABLE pig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_id INTEGER UNIQUE,
+    content_id INTEGER NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
+    should_extend BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -190,7 +194,8 @@ WHEN
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
+    OLD.owner != NEW.owner OR
+    OLD.should_extend != NEW.should_extend
 BEGIN
     UPDATE sig
     SET updated_at = CURRENT_TIMESTAMP
@@ -207,7 +212,8 @@ WHEN
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
+    OLD.owner != NEW.owner OR
+    OLD.should_extend != NEW.should_extend
 BEGIN
     UPDATE pig
     SET updated_at = CURRENT_TIMESTAMP

@@ -1,5 +1,5 @@
 # SIG/PIG 관련 DB, API 명세서
-**최신개정일:** 2025-06-21
+**최신개정일:** 2025-09-17
 
 # DB 구조
 
@@ -13,6 +13,8 @@ CREATE TABLE sig (
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
+    should_extend BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -80,7 +82,8 @@ WHEN
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
+    OLD.owner != NEW.owner OR
+    OLD.should_extend != NEW.should_extend
 BEGIN
     UPDATE sig
     SET updated_at = CURRENT_TIMESTAMP
@@ -97,7 +100,8 @@ WHEN
     OLD.status != NEW.status OR
     OLD.year != NEW.year OR
     OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
+    OLD.owner != NEW.owner OR
+    OLD.should_extend != NEW.should_extend
 BEGIN
     UPDATE pig
     SET updated_at = CURRENT_TIMESTAMP
@@ -227,6 +231,7 @@ END;
   "title": "AI SIG",
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
+  "should_extend": true,
 }
 ```
 

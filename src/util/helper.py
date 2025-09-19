@@ -1,9 +1,19 @@
 import csv
 import io
 from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException, Request
-from pydantic import field_validator, BaseModel
+from pydantic import BaseModel, field_validator
+
 from src.model import User
+
+
+map_semester_name = {
+    1: '1',
+    2: 'S',
+    3: '2',
+    4: 'W',
+}
 
 
 def get_file_extension(filename: str) -> str:
@@ -20,6 +30,10 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
     utc_dt = kst_naive_dt - timedelta(hours=9)
     utc_dt_aware = utc_dt.replace(tzinfo=timezone.utc)
     return utc_dt_aware
+
+
+def get_new_year_semester(old_year: int, old_semester: int) -> tuple[int, int]:
+    return old_year + old_semester // 4, old_semester % 4 + 1
 
 
 class DepositDTO(BaseModel):

@@ -17,12 +17,14 @@ class SIG(SQLModel, table=True):
 
     title: str = Field(nullable=False)
     description: str = Field(nullable=False)
-    content_id: int = Field(foreign_key="article.id", unique=True)
+    content_id: int = Field(foreign_key="article.id", nullable=False, unique=True)
 
     status: SCSCStatus = Field(nullable=False)
 
     year: int = Field(nullable=False)
     semester: int = Field(nullable=False)
+    
+    should_extend: bool = Field(default=False, nullable=False)
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

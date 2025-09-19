@@ -37,7 +37,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         year=scsc_global_status.year,
         semester=scsc_global_status.semester,
         owner=user_id,
-        status=scsc_global_status.status
+        status=scsc_global_status.status,
     )
     session.add(sig)
     try: session.commit()
@@ -65,6 +65,7 @@ class BodyUpdateSIG(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
+    should_extend: Optional[bool] = None
 
 
 async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
@@ -85,6 +86,7 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     if body.status:
         if not is_executive: raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
         sig.status = body.status
+    if body.should_extend is not None: sig.should_extend = body.should_extend
 
     session.add(sig)
     try: session.commit()
@@ -99,5 +101,5 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     if body.description: bot_body['new_topic'] = body.description
     await send_discord_bot_request_no_reply(action_code=4005, body=bot_body)
     
-    logger.info(f'info_type=sig_updated ; sig_id={id} ; title={body.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester}')
+    logger.info(f'info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester}')
     return
