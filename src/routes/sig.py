@@ -136,12 +136,12 @@ async def join_sig(id: int, session: SessionDep, request: Request):
 
 
 @sig_router.post('/sig/{id}/member/leave', status_code=204)
-async def leave_sig(id: int, session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request):
+async def leave_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if sig.owner == current_user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
-    sig_member = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id).where(SIGMember.status == scsc_global_status.status)).first()
+    sig_member = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id)).first()
     if not sig_member: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
     session.delete(sig_member)
     session.commit()
