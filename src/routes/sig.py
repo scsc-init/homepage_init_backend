@@ -52,8 +52,7 @@ async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     session.refresh(sig)
     year = sig.year
     semester = sig.semester
-    await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
-                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title, "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     logger.info(f'info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
@@ -75,8 +74,7 @@ async def delete_sig(id: int, session: SessionDep, request: Request) -> None:
     session.refresh(sig)
     year = sig.year
     semester = sig.semester
-    await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title,
-                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title, "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     logger.info(f'info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
@@ -118,7 +116,10 @@ async def join_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"SCSC 전역 상태가 {ctrl_status_available.join_sigpig}일 때만 시그/피그에 가입할 수 있습니다")
+    if sig.is_rolling_admission:
+        if sig.status not in ctrl_status_available.join_sigpig_rolling_admission: raise HTTPException(400, f"시그/피그 상태가 {ctrl_status_available.join_sigpig_rolling_admission}일 때만 시그/피그에 가입할 수 있습니다")
+    else:
+        if sig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"시그/피그 상태가 {ctrl_status_available.join_sigpig}일 때만 시그/피그에 가입할 수 있습니다")
     sig_member = SIGMember(
         ig_id=id,
         user_id=current_user.id,
