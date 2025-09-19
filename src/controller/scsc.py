@@ -87,6 +87,15 @@ async def update_scsc_global_status_ctrl(session: SessionDep, current_user_id: s
             pig.status = SCSCStatus.recruiting
             session.add(pig)
 
+    # start of active
+    if new_status == SCSCStatus.active:
+        for sig in session.exec(select(SIG).where(SIG.status == SCSCStatus.recruiting)).all():
+            sig.status = SCSCStatus.active
+            session.add(sig)
+        for pig in session.exec(select(PIG).where(PIG.status == SCSCStatus.recruiting)).all():
+            pig.status = SCSCStatus.active
+            session.add(pig)
+
     # end of active
     if scsc_global_status.status == SCSCStatus.active:
         # update previous semester data
