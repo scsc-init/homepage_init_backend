@@ -77,12 +77,14 @@ CREATE INDEX idx_pig_member_ig ON pig_member(ig_id);
 ```sql
 CREATE TRIGGER update_sig_updated_at
 AFTER UPDATE OF title, description, content_id, status, year, semester, owner, should_extend, is_rolling_admission ON sig 
+FOR EACH ROW
 BEGIN 
     UPDATE sig SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id; 
 END;
 
 CREATE TRIGGER update_pig_updated_at
 AFTER UPDATE OF title, description, content_id, status, year, semester, owner, should_extend, is_rolling_admission ON pig 
+FOR EACH ROW
 BEGIN 
     UPDATE pig SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id; 
 END;
@@ -111,7 +113,7 @@ END;
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
-  "is_rolling_admission":false,
+  "is_rolling_admission": false,
 }
 ```
 
@@ -129,7 +131,7 @@ END;
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
   "owner": "hash_of_owner_user",
-  "is_rolling_admission":false,
+  "is_rolling_admission": false,
 }
 ```
 
@@ -160,7 +162,9 @@ END;
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user"
+  "owner": "hash_of_owner_user",
+  "should_extend": true,
+  "is_rolling_admission": true,
 }
 ```
 
@@ -189,7 +193,9 @@ END;
     "semester": 1,
     "created_at": "2025-03-01T10:00:00Z",
     "updated_at": "2025-04-01T12:00:00Z",
-    "owner": "hash_of_owner_user"
+    "owner": "hash_of_owner_user",
+    "should_extend": true,
+    "is_rolling_admission": true,
   },
   ...
 ]
@@ -213,7 +219,7 @@ END;
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
   "should_extend": true,
-  "is_rolling_admission":true,
+  "is_rolling_admission": true,
 }
 ```
 
@@ -280,7 +286,7 @@ END;
   "content": "### 안녕하세요",
   "status": "recruiting",
   "should_extend": true,
-  "is_rolling_admission":true,
+  "is_rolling_admission": true,
 }
 ```
 

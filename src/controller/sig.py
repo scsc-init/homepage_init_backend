@@ -19,7 +19,7 @@ class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: bool
+    is_rolling_admission: bool = False
 
 
 async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> SIG:
@@ -43,7 +43,7 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         is_rolling_admission=body.is_rolling_admission,
     )
     session.add(sig)
-    try: session.commit()
+    try: session.flush()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
@@ -56,10 +56,13 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         status=sig.status
     )
     session.add(sig_member)
-    session.commit()
+    try: session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, detail="시그장 자동 가입 중 중복 오류가 발생했습니다")
     session.refresh(sig)
-    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': body.title, 'user_id_list': [user_discord_id], "sig_description": sig.description})
-    logger.info(f'info_type=sig_created ; sig_id={sig.id} ; title={body.title} ; owner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={body.is_rolling_admission}')
+    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': sig.title, 'user_id_list': [user_discord_id], "sig_description": sig.description})
+    logger.info(f'info_type=sig_created ; sig_id={sig.id} ; title={sig.title} ; owner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}')
     return sig
 
 
@@ -104,7 +107,7 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     bot_body['sig_name'] = old_title
     if body.title: bot_body['new_sig_name'] = body.title
     if body.description: bot_body['new_topic'] = body.description
-    await send_discord_bot_request_no_reply(action_code=4005, body=bot_body)
+    if len(bot_body) > 1: await send_discord_bot_request_no_reply(action_code=4005, body=bot_body)
 
-    logger.info(f'info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={body.is_rolling_admission}')
+    logger.info(f'info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}')
     return

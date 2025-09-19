@@ -19,7 +19,7 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: bool
+    is_rolling_admission: bool = False
 
 
 async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> PIG:
@@ -43,7 +43,7 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
         is_rolling_admission=body.is_rolling_admission,
     )
     session.add(pig)
-    try: session.commit()
+    try: session.flush()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
@@ -56,10 +56,13 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
         status=pig.status
     )
     session.add(pig_member)
-    session.commit()
+    try: session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, detail="피그장 자동 가입 중 중복 오류가 발생했습니다")
     session.refresh(pig)
-    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': body.title, 'user_id_list': [user_discord_id], "pig_description": pig.description})
-    logger.info(f'info_type=pig_created ; pig_id={pig.id} ; title={body.title} ; owner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={body.is_rolling_admission}')
+    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': pig.title, 'user_id_list': [user_discord_id], "pig_description": pig.description})
+    logger.info(f'info_type=pig_created ; pig_id={pig.id} ; title={pig.title} ; owner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}')
     return pig
 
 
@@ -104,7 +107,7 @@ async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, use
     bot_body['pig_name'] = old_title
     if body.title: bot_body['new_pig_name'] = body.title
     if body.description: bot_body['new_topic'] = body.description
-    await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
+    if len(bot_body) > 1: await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
 
-    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={body.is_rolling_admission}')
+    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}')
     return

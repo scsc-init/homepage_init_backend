@@ -116,10 +116,9 @@ async def join_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.is_rolling_admission:
-        if sig.status not in ctrl_status_available.join_sigpig_rolling_admission: raise HTTPException(400, f"시그/피그 상태가 {ctrl_status_available.join_sigpig_rolling_admission}일 때만 시그/피그에 가입할 수 있습니다")
-    else:
-        if sig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"시그/피그 상태가 {ctrl_status_available.join_sigpig}일 때만 시그/피그에 가입할 수 있습니다")
+    allowed = (ctrl_status_available.join_sigpig_rolling_admission if sig.is_rolling_admission else ctrl_status_available.join_sigpig)
+    if sig.status not in allowed: raise HTTPException(400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다")
+
     sig_member = SIGMember(
         ig_id=id,
         user_id=current_user.id,
