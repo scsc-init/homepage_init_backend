@@ -141,12 +141,13 @@ async def leave_sig(id: int, session: SessionDep, request: Request):
     sig = session.get(SIG, id)
     if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if sig.owner == current_user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
-    sig_member = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id)).first()
-    if not sig_member: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-    session.delete(sig_member)
+    sig_members = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id)).all()
+    if not sig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
+    for member in sig_members:
+        session.delete(member)
     session.commit()
     session.refresh(sig)
-    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': sig.title})
+    if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': sig.title})
     logger.info(f'info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
