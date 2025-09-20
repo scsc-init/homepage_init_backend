@@ -136,17 +136,18 @@ async def join_pig(id: int, session: SessionDep, request: Request):
 
 
 @pig_router.post('/pig/{id}/member/leave', status_code=204)
-async def leave_pig(id: int, session: SessionDep, scsc_global_status: SCSCGlobalStatusDep, request: Request):
+async def leave_pig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if pig.owner == current_user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
-    pig_member = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(PIGMember.user_id == current_user.id).where(PIGMember.status == scsc_global_status.status)).first()
-    if not pig_member: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-    session.delete(pig_member)
+    pig_members = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(PIGMember.user_id == current_user.id)).all()
+    if not pig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
+    for member in pig_members:
+        session.delete(member)
     session.commit()
     session.refresh(pig)
-    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': pig.title})
+    if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': pig.title})
     logger.info(f'info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
