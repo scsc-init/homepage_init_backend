@@ -1,9 +1,7 @@
 ALTER TABLE sig ADD COLUMN should_extend BOOLEAN NOT NULL DEFAULT 0;
 ALTER TABLE pig ADD COLUMN should_extend BOOLEAN NOT NULL DEFAULT 0;
-ALTER TABLE sig ALTER COLUMN content_id SET NOT NULL;
-ALTER TABLE pig ALTER COLUMN content_id SET NOT NULL;
 
-DROP TRIGGER IF EXISTS update_sig_updated_at ON sig;
+DROP TRIGGER IF EXISTS update_sig_updated_at;
 CREATE TRIGGER update_sig_updated_at
 AFTER UPDATE ON sig
 FOR EACH ROW
@@ -22,7 +20,7 @@ BEGIN
     WHERE id = OLD.id;
 END;
 
-DROP TRIGGER IF EXISTS update_pig_updated_at ON pig;
+DROP TRIGGER IF EXISTS update_pig_updated_at;
 CREATE TRIGGER update_pig_updated_at
 AFTER UPDATE ON pig
 FOR EACH ROW

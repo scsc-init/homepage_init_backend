@@ -26,12 +26,14 @@ _valid_scsc_global_status_update = (
 @dataclass
 class _CtrlStatusAvailable:
     create_sigpig: tuple[SCSCStatus, SCSCStatus]
-    join_sigpig: tuple[SCSCStatus, SCSCStatus]
+    join_sigpig: tuple[SCSCStatus, SCSCStatus]  # also applied to leave
+    join_sigpig_rolling_admission: tuple[SCSCStatus, SCSCStatus, SCSCStatus]  # also applied to leave
 
 
 ctrl_status_available = _CtrlStatusAvailable(
     create_sigpig=(SCSCStatus.surveying, SCSCStatus.recruiting),
-    join_sigpig=(SCSCStatus.surveying, SCSCStatus.recruiting)
+    join_sigpig=(SCSCStatus.surveying, SCSCStatus.recruiting),
+    join_sigpig_rolling_admission=(SCSCStatus.surveying, SCSCStatus.recruiting, SCSCStatus.active),
 )
 
 

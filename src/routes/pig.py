@@ -52,8 +52,7 @@ async def delete_my_pig(id: int, session: SessionDep, request: Request) -> None:
     session.refresh(pig)
     year = pig.year
     semester = pig.semester
-    await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
-                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title, "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     logger.info(f'info_type=pig_deleted ; pig_id={pig.id} ; title={pig.title} ; remover_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
@@ -75,8 +74,7 @@ async def delete_pig(id: int, session: SessionDep, request: Request) -> None:
     session.refresh(pig)
     year = pig.year
     semester = pig.semester
-    await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title,
-                                                                    "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
+    await send_discord_bot_request_no_reply(action_code=4004, body={'pig_name': pig.title, "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
     logger.info(f'info_type=pig_deleted ; pig_id={pig.id} ; title={pig.title} ; remover_id={current_user.id} ; year={pig.year} ; semester={pig.semester}')
     return
 
@@ -118,7 +116,9 @@ async def join_pig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if pig.status not in ctrl_status_available.join_sigpig: raise HTTPException(400, f"SCSC 전역 상태가 {ctrl_status_available.join_sigpig}일 때만 시그/피그에 가입할 수 있습니다")
+    allowed = (ctrl_status_available.join_sigpig_rolling_admission if pig.is_rolling_admission else ctrl_status_available.join_sigpig)
+    if pig.status not in allowed: raise HTTPException(400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다")
+
     pig_member = PIGMember(
         ig_id=id,
         user_id=current_user.id,
@@ -140,6 +140,8 @@ async def leave_pig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     pig = session.get(PIG, id)
     if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    allowed = (ctrl_status_available.join_sigpig_rolling_admission if pig.is_rolling_admission else ctrl_status_available.join_sigpig)
+    if pig.status not in allowed: raise HTTPException(400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다")
     if pig.owner == current_user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
     pig_members = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(PIGMember.user_id == current_user.id)).all()
     if not pig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
