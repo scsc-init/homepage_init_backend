@@ -1,6 +1,9 @@
 # 회원 관련 DB, API 명세서
 
-> 최신개정일: 2025-08-23
+> 최초작성일: 2025-05-01  
+> 최신개정일: 2025-09-05  
+> 최신개정자: 이한경  
+> 작성자: 이한경, 윤영우  
 
 # DB 구조
 
@@ -215,7 +218,6 @@ CREATE TABLE standby_req_tbl (
 ```
 - **Status Codes**:
   - `200 OK`
-  - `401 Unauthorized` (인증 실패 시)
   - `404 Not Found` (유효하지 않은 ID)
 
 ---
@@ -346,7 +348,7 @@ CREATE TABLE standby_req_tbl (
 ## Update My Profile Picture With File (내 프로필 사진을 파일로 변경)
 
 - **Method**: `POST`  
-- **URL**: `/api/user/update`  
+- **URL**: `/api/user/update-pfp-file`  
 - **설명**: 로그인한 사용자의 정보 수정  
 - **Request**:
   * **Content-Type**: `multipart/form-data`
@@ -442,10 +444,10 @@ CREATE TABLE standby_req_tbl (
 
 
 
-## 졸업 신청자 관리 API (`/api/user/oldboy`)
+## 졸업생 전환 신청 관리 API (`/api/user/oldboy`)
 
 - `oldboy_applicant` 테이블의 데이터를 관리하는 API입니다.
-- 이 테이블은 `user` 테이블의 `id`를 참조하며, 졸업 신청자의 처리 여부와 신청/업데이트 시각을 기록합니다.
+- 이 테이블은 `user` 테이블의 `id`를 참조하며, 졸업생 전환 신청자의 처리 여부와 신청/업데이트 시각을 기록합니다.
 
 ---
 
@@ -453,7 +455,7 @@ CREATE TABLE standby_req_tbl (
 
 - **Method**: `POST`
 - **URL**: `/api/user/oldboy/register`
-- **Description**: 로그인된 사용자에 대해 새로운 졸업 신청자 기록을 생성합니다. 가입한 지 3년이 지난 정회원이 신청할 수 있습니다. 
+- **Description**: 로그인된 사용자에 대해 새로운 졸업생 전환 신청 기록을 생성합니다. 정회원이며, 사용자 생성일(user.created_at, UTC 기준)로부터 156주(3년)가 경과한 경우에만 신청할 수 있습니다.
 
 - **Response**:
 ```json
@@ -468,7 +470,28 @@ CREATE TABLE standby_req_tbl (
   - `201 Created`: 생성 성공
   - `400 Bad Request`: oldboy 신청 자격 없음
   - `401 Unauthorized` (로그인하지 않음)
-  - `409 Conflict`: 이미 존재하는 `id`로 신청을 시도
+  - `409 Conflict`: 이미 신청 기록이 존재하는 `id`로 신청을 시도
+
+---
+
+## Get Oldboy Applicant(Self)
+
+- **Method**: `GET`
+- **URL**: `/api/user/oldboy/applicant`
+- **Description**: 로그인된 사용자의 졸업생 전환 신청 기록을 조회합니다. 
+- **Response**:
+```json
+{
+  "id": "user_id_from_user_table",
+  "processed": false,
+  "created_at": "2023-10-27T10:00:00Z",
+  "updated_at": "2023-10-27T10:00:00Z"
+}
+```
+- **Status Codes**:
+  - `200 OK`
+  - `401 Unauthorized`: (로그인하지 않음)
+  - `404 Not Found`: 졸업생 전환 신청 기록 없음
 
 ---
 
@@ -476,9 +499,7 @@ CREATE TABLE standby_req_tbl (
 
 - **Method**: `GET`
 - **URL**: `/api/executive/user/oldboy/applicants`
-- **Description**: 졸업 신청자 기록을 조회합니다.
-- **Query Parameters**:
-    - `processed`: Allowed values: `true`, `false`
+- **Description**: 졸업생 전환 신청 기록을 조회합니다.
 - **Response**:
 ```json
 [
@@ -507,12 +528,13 @@ CREATE TABLE standby_req_tbl (
 
 - **Method**: `POST`
 - **URL**: `/api/executive/user/oldboy/:id/process`
-- **Description**: 특정 졸업 신청자의 `processed` 상태를 업데이트하고 졸업 신청자의 권한을 `oldboy`로 변경합니다. 
+- **Description**: 특정 `id`를 가진 사용자의 졸업생 전환 신청 `processed` 상태를 업데이트하고 신청자의 권한을 `oldboy`로 변경합니다. 
 - **Status Codes**:
-  - `204 No Content`: 업데이트 성공 (응답 본문 없음)
+  - `204 No Content`: 업데이트 성공
   - `401 Unauthorized`: 로그인하지 않음
   - `403 Forbidden`: 권한 없음 (예: 관리자가 아님)
-  - `404 Not Found`: 해당 ID의 졸업 신청 기록 없음
+  - `404 Not Found`: 해당 ID의 졸업생 전환 신청 기록 없음
+  - `409 Conflict`: 이미 oldboy인 사용자에 대해 요청함
 
 ---
 
@@ -520,12 +542,12 @@ CREATE TABLE standby_req_tbl (
 
 - **Method**: `POST`
 - **URL**: `/api/user/oldboy/unregister`
-- **Description**: 로그인한 사용자의 졸업 신청자 기록이 처리되지 않았다면 삭제합니다. 
+- **Description**: 로그인한 사용자의 졸업생 전환 신청 기록이 처리되지 않았다면 삭제합니다. 
 - **Status Codes**:
   - `204 No Content`: 삭제 성공
-  - `400 Bad Request`: 이미 oldboy로 처리됨
   - `401 Unauthorized`: 로그인하지 않음
-  - `404 Not Found`: 해당 ID의 졸업 신청 기록 없음
+  - `404 Not Found`: 해당 ID의 졸업생 전환 신청 기록 없음
+  - `409 Conflict`: 신청이 이미 처리됨
 
 ---
 
@@ -533,12 +555,12 @@ CREATE TABLE standby_req_tbl (
 
 - **Method**: `POST`
 - **URL**: `/api/executive/user/oldboy/:id/unregister`
-- **Description**: 특정 `id`를 가진 졸업 신청자 기록을 삭제합니다. 
+- **Description**: 특정 `id`를 가진 사용자의 졸업생 전환 신청 기록을 삭제합니다. 
 - **Status Codes**:
   - `204 No Content`: 삭제 성공
   - `401 Unauthorized`: 로그인하지 않음
   - `403 Forbidden`: 권한 없음 (예: 관리자가 아님)
-  - `404 Not Found`: 해당 ID의 졸업 신청 기록 없음
+  - `404 Not Found`: 해당 ID의 졸업생 전환 신청 기록 없음
 
 ---
 
@@ -546,10 +568,10 @@ CREATE TABLE standby_req_tbl (
 
 - **Method**: `POST`
 - **URL**: `/api/user/oldboy/reactivate`
-- **Description**: 로그인한 사용자의 권한이 oldboy이면 권한을 member로 바꾸고 상태를 pending으로 바꾼다. 
+- **Description**: 로그인한 사용자의 권한이 `oldboy`이면 권한을 `member`로 바꾸고 상태를 `pending`으로 변경합니다. 기존 `oldboy_applicant` 기록이 삭제됩니다. 
 - **Status Codes**:
   - `204 No Content`
-  - `400 Bad Request`: oldboy가 아님
+  - `400 Bad Request`: 사용자의 권한이 `oldboy`가 아님
   - `401 Unauthorized`: 로그인하지 않음
 
 ---
@@ -557,10 +579,8 @@ CREATE TABLE standby_req_tbl (
 ## 입금 확인(standby) API (`/api/user/standby`)
 
 - `standby`는 입금 확인을 기다리는 회원들을 관리하는 API입니다.
-- 
 
-___
-
+---
 
 ## Get Standby Request List
 - **Method**: `GET`
@@ -616,7 +636,7 @@ ___
 - **Method**: `POST`
 - **URL**: `/api/executive/user/standby/process`
 - **Request**:
-  - **Content-Type**: `form-data`
+  - **Content-Type**: `multipart/form-data`
   - **Form Fields**:
 
     | 필드명  | 타입   | 필수 여부 | 설명                    |
@@ -753,7 +773,7 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - `users`: 해당 입금 기록에 대응하는 사용자 리스트
 
 ##### 알 수 없는 오류
-- 입금 확인 및 status 변경이 정상적으로 처리된 경우
+- 입금 확인 및 status 변경이 정상적으로 처리되지 않은 경우
 - `result_code`: 500
 - `result_msg`: "알 수 없는 오류: ..."
 - `users`: `[]`

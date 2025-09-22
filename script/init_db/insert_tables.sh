@@ -116,10 +116,13 @@ CREATE TABLE sig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_id INTEGER UNIQUE,
+    content_id INTEGER NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
+    should_extend BOOLEAN NOT NULL DEFAULT FALSE,
+    is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -133,10 +136,13 @@ CREATE TABLE pig (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
-    content_id INTEGER UNIQUE,
+    content_id INTEGER NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
+    should_extend BOOLEAN NOT NULL DEFAULT FALSE,
+    is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -174,6 +180,8 @@ CREATE TABLE pig_member (
 -- Create index for SIG/PIG
 CREATE INDEX idx_sig_owner ON sig(owner);
 CREATE INDEX idx_sig_term ON sig(year, semester);
+CREATE INDEX idx_pig_owner ON pig(owner);
+CREATE INDEX idx_pig_term ON pig(year, semester);
 CREATE INDEX idx_sig_member_user ON sig_member(user_id);
 CREATE INDEX idx_sig_member_ig ON sig_member(ig_id);
 CREATE INDEX idx_pig_member_user ON pig_member(user_id);
@@ -181,37 +189,15 @@ CREATE INDEX idx_pig_member_ig ON pig_member(ig_id);
 
 -- Create trigger for SIG/PIG
 CREATE TRIGGER update_sig_updated_at
-AFTER UPDATE ON sig
-FOR EACH ROW
-WHEN 
-    OLD.title != NEW.title OR
-    OLD.description != NEW.description OR
-    OLD.content_id != NEW.content_id OR
-    OLD.status != NEW.status OR
-    OLD.year != NEW.year OR
-    OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
-BEGIN
-    UPDATE sig
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
+AFTER UPDATE OF title, description, content_id, status, year, semester, owner, should_extend, is_rolling_admission ON sig 
+BEGIN 
+    UPDATE sig SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id; 
 END;
 
 CREATE TRIGGER update_pig_updated_at
-AFTER UPDATE ON pig
-FOR EACH ROW
-WHEN 
-    OLD.title != NEW.title OR
-    OLD.description != NEW.description OR
-    OLD.content_id != NEW.content_id OR
-    OLD.status != NEW.status OR
-    OLD.year != NEW.year OR
-    OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
-BEGIN
-    UPDATE pig
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
+AFTER UPDATE OF title, description, content_id, status, year, semester, owner, should_extend, is_rolling_admission ON pig 
+BEGIN 
+    UPDATE pig SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id; 
 END;
 
 -- SCSC global status

@@ -217,7 +217,7 @@ async def process_oldboy_applicant_ctrl(session: SessionDep, user_id: str) -> No
 
     user = session.get(User, user_id)
     if not user: raise HTTPException(503, detail="user does not exist")
-    if user.role == get_user_role_level('oldboy'): raise HTTPException(503, detail="user is already oldboy")
+    if user.role == get_user_role_level('oldboy'): raise HTTPException(409, detail="user is already oldboy")
 
     oldboy_applicant.processed = True
     session.add(oldboy_applicant)

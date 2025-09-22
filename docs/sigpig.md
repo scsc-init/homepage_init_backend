@@ -1,5 +1,5 @@
 # SIG/PIG 관련 DB, API 명세서
-**최신개정일:** 2025-06-21
+**최신개정일:** 2025-09-19
 
 # DB 구조
 
@@ -13,6 +13,9 @@ CREATE TABLE sig (
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+
+    should_extend BOOLEAN NOT NULL DEFAULT FALSE,
+    is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -63,6 +66,8 @@ CREATE TABLE pig_member (
 ```sql
 CREATE INDEX idx_sig_owner ON sig(owner);
 CREATE INDEX idx_sig_term ON sig(year, semester);
+CREATE INDEX idx_pig_owner ON pig(owner);
+CREATE INDEX idx_pig_term ON pig(year, semester);
 CREATE INDEX idx_sig_member_user ON sig_member(user_id);
 CREATE INDEX idx_sig_member_ig ON sig_member(ig_id);
 CREATE INDEX idx_pig_member_user ON pig_member(user_id);
@@ -71,37 +76,17 @@ CREATE INDEX idx_pig_member_ig ON pig_member(ig_id);
 
 ```sql
 CREATE TRIGGER update_sig_updated_at
-AFTER UPDATE ON sig
+AFTER UPDATE OF title, description, content_id, status, year, semester, owner, should_extend, is_rolling_admission ON sig 
 FOR EACH ROW
-WHEN 
-    OLD.title != NEW.title OR
-    OLD.description != NEW.description OR
-    OLD.content_id != NEW.content_id OR
-    OLD.status != NEW.status OR
-    OLD.year != NEW.year OR
-    OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
-BEGIN
-    UPDATE sig
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
+BEGIN 
+    UPDATE sig SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id; 
 END;
 
 CREATE TRIGGER update_pig_updated_at
-AFTER UPDATE ON pig
+AFTER UPDATE OF title, description, content_id, status, year, semester, owner, should_extend, is_rolling_admission ON pig 
 FOR EACH ROW
-WHEN 
-    OLD.title != NEW.title OR
-    OLD.description != NEW.description OR
-    OLD.content_id != NEW.content_id OR
-    OLD.status != NEW.status OR
-    OLD.year != NEW.year OR
-    OLD.semester != NEW.semester OR
-    OLD.owner != NEW.owner
-BEGIN
-    UPDATE pig
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
+BEGIN 
+    UPDATE pig SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id; 
 END;
 
 ```
@@ -128,6 +113,7 @@ END;
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
+  "is_rolling_admission": false,
 }
 ```
 
@@ -144,7 +130,8 @@ END;
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user"
+  "owner": "hash_of_owner_user",
+  "is_rolling_admission": false,
 }
 ```
 
@@ -175,7 +162,9 @@ END;
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user"
+  "owner": "hash_of_owner_user",
+  "should_extend": true,
+  "is_rolling_admission": true,
 }
 ```
 
@@ -204,7 +193,9 @@ END;
     "semester": 1,
     "created_at": "2025-03-01T10:00:00Z",
     "updated_at": "2025-04-01T12:00:00Z",
-    "owner": "hash_of_owner_user"
+    "owner": "hash_of_owner_user",
+    "should_extend": true,
+    "is_rolling_admission": true,
   },
   ...
 ]
@@ -227,6 +218,8 @@ END;
   "title": "AI SIG",
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
+  "should_extend": true,
+  "is_rolling_admission": true,
 }
 ```
 
@@ -292,6 +285,8 @@ END;
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
   "status": "recruiting",
+  "should_extend": true,
+  "is_rolling_admission": true,
 }
 ```
 
