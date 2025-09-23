@@ -309,7 +309,7 @@ CREATE TABLE standby_req_tbl (
 -- w html metadata
 CREATE TABLE w_html_metadata (
     name TEXT PRIMARY KEY,
-    size INTEGER NOT NULL,
+    size INTEGER NOT NULL CHECK (size >= 0),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     owner TEXT,

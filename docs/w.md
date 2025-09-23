@@ -9,7 +9,7 @@
 ```sql
 CREATE TABLE w_html_metadata (
     name TEXT PRIMARY KEY,
-    size INTEGER NOT NULL,
+    size INTEGER NOT NULL CHECK (size >= 0),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     owner TEXT,
@@ -31,7 +31,7 @@ END;
 
 # API 구조
 
-## 파일 업로드 API (/api/w)
+## 파일 업로드 API (/api/executive/w, /api/w)
 
   - 파일 업로드를 관리하는 API
   - 업로드된 파일은 `.env`에 정의된 `W_HTML_DIR` 디렉토리에 저장
@@ -52,11 +52,11 @@ END;
   "size": 23000,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user",
+  "owner": "hash_of_owner_user"
 }
 ```
 
-- 파일의 이름으로 name이 지정된다. 
+- 파일의 이름으로 name이 지정된다. 파일명은 알파벳, 숫자, `_`, `-`으로만 구성되어야 한다.
 - 파일의 크기(Bytes)가 size로 지정된다. 
 - 파일을 업로드한 사람이 owner로 지정된다. 
 
@@ -76,7 +76,7 @@ END;
 
 * **Method**: `GET`
 * **URL**: `/api/w/:name`
-* **설명**: 업로드된 파일를 이름으로 다운로드한다.
+* **설명**: 업로드된 파일을 이름으로 다운로드한다.
 
 * **Path Parameters**:
 
@@ -110,7 +110,7 @@ END;
   "size": 23000,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user",
+  "owner": "hash_of_owner_user"
 }
 ```
 
