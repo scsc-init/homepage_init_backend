@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     discord_receive_queue: str
     notice_channel_id: int
     grant_channel_id: int
+    w_html_dir: str
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

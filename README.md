@@ -3,8 +3,8 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2025-08-17  
-> 최신개정자: 윤영우  
+> 최신개정일: 2025-09-23  
+> 최신개정자: 이한경  
 > 작성자: [강명석](tomskang@naver.com), 이한경, 윤영우  
 
 ## 브랜치
@@ -35,6 +35,7 @@ REPLY_QUEUE="main_response_queue"
 DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
+W_HTML_DIR="static/w/"
 ```
 
 | Key Name             | Description                                                      |
@@ -57,6 +58,7 @@ GRANT_CHANNEL_ID=0
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
+| `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 
 ## 기타 설정 파일
 
