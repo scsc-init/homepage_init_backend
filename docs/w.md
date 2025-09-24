@@ -33,8 +33,8 @@ END;
 
 ## 파일 업로드 API (/api/executive/w, /api/w)
 
-  - 파일 업로드를 관리하는 API
-  - 업로드된 파일은 `.env`에 정의된 `W_HTML_DIR` 디렉토리에 저장
+- 파일 업로드를 관리하는 API
+- 업로드된 파일은 `.env`에 정의된 `W_HTML_DIR` 디렉토리에 저장
 
 -----
 
