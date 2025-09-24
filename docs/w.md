@@ -98,7 +98,7 @@ END;
 
 ## Get all metadatas (Executive)
 
-- **Method**: `POST`
+- **Method**: `GET`
 - **URL**: `/api/executive/ws`
 - **Response**:
 
