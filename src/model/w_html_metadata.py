@@ -11,4 +11,4 @@ class WHTMLMetadata(SQLModel, table=True):
     size: int = Field(nullable=False, ge=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    owner: Optional[str] = Field(nullable=True, foreign_key="user.id")
+    creator: Optional[str] = Field(nullable=True, foreign_key="user.id")

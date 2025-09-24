@@ -12,16 +12,16 @@ CREATE TABLE w_html_metadata (
     size INTEGER NOT NULL CHECK (size >= 0),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    owner TEXT,
+    creator TEXT,
 
-    FOREIGN KEY (owner) REFERENCES user(id) ON DELETE SET NULL
+    FOREIGN KEY (creator) REFERENCES user(id) ON DELETE SET NULL
 );
 ```
 
 ### SQL 관련
 ```sql
 CREATE TRIGGER update_w_html_metadata_updated_at
-AFTER UPDATE OF size, owner ON w_html_metadata 
+AFTER UPDATE OF size, creator ON w_html_metadata 
 FOR EACH ROW
 BEGIN 
     UPDATE w_html_metadata SET updated_at = CURRENT_TIMESTAMP WHERE name = OLD.name; 
@@ -52,13 +52,13 @@ END;
   "size": 23000,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user"
+  "creator": "hash_of_creator_user"
 }
 ```
 
 - 파일의 이름으로 name이 지정된다. 파일명은 알파벳, 숫자, `_`, `-`으로만 구성되어야 한다.
 - 파일의 크기(Bytes)가 size로 지정된다. 
-- 파일을 업로드한 사람이 owner로 지정된다. 
+- 파일을 업로드한 사람이 creator로 지정된다. 
 
 * **Status Codes**:
 
@@ -96,6 +96,36 @@ END;
 
 ---
 
+## Get all metadatas (Executive)
+
+- **Method**: `POST`
+- **URL**: `/api/executive/ws`
+- **Response**:
+
+```json
+[
+  [
+    {
+        "size": 22531,
+        "updated_at": "2025-09-24T08:38:05.318387",
+        "name": "SCPC2",
+        "created_at": "2025-09-24T08:38:05.318370",
+        "creator": "hash_of_creator_user"
+    },
+    "name_of_creator_user"
+  ],
+  ...
+]
+```
+
+* **Status Codes**:
+
+  * `200 OK`
+  * `401 Unauthorized`: 로그인 하지 않음
+  * `403 Forbidden`
+
+---
+
 ## Update File (Executive)
 
 - **Method**: `POST`
@@ -110,12 +140,12 @@ END;
   "size": 23000,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user"
+  "creator": "hash_of_creator_user"
 }
 ```
 
 - 기존 이름에 해당하는 파일을 업로드한 파일로 덮어쓴다. (업로드한 파일의 이름은 무관하다.)
-- size, owner를 해당 요청에 맞게 갱신한다. 
+- size, creator를 해당 요청에 맞게 갱신한다. 
 
 
 * **Status Codes**:
