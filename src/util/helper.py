@@ -47,7 +47,7 @@ def split_filename(filename: str) -> tuple[str, str]:
     if not base_name and filename.startswith('.'):
         return filename, ''
 
-    return base_name, extension
+    return base_name, extension.lower()
 
 
 def get_user(request: Request) -> User:

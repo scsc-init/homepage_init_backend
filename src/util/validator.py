@@ -73,7 +73,7 @@ def is_valid_img_url(url: str, timeout: int = 5) -> bool:
     except Exception: return False
 
 
-async def validate_and_read_file(file: UploadFile, *, valid_mime_type: str = '', valid_ext: set[str] = set()) -> tuple[bytes, str, str, str]:
+async def validate_and_read_file(file: UploadFile, *, valid_mime_type: str = '', valid_ext: frozenset[str] = frozenset()) -> tuple[bytes, str, str, str]:
     """
     Validates an uploaded file against specified MIME type, extension, and size 
     limits, then asynchronously reads its content.
@@ -89,7 +89,7 @@ async def validate_and_read_file(file: UploadFile, *, valid_mime_type: str = '',
         valid_mime_type: The required starting string for the file's MIME type 
                          (e.g., 'image/' for any image). Defaults to an empty string, 
                          which effectively allows any MIME type if it's not None.
-        valid_ext: A set of valid file extensions (e.g., {'jpg', 'png'}). 
+        valid_ext: A frozenset of valid file extensions (e.g., {'jpg', 'png'}). 
                    Defaults to an empty set, which means no extension is allowed 
                    unless an empty string is passed as the extension.
 
@@ -107,7 +107,7 @@ async def validate_and_read_file(file: UploadFile, *, valid_mime_type: str = '',
         - file.content_type (str): The MIME type of the file.
     """
     if file.content_type is None or not file.content_type.startswith(valid_mime_type): raise HTTPException(400, detail=f"cannot upload file without MIME type {valid_mime_type}")
-    if not file.filename: raise HTTPException(400, detail="cannot upload fiel without filename")
+    if not file.filename: raise HTTPException(400, detail="cannot upload file without filename")
     basename, ext = split_filename(file.filename)
     if ext not in valid_ext: raise HTTPException(400, detail=f"cannot upload if the extension is not {valid_ext}")
     content = await file.read()

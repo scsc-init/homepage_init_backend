@@ -108,12 +108,11 @@ class BodyUpdateMyPfpFile(BaseModel):
 
 @user_router.post('/user/update-pfp-file', status_code=204)
 async def update_my_pfp_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> None:
-    content, _, ext, _ = await validate_and_read_file(file, valid_mime_type="image/", valid_ext={'png', 'jpg', 'jpeg'})
+    content, _, ext, _ = await validate_and_read_file(file, valid_mime_type="image/", valid_ext=frozenset({'png', 'jpg', 'jpeg'}))
 
     current_user = get_user(request)
     filename = f"{current_user.id}.{ext}"
     path = f"static/image/pfps/{filename}"
-    content = await file.read()
     with open(path, "wb") as fp:
         fp.write(content)
     current_user.profile_picture = path
@@ -303,7 +302,7 @@ class ProcessStandbyListResponse(BaseModel):
 
 @user_router.post('/executive/user/standby/process', response_model=ProcessStandbyListResponse)
 async def process_standby_list(session: SessionDep, file: UploadFile = File(...)) -> ProcessStandbyListResponse:
-    content, _, _, _ = await validate_and_read_file(file, valid_ext={'csv'})
+    content, _, _, _ = await validate_and_read_file(file, valid_ext=frozenset({'csv'}))
     try: deposit_array = await process_standby_user('utf-8', content)
     except UnicodeDecodeError:
         try: deposit_array = await process_standby_user('euc-kr', content)

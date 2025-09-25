@@ -21,7 +21,7 @@ w_router = APIRouter(tags=['w'])
 
 @w_router.post('/executive/w/create', status_code=201)
 async def upload_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> WHTMLMetadata:
-    content, basename, _, _ = await validate_and_read_file(file, valid_mime_type="text/html", valid_ext={'html'})
+    content, basename, _, _ = await validate_and_read_file(file, valid_mime_type="text/html", valid_ext=frozenset({'html'}))
     if not re.fullmatch(r'^[a-zA-Z0-9_-]+$', basename): raise HTTPException(400, detail="filename should consist of alphabets, numbers, underscores, and hyphens")
 
     with open(path.join(get_settings().w_html_dir, f"{file.filename}"), "wb") as fp:
@@ -59,7 +59,7 @@ async def get_all_metadata(session: SessionDep) -> Sequence[tuple[WHTMLMetadata,
 async def update_w_by_name(name: str, session: SessionDep, request: Request, file: UploadFile = File(...)) -> WHTMLMetadata:
     w_meta = session.get(WHTMLMetadata, name)
     if not w_meta: raise HTTPException(404, detail="file not found")
-    content, _, _, _ = await validate_and_read_file(file, valid_mime_type="text/html", valid_ext={'html'})
+    content, _, _, _ = await validate_and_read_file(file, valid_mime_type="text/html", valid_ext=frozenset({'html'}))
 
     with open(path.join(get_settings().w_html_dir, f"{name}.html"), "wb") as fp:
         fp.write(content)

@@ -14,7 +14,7 @@ file_router = APIRouter(tags=['file'])
 @file_router.post('/file/docs/upload', status_code=201)
 async def upload_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> FileMetadata:
     current_user = get_user(request)
-    content, basename, ext, mime_type = await validate_and_read_file(file, valid_ext={'pdf', 'docx', 'pptx'})
+    content, basename, ext, mime_type = await validate_and_read_file(file, valid_ext=frozenset({'pdf', 'docx', 'pptx'}))
     uuid = create_uuid()
     with open(path.join(get_settings().file_dir, f"{uuid}.{ext}"), "wb") as fp:
         fp.write(content)
@@ -43,7 +43,7 @@ async def get_docs_by_id(id: str, session: SessionDep) -> FileResponse:
 @file_router.post('/file/image/upload', status_code=201)
 async def upload_image(session: SessionDep, request: Request, file: UploadFile = File(...)) -> FileMetadata:
     current_user = get_user(request)
-    content, basename, ext, mime_type = await validate_and_read_file(file, valid_mime_type="image/", valid_ext={'jpg', 'jpeg', 'png'})
+    content, basename, ext, mime_type = await validate_and_read_file(file, valid_mime_type="image/", valid_ext=frozenset({'jpg', 'jpeg', 'png'}))
 
     uuid = create_uuid()
     with open(path.join(get_settings().image_dir, f"{uuid}.{ext}"), "wb") as fp:
