@@ -22,7 +22,6 @@ JWT_SECRET="some-session-secret"
 JWT_VALID_SECONDS=3600
 SQLITE_FILENAME="db/YOUR_DB_FILENAME.db"
 IMAGE_DIR="static/image/photo/"
-IMAGE_MAX_SIZE=10000000
 FILE_DIR="download/"
 FILE_MAX_SIZE=10000000
 ARTICLE_DIR="static/article/"
@@ -45,7 +44,6 @@ W_HTML_DIR="static/w/"
 | `JWT_VALID_SECONDS`      | 로그인 관련 JWT 유효 시간(초)          |
 | `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
 | `IMAGE_DIR`              | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
-| `IMAGE_MAX_SIZE`         | 이미지 최대 용량(바이트) |
 | `FILE_DIR`               | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`          | 파일 최대 용량(바이트) |
 | `ARTICLE_DIR`            | 글 업로드 경로. 폴더가 이미 생성되어 있어야 함 |

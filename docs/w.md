@@ -43,7 +43,7 @@ END;
 - **Method**: `POST`
 - **URL**: `/api/executive/w/create`
 - **Request Body** (multipart/form-data):
-    - `file`: 업로드할 파일 (`UploadFile`). mime type이 `text/html`이고 확장자가 `.html`이어야 한다.
+  - `file`: 업로드할 파일 (`UploadFile`). mime type이 `text/html`이고 확장자가 `.html`이어야 한다.
 - **Response**:
 
 ```json
@@ -131,7 +131,7 @@ END;
 - **Method**: `POST`
 - **URL**: `/api/executive/w/:name/update`
 - **Request Body** (multipart/form-data):
-    - `file`: 업로드할 파일 (`UploadFile`). mime type이 `text/html`이고 확장자가 `.html`이어야 한다. 
+  - `file`: 업로드할 파일 (`UploadFile`). mime type이 `text/html`이고 확장자가 `.html`이어야 한다. 
 - **Response**:
 
 ```json
@@ -154,6 +154,7 @@ END;
   * `401 Unauthorized`
   * `403 Forbidden`
   * `404 Not Found`: `name`에 해당하는 값이 없음.
+  * `413 Payload Too Large`: 파일 크기 제한 초과(.env의 `FILE_MAX_SIZE`)
 
 ---
 

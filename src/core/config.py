@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     jwt_valid_seconds: int
     sqlite_filename: str
     image_dir: str
-    image_max_size: int
     file_dir: str
     file_max_size: int
     article_dir: str

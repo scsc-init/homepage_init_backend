@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import FileMetadata
-from src.util import create_uuid, get_file_extension, get_user
+from src.util import create_uuid, split_filename, get_user, validate_and_read_file
 
 file_router = APIRouter(tags=['file'])
 
@@ -14,21 +14,16 @@ file_router = APIRouter(tags=['file'])
 @file_router.post('/file/docs/upload', status_code=201)
 async def upload_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> FileMetadata:
     current_user = get_user(request)
-    if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
-    ext_whitelist = ('pdf', 'docx', 'pptx')
-    if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
-    content = await file.read()
-    if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"cannot upload file larger than {get_settings().file_max_size} bytes")
-
+    content, basename, ext, mime_type = await validate_and_read_file(file, valid_ext={'pdf', 'docx', 'pptx'})
     uuid = create_uuid()
     with open(path.join(get_settings().file_dir, f"{uuid}.{ext}"), "wb") as fp:
         fp.write(content)
 
     file_meta = FileMetadata(
         id=uuid,
-        original_filename=file.filename,
+        original_filename=f"{basename}.{ext}",
         size=len(content),
-        mime_type=file.content_type,
+        mime_type=mime_type,
         owner=current_user.id
     )
     session.add(file_meta)
@@ -41,17 +36,14 @@ async def upload_file(session: SessionDep, request: Request, file: UploadFile = 
 async def get_docs_by_id(id: str, session: SessionDep) -> FileResponse:
     file_meta = session.get(FileMetadata, id)
     if not file_meta: raise HTTPException(404, detail="file not found")
-    return FileResponse(path.join(get_settings().file_dir, f"{file_meta.id}.{get_file_extension(file_meta.original_filename)}"))
+    _, ext = split_filename(file_meta.original_filename)
+    return FileResponse(path.join(get_settings().file_dir, f"{file_meta.id}.{ext}"))
 
 
 @file_router.post('/file/image/upload', status_code=201)
 async def upload_image(session: SessionDep, request: Request, file: UploadFile = File(...)) -> FileMetadata:
     current_user = get_user(request)
-    if file.content_type is None or not file.content_type.startswith("image"): raise HTTPException(400, detail="cannot upload non-image file")
-    ext_whitelist = ('jpg', 'jpeg', 'png')
-    if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
-    content = await file.read()
-    if len(content) > get_settings().image_max_size: raise HTTPException(413, detail=f"cannot upload image larger than {get_settings().image_max_size} bytes")
+    content, basename, ext, mime_type = await validate_and_read_file(file, valid_mime_type="image/", valid_ext={'jpg', 'jpeg', 'png'})
 
     uuid = create_uuid()
     with open(path.join(get_settings().image_dir, f"{uuid}.{ext}"), "wb") as fp:
@@ -59,9 +51,9 @@ async def upload_image(session: SessionDep, request: Request, file: UploadFile =
 
     image = FileMetadata(
         id=uuid,
-        original_filename=file.filename,
+        original_filename=f"{basename}.{ext}",
         size=len(content),
-        mime_type=file.content_type,
+        mime_type=mime_type,
         owner=current_user.id
     )
     session.add(image)
@@ -74,4 +66,5 @@ async def upload_image(session: SessionDep, request: Request, file: UploadFile =
 async def get_image_by_id(id: str, session: SessionDep) -> FileResponse:
     image = session.get(FileMetadata, id)
     if not image: raise HTTPException(404, detail="image not found")
-    return FileResponse(path.join(get_settings().image_dir, f"{image.id}.{get_file_extension(image.original_filename)}"))
+    _, ext = split_filename(image.original_filename)
+    return FileResponse(path.join(get_settings().image_dir, f"{image.id}.{ext}"))

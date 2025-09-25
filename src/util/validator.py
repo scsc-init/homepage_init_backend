@@ -4,6 +4,11 @@ import uuid
 from datetime import datetime
 
 import requests
+from fastapi import HTTPException, UploadFile
+
+from src.core import get_settings
+
+from .helper import split_filename
 
 
 def sha256_hash(text: str) -> str:
@@ -66,3 +71,45 @@ def is_valid_img_url(url: str, timeout: int = 5) -> bool:
         return content_type.startswith('image/')
     except requests.exceptions.RequestException: return False
     except Exception: return False
+
+
+async def validate_and_read_file(file: UploadFile, *, valid_mime_type: str = '', valid_ext: set[str] = set()) -> tuple[bytes, str, str, str]:
+    """
+    Validates an uploaded file against specified MIME type, extension, and size 
+    limits, then asynchronously reads its content.
+
+    This function performs the following checks:
+    1. Ensures the file's MIME type is provided and starts with `valid_mime_type`.
+    2. Ensures the file has a filename.
+    3. Ensures the file's extension is one of the extensions in `valid_ext`.
+    4. Ensures the file size does not exceed the limit set by `get_settings().file_max_size`.
+
+    Args:
+        file: The uploaded file object (e.g., from FastAPI's `File` dependency).
+        valid_mime_type: The required starting string for the file's MIME type 
+                         (e.g., 'image/' for any image). Defaults to an empty string, 
+                         which effectively allows any MIME type if it's not None.
+        valid_ext: A set of valid file extensions (e.g., {'jpg', 'png'}). 
+                   Defaults to an empty set, which means no extension is allowed 
+                   unless an empty string is passed as the extension.
+
+    Raises:
+        HTTPException: 
+            - 400 (Bad Request): If the MIME type is missing/invalid, 
+              filename is missing, or extension is invalid.
+            - 413 (Payload Too Large): If the file size exceeds the configured maximum.
+
+    Returns:
+        A tuple containing:
+        - content (bytes): The binary content of the file.
+        - basename (str): The base name of the file (without the extension).
+        - ext (str): The file extension (without the leading dot).
+        - file.content_type (str): The MIME type of the file.
+    """
+    if file.content_type is None or not file.content_type.startswith(valid_mime_type): raise HTTPException(400, detail=f"cannot upload file without MIME type {valid_mime_type}")
+    if not file.filename: raise HTTPException(400, detail="cannot upload fiel without filename")
+    basename, ext = split_filename(file.filename)
+    if ext not in valid_ext: raise HTTPException(400, detail=f"cannot upload if the extension is not {valid_ext}")
+    content = await file.read()
+    if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"cannot upload file larger than {get_settings().file_max_size} bytes")
+    return content, basename, ext, file.content_type
