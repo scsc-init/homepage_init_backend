@@ -9,7 +9,6 @@ class Settings(BaseSettings):
     jwt_valid_seconds: int
     sqlite_filename: str
     image_dir: str
-    image_max_size: int
     file_dir: str
     file_max_size: int
     article_dir: str
@@ -22,6 +21,7 @@ class Settings(BaseSettings):
     discord_receive_queue: str
     notice_channel_id: int
     grant_channel_id: int
+    w_html_dir: str
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

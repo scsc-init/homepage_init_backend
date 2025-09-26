@@ -16,8 +16,38 @@ map_semester_name = {
 }
 
 
-def get_file_extension(filename: str) -> str:
-    return filename.split('.')[-1].lower()
+def split_filename(filename: str) -> tuple[str, str]:
+    """
+    Splits a filename into its base name and extension.
+
+    Examples:
+    - 'document.pdf' -> ('document', 'pdf')
+    - 'archive.tar.gz' -> ('archive.tar', 'gz')
+    - 'photo' -> ('photo', '')
+    - '.gitignore' -> ('.gitignore', '')
+
+    Args:
+        filename: The full name of the file (str).
+
+    Returns:
+        A tuple containing the base name (str) and the extension (str, without the dot).
+    """
+    parts = filename.rsplit('.', 1)
+
+    if len(parts) == 1:
+        # No dot found, so the entire filename is the base name, and the extension is empty.
+        return parts[0], ''
+
+    base_name, extension = parts
+
+    # Special handling for filenames that start with a dot (like '.gitignore')
+    # and do not have another dot. rsplit gives ('', 'gitignore').
+    # If the original filename *started* with a dot, and there was only one dot found
+    # (meaning the base_name is empty), we typically treat the whole thing as the base name.
+    if not base_name and filename.startswith('.'):
+        return filename, ''
+
+    return base_name, extension.lower()
 
 
 def get_user(request: Request) -> User:
