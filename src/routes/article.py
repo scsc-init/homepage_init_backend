@@ -25,22 +25,17 @@ async def create_article(session: SessionDep, request: Request, body: BodyCreate
     current_user = get_user(request)
     ret = await create_article_ctrl(session, body, current_user.id, current_user.role)
     try:
-        if body.board_id == 5:  # notice
+        if body.board_id == 5:  
             await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().notice_channel_id, 'content': f"{body.title}\n\n{body.content}"})
-        elif body.board_id == 6:  # grant
+        elif body.board_id == 6:  
             await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().grant_channel_id, 'content': body.content})
     except Exception: logger.error(f'err_type=create_article ; error occurred during connecting to discord ; {body=}', exc_info=True)
     return ret
 
-
-# This works as "api/article" + "s/{board_id}" (="api/articles/{board_id}")
-@article_general_router.get('s/{board_id}')
-async def get_article_list_by_board(board_id: int, session: SessionDep, request: Request) -> list[ArticleResponse]:
+@article_general_router.get('/s/{board_id}')
+async def get_article_list_by_board(board_id: int, session: SessionDep) -> list[ArticleResponse]:
     board = session.get(Board, board_id)
     if not board: raise HTTPException(404, detail="Board not found")
-
-    current_user = get_user(request)
-    if current_user.role < board.reading_permission_level: raise HTTPException(403, detail="You are not allowed to read this board")
 
     articles = session.exec(select(Article).where(Article.board_id == board_id)).all()
     result: list[ArticleResponse] = []
@@ -59,13 +54,11 @@ async def get_article_list_by_board(board_id: int, session: SessionDep, request:
 
 
 @article_general_router.get('/{id}')
-async def get_article_by_id(id: int, session: SessionDep, request: Request) -> ArticleResponse:
+async def get_article_by_id(id: int, session: SessionDep) -> ArticleResponse:
     article = session.get(Article, id)
     if not article: raise HTTPException(404, detail="Article not found")
     board = session.get(Board, article.board_id)
     if not board: raise HTTPException(503, detail="board does not exist")
-    current_user = get_user(request)
-    if current_user.role < board.reading_permission_level: raise HTTPException(403, detail="You are not allowed to read this article")
     if article.is_deleted: return ArticleResponse(**article.model_dump(), content=DELETED)
 
     try:
