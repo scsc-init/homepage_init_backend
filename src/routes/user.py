@@ -12,7 +12,7 @@ from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, r
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserResponse, UserStatus, StandbyReqTbl, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, get_file_extension, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url, validate_and_read_file
 
 
 logger = logging.getLogger("app")
@@ -108,14 +108,11 @@ class BodyUpdateMyPfpFile(BaseModel):
 
 @user_router.post('/user/update-pfp-file', status_code=204)
 async def update_my_pfp_file(session: SessionDep, request: Request, file: UploadFile = File(...)) -> None:
+    content, _, ext, _ = await validate_and_read_file(file, valid_mime_type="image/", valid_ext=frozenset({'png', 'jpg', 'jpeg'}))
+
     current_user = get_user(request)
-    if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
-    if not file.content_type.startswith("image/"): raise HTTPException(400, detail="cannot upload file without content_type image/")
-    ext_whitelist = ('png', 'jpg', 'jpeg')
-    if file.filename is None or (ext := get_file_extension(file.filename)) not in ext_whitelist: raise HTTPException(400, detail=f"cannot upload if the extension is not {ext_whitelist}")
     filename = f"{current_user.id}.{ext}"
     path = f"static/image/pfps/{filename}"
-    content = await file.read()
     with open(path, "wb") as fp:
         fp.write(content)
     current_user.profile_picture = path
@@ -305,14 +302,7 @@ class ProcessStandbyListResponse(BaseModel):
 
 @user_router.post('/executive/user/standby/process', response_model=ProcessStandbyListResponse)
 async def process_standby_list(session: SessionDep, file: UploadFile = File(...)) -> ProcessStandbyListResponse:
-    if file.content_type is None: raise HTTPException(400, detail="cannot upload file without content_type")
-    ext_whitelist = ('csv',)
-
-    if file.filename is None or get_file_extension(file.filename) not in ext_whitelist: raise HTTPException(400, detail=f"{ext_whitelist} 확장자만 업로드할 수 있습니다")
-
-    content = await file.read()
-    if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"{get_settings().file_max_size} 바이트보다 큰 용량의 파일은 업로드할 수 없습니다")
-
+    content, _, _, _ = await validate_and_read_file(file, valid_ext=frozenset({'csv'}))
     try: deposit_array = await process_standby_user('utf-8', content)
     except UnicodeDecodeError:
         try: deposit_array = await process_standby_user('euc-kr', content)
