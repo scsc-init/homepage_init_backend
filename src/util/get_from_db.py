@@ -1,3 +1,4 @@
+from datetime import datetime, timezone     
 from functools import lru_cache
 from typing import Annotated
 
@@ -5,7 +6,7 @@ from fastapi import Depends, HTTPException
 from sqlmodel import select
 
 from src.db import SessionDep, SessionLocal
-from src.model import SCSCGlobalStatus, UserRole
+from src.model import KeyValue, SCSCGlobalStatus, UserRole       
 
 
 @lru_cache
@@ -34,7 +35,39 @@ def get_user_role_level(role_name: str) -> int:
     finally:
         if session: session.close()
 
+def get_kv_entry(session: SessionDep, key: str) -> KeyValue:                                                          
+    """key_value 테이블에서 지정한 키를 읽어온다."""                                                                      
+    kv_entry = session.get(KeyValue, key)                                                                             
+    if kv_entry is None:                                                                                              
+        raise HTTPException(503, detail=f"config entry '{key}' not configured")                                           
+    return kv_entry                                                                                                   
+                                                                                                                          
+                                                                                                                        
+                                                                                                                        
+def update_kv_entry(                                                                                                  
+    session: SessionDep,                                                                                                  
+    *,                                                                                                                    
+    key: str,                                                                                                             
+    value: str,                                                                                                           
+    actor_role: int,                                                                                                      
+    min_role: int | None = None,                                                                                          
+) -> KeyValue:                                                                                                            
+    """키에 해당하는 값을 갱신하고 권한이 부족하면 403을 던진다."""                                                       
+    kv_entry = get_kv_entry(session, key)                                                                         
 
+    required_role = kv_entry.writing_permission_level                                                                                        
+    if actor_role < required_role:                                                                    
+        raise HTTPException(403, detail="insufficient permission")                                                        
+                                                                                                                        
+    kv_entry.value = value                                                                                            
+    kv_entry.updated_at = datetime.now(timezone.utc)                                                                  
+                                                                                                                        
+    session.add(kv_entry)                                                                                             
+    session.commit()                                                                                                      
+    session.refresh(kv_entry)                                                                                         
+    return kv_entry                                                                                                   
+                                    
+    
 def _get_scsc_global_status(session: SessionDep) -> SCSCGlobalStatus:
     status = session.get(SCSCGlobalStatus, 1)
     if status is None: raise HTTPException(503, detail="scsc global status does not exist")

@@ -8,3 +8,5 @@ from .user import User, UserResponse, UserRole, UserStatus, StandbyReqTbl, Oldbo
 from .comment import Comment, CommentResponse
 from .check_user_status_rule import CheckUserStatusRule
 from .w_html_metadata import WHTMLMetadata
+
+from .kv import KeyValue
