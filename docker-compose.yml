@@ -6,7 +6,10 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:/app/
+      - ./static/:/app/static/
+      - ./download/:/app/download/
+      - ./logs/:/app/logs/
+      - ./db/:/app/db/
     entrypoint: bash
     command: >
       -c '
@@ -23,5 +26,5 @@ services:
         echo "Database already exists. Skipping initialization.";
       fi;
 
-      exec fastapi run main.py --host 0.0.0.0 --port 8080
+      exec uv run fastapi run main.py --host 0.0.0.0 --port 8080
       '

@@ -1,13 +1,12 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-trixie
 
 WORKDIR /app
 
-# Install system dependencies if needed (e.g., sqlite3 CLI)
+COPY --from=ghcr.io/astral-sh/uv:0.8.23 /uv /uvx /bin/
+
 RUN apt-get update && apt-get install -y sqlite3 bash && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
 
-# Copy project files
 COPY . .

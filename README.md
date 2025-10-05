@@ -3,9 +3,9 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2025-09-23  
-> 최신개정자: 이한경  
-> 작성자: [강명석](tomskang@naver.com), 이한경, 윤영우  
+> 최신개정일: 2025-10-05  
+> 최신개정자: [윤영우](dan.yun0821@gmail.com)  
+> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com)  
 
 ## 브랜치
 
@@ -67,31 +67,31 @@ W_HTML_DIR="static/w/"
 - 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
 - 예시 파일에 포함된 `deposit.app@scsc.dev`를 포함해야 `homepage_init_deposit_app`이 정상적으로 작동합니다
 
-### `logs/`
+### 폴더 추가
 
-- 루트에 `logs/` 폴더를 추가합니다
+- 루트에 다음 명령어로 필요한 폴더를 추가합니다.
+
+```bash
+mkdir -p \
+  ./db \
+  ./download \
+  ./logs \
+  ./static/article \
+  ./static/image/photo \
+  ./static/image/pfps
+```
 
 ## 실행 방법(with docker)
 
 linux, docker가 요구됩니다. docker compose>=2.25.0가 요구됩니다.  
 
-### Development 중
-
 docker container를 빌드하고 실행합니다.
 ```bash
 docker-compose up --build
 ```
-vscode의 `Dev Containers` extensions에서 `open folder in container`을 통해 위에서 실행한 컨테이너로 연결합니다.
 
 
 ## 실행 방법(without docker)
-
-conda 환경을 설정 및 실행합니다. linux가 요구됩니다.
-
-```bash
-conda env create --file environment.yml
-conda activate scsc_init_backend
-```
 
 db 파일을 생성합니다.
 ```bash
@@ -109,9 +109,9 @@ sqlite3 ./YOUR_DB_FILENAME.db "select * from major;"
 sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
 ```
 
-실행합니다. `fastapi-cli`를 요구합니다.
+실행합니다. `uv`를 요구합니다. `uv` 설정에 관련된 내용은 하단의 `developer tips` 절에 설명됩니다.  
 ```bash
-fastapi run main.py --host 0.0.0.0 --port 8080
+uv run python main.py -- --host 0.0.0.0 --port 8080
 ```
 
 ### 기타
@@ -127,6 +127,42 @@ fastapi run --help
 ```bash
 fastapi dev main.py
 ```
+
+## developer tips
+
+### 개발 환경 설정
+
+package manager로 uv를 사용합니다.  
+
+uv로 파이썬 가상환경을 만듭니다. 가상환경을 실행 후 `uv.lock`에서 명시된 dependency를 모두 설치합니다.  
+
+```bash
+uv venv
+source .venv/bin/activate
+uv sync
+```
+
+### dependency 변경
+
+dependency 변경이 필요한 경우, uv를 사용하고, `pyproject.toml`과 `uv.lock`을 변경합니다. 다음은 패키지를 추가하는 예시입니다.  
+
+```bash
+uv add fastapi
+uv add --dev pytest black
+uv sync
+```
+
+이에 맞춰 `requirements.txt`도 반드시 같이 업데이트합니다.
+```bash
+uv pip compile pyproject.toml -o requirements.txt --no-deps
+```
+
+### DB clear
+
+DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파일을 다시 생성할 필요가 있습니다.)  
+
+`./script/clear_db.sh`를 실행합니다.
+
 
 ## https 설정 및 실행
 
