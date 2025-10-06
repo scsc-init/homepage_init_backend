@@ -20,4 +20,5 @@ rm -f ../db/*.db &&
 rm -f ../static/article/*.md && 
 rm -f ../static/image/pfps/* && 
 rm -f ../static/image/photos/* && 
+rm -f ../static/downloads/* &&
 echo "successfully removed database files"

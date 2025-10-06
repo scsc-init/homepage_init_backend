@@ -67,19 +67,6 @@ W_HTML_DIR="static/w/"
 - 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
 - 예시 파일에 포함된 `deposit.app@scsc.dev`를 포함해야 `homepage_init_deposit_app`이 정상적으로 작동합니다
 
-### 폴더 추가
-
-- 루트에 다음 명령어로 필요한 폴더를 추가합니다.
-
-```bash
-mkdir -p \
-  ./db \
-  ./logs \
-  ./static/download \
-  ./static/article \
-  ./static/image/photo \
-  ./static/image/pfps
-```
 
 ## 실행 방법(with docker)
 
@@ -92,6 +79,18 @@ docker-compose up --build
 
 
 ## 실행 방법(without docker)
+
+루트에 다음 명령어로 필요한 폴더를 추가합니다.
+
+```bash
+mkdir -p \
+  ./db \
+  ./logs \
+  ./static/download \
+  ./static/article \
+  ./static/image/photo \
+  ./static/image/pfps
+```
 
 db 파일을 생성합니다.
 ```bash
@@ -111,7 +110,7 @@ sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
 
 실행합니다. `uv`를 요구합니다. `uv` 설정에 관련된 내용은 하단의 `developer tips` 절에 설명됩니다.  
 ```bash
-uv run python main.py -- --host 0.0.0.0 --port 8080
+uv run python main.py --host 0.0.0.0 --port 8080
 ```
 
 ### 기타
@@ -166,7 +165,7 @@ uv pip compile pyproject.toml -o requirements.txt --no-deps
 
 ### DB clear
 
-DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파일을 다시 생성할 필요가 있습니다.)  
+DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파일을 다시 생성할 필요가 있습니다. 단, docker compose 실행 시에는 DB 파일을 체크하고 없을 시 자동으로 entry에서 생성하므로, 수동으로 파일을 생성할 필요는 없습니다.)  
 
 `./script/clear_db.sh`를 실행합니다.
 
