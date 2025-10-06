@@ -139,7 +139,7 @@ uv로 파이썬 가상환경을 만듭니다. 가상환경을 실행 후 `uv.loc
 ```bash
 uv venv
 source .venv/bin/activate
-uv sync
+uv sync --locked
 ```
 
 ### dependency 변경
@@ -149,7 +149,8 @@ dependency 변경이 필요한 경우, uv를 사용하고, `pyproject.toml`과 `
 ```bash
 uv add fastapi
 uv add --dev pytest black
-uv sync
+uv lock
+uv sync --locked
 ```
 
 이에 맞춰 `requirements.txt`도 반드시 같이 업데이트합니다.
@@ -202,3 +203,39 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | ├── `/model/`       | DB 테이블 정의 및 ORM 모델 |
 | └── `/routes/`      | API 라우터 모음 |
 | &nbsp;&nbsp;&nbsp;&nbsp;└── `__init__.py` | 루트 라우터 |
+
+## Migration details for devs
+
+### Migration: conda + pip -> uv
+
+package manager을 **conda + pip** 을 **[uv](https://github.com/astral-sh/uv)** 로 변경합니다.([via Pull#121](https://github.com/scsc-init/homepage_init_backend/pull/121))
+
+**배경**  
+
+- 속도가 빠름
+- homepage_init_backend venv는 이 레포지토리 단 하나에서만 쓰일 것이므로 uv로 관리하여도 충분함
+- pyproject.toml을 쓰기 용이하다
+
+**설명**
+
+1. conda 환경 제거
+
+```bash
+conda deactivate
+conda env remove -n homepage_init_backend # or whatever your env name is
+```
+
+2. uv 설치 및 설정
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh # might need to restart shell after installation
+uv venv
+source .venv/bin/activate # or .venv\Scripts\activate on Windows
+uv sync
+```
+
+**기타**
+
+- As of now, **live edits inside the docker container do not work** as the code files are not mounted. Therefore, to apply updates to the code into the container image, devs must rebuild the container.
+
+- In `./Dockerfile`, we setup a nonroot user to execute the application and modify static files. At production, we encourage the devs to add gid and uid that is appropriate for the host server, so that they have access to static files at host machine.
