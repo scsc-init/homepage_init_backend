@@ -34,3 +34,17 @@ services:
 
       exec fastapi run main.py --host 0.0.0.0 --port 8080;
       '
+    develop: 
+      watch: 
+        - action: sync
+          path: .
+          target: /app
+
+        - action: rebuild
+          path: ./Dockerfile
+
+        - action: rebuild
+          path: ./uv.lock
+
+        - action: rebuild
+          path: ./script/init_db
