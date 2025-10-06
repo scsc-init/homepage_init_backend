@@ -5,14 +5,23 @@ import logging.config
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 # Mount Static Files
 from fastapi.staticfiles import StaticFiles
 
 # Middleware
 from src.core import get_settings
-from src.middleware import APISecretMiddleware, AssertPermissionMiddleware, CheckUserStatusMiddleware, HTTPLoggerMiddleware, UserAuthMiddleware
+from src.middleware import (
+    APISecretMiddleware,
+    AssertPermissionMiddleware,
+    CheckUserStatusMiddleware,
+    HTTPLoggerMiddleware,
+    UserAuthMiddleware,
+)
+
 # Route
 from src.routes import root_router
+
 # Logger
 from src.util import LOGGING_CONFIG
 

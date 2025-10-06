@@ -41,9 +41,15 @@ class User(SQLModel, table=True):
     profile_picture: Optional[str] = Field(default=None, nullable=True)
     profile_picture_is_url: bool = Field(default=False, nullable=False)
 
-    last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    last_login: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     major_id: int = Field(foreign_key="major.id", nullable=False)
 
@@ -54,9 +60,7 @@ class UserResponse(BaseModel):
     name: str
     major_id: int
 
-    model_config = {
-        "from_attributes": True  # enables reading from ORM objects
-    }
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
 class StandbyReqTbl(SQLModel, table=True):
@@ -74,5 +78,9 @@ class OldboyApplicant(SQLModel, table=True):
 
     id: str = Field(foreign_key="user.id", primary_key=True)
     processed: bool = Field(default=False, nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )

@@ -74,8 +74,8 @@ W_HTML_DIR="static/w/"
 ```bash
 mkdir -p \
   ./db \
-  ./download \
   ./logs \
+  ./static/download \
   ./static/article \
   ./static/image/photo \
   ./static/image/pfps
@@ -140,6 +140,12 @@ uv로 파이썬 가상환경을 만듭니다. 가상환경을 실행 후 `uv.loc
 uv venv
 source .venv/bin/activate
 uv sync --locked
+```
+
+다음으로 pre-commit을 uv로 설정합니다.
+
+```bash
+uv run pre-commit install
 ```
 
 ### dependency 변경
@@ -231,7 +237,8 @@ conda env remove -n homepage_init_backend # or whatever your env name is
 curl -LsSf https://astral.sh/uv/install.sh | sh # might need to restart shell after installation
 uv venv
 source .venv/bin/activate # or .venv\Scripts\activate on Windows
-uv sync
+uv lock
+uv sync --locked
 ```
 
 **기타**
@@ -239,3 +246,36 @@ uv sync
 - As of now, **live edits inside the docker container do not work** as the code files are not mounted. Therefore, to apply updates to the code into the container image, devs must rebuild the container.
 
 - In `./Dockerfile`, we setup a nonroot user to execute the application and modify static files. At production, we encourage the devs to add gid and uid that is appropriate for the host server, so that they have access to static files at host machine.
+
+### Migration: Add black, isort, pre-commit
+
+[`black`](https://github.com/psf/black), [`isort`](https://github.com/PyCQA/isort), [`pre-commit`](https://github.com/pre-commit/pre-commit)을 도입합니다.  
+
+**배경**  
+
+- 좋은 포맷
+- 코드의 통일성
+- 버그, 충돌 방지
+
+**설명**
+
+1. deps 변경 (dev deps 추가)
+
+```bash
+uv lock
+uv sync --locked
+```
+
+2. pre-commit 설치
+
+```bash
+uv run pre-commit install
+```
+
+3. (선택) pre-commit 테스트
+
+**주의**: 이 명령은 설정된 모든 파일을 변경합니다.
+
+```bash
+uv run pre-commit run --all-files
+```

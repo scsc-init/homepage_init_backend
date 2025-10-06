@@ -65,3 +65,20 @@ dependencies = [
     "wheel==0.45.1",
     "yarl==1.20.1",
 ]
+
+[dependency-groups]
+dev = [
+    "black>=25.9.0",
+    "isort>=6.1.0",
+    "pre-commit>=4.3.0",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 88
+combine_as_imports = false

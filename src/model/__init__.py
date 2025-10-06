@@ -1,10 +1,17 @@
-from .article import Article, Board, ArticleResponse
+from .article import Article, ArticleResponse, Board
+from .check_user_status_rule import CheckUserStatusRule
+from .comment import Comment, CommentResponse
 from .file_metadata import FileMetadata
 from .major import Major
-from .scsc_global_status import SCSCStatus, SCSCGlobalStatus
 from .pig import PIG, PIGMember
+from .scsc_global_status import SCSCGlobalStatus, SCSCStatus
 from .sig import SIG, SIGMember
-from .user import User, UserResponse, UserRole, UserStatus, StandbyReqTbl, OldboyApplicant
-from .comment import Comment, CommentResponse
-from .check_user_status_rule import CheckUserStatusRule
+from .user import (
+    OldboyApplicant,
+    StandbyReqTbl,
+    User,
+    UserResponse,
+    UserRole,
+    UserStatus,
+)
 from .w_html_metadata import WHTMLMetadata
