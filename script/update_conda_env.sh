@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# =============================================================================================================================
+# DEPRECATED: This script is deprecated and may be removed in future releases, as conda is no longer supported in this project.
+# Please use `uv pip compile pyproject.toml -o requirements.txt --no-deps` instead.
+# =============================================================================================================================
+
 # Check if environment name is provided
 if [ -z "$1" ]; then
   echo "Usage: $0 <conda-environment-name>"

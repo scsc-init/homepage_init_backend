@@ -10,6 +10,7 @@ presidents.csv
 
 # private files
 ignoredir/
+logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
