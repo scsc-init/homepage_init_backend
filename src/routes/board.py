@@ -33,20 +33,25 @@ async def create_board(session: SessionDep, request: Request, body: BodyCreateBo
         reading_permission_level=body.reading_permission_level,
     )
     session.add(board)
-    try: session.commit()
+    try:
+        session.commit()
     except IntegrityError:
         session.rollback()
-        logger.warning(f'err_type=board_update err_code=409 ; msg=unique field already exists ; executor={current_user.id}')
-        raise HTTPException(status_code=409, detail="unique field already exists")
+        logger.warning(
+            f'err_type=board_update err_code=409 ; msg=unique field already exists ; executor={current_user.id}')
+        raise HTTPException(
+            status_code=409, detail="unique field already exists")
     session.refresh(board)
-    logger.info(f'info_type=board_update ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}')
+    logger.info(
+        f'info_type=board_update ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}')
     return board
 
 
 @board_router.get('/board/{id}')
 async def get_board_by_id(id: int, session: SessionDep) -> Board:
     board = session.get(Board, id)
-    if not board: raise HTTPException(404, detail="Board not found")
+    if not board:
+        raise HTTPException(404, detail="Board not found")
     return board
 
 
@@ -70,17 +75,24 @@ async def update_board(id: int, session: SessionDep, request: Request, body: Bod
     if not board:
         raise HTTPException(status_code=404, detail="Board not found",)
     # TODO: Who can, What can?
-    if body.name: board.name = body.name
-    if body.description: board.description = body.description
-    if body.writing_permission_level: board.writing_permission_level = body.writing_permission_level
-    if body.reading_permission_level: board.reading_permission_level = body.reading_permission_level
+    if body.name:
+        board.name = body.name
+    if body.description:
+        board.description = body.description
+    if body.writing_permission_level:
+        board.writing_permission_level = body.writing_permission_level
+    if body.reading_permission_level:
+        board.reading_permission_level = body.reading_permission_level
     board.updated_at = datetime.now(timezone.utc)
-    try: session.commit()
+    try:
+        session.commit()
     except IntegrityError:
         session.rollback()
-        logger.warning(f'err_type=board_update err_code=409 ; msg=unique field already exists ; board_id={id} ; executor={current_user.id}')
+        logger.warning(
+            f'err_type=board_update err_code=409 ; msg=unique field already exists ; board_id={id} ; executor={current_user.id}')
         raise HTTPException(409, detail="unique field already exists")
-    logger.info(f'info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}')
+    logger.info(
+        f'info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}')
 
 
 @board_router.post('/executive/board/delete/{id}', status_code=204)
@@ -91,11 +103,14 @@ async def delete_board(id: int, session: SessionDep, request: Request) -> None:
         raise HTTPException(status_code=404, detail="Board not found",)
     # TODO: Who can, What can?
     session.delete(board)
-    try: session.commit()
+    try:
+        session.commit()
     except IntegrityError:
         session.rollback()
-        logger.warning(f'err_type=board_delete err_code=409 ; msg=Cannot delete board because of foreign key restriction ; board_id={id} ; executor={current_user.id}')
-        raise HTTPException(409, detail="Cannot delete board because of foreign key restriction")
+        logger.warning(
+            f'err_type=board_delete err_code=409 ; msg=Cannot delete board because of foreign key restriction ; board_id={id} ; executor={current_user.id}')
+        raise HTTPException(
+            409, detail="Cannot delete board because of foreign key restriction")
     session.refresh(board)
-    logger.info(f'info_type=board_delete ; board_id={id} ; executor={current_user.id}')
-    
+    logger.info(
+        f'info_type=board_delete ; board_id={id} ; executor={current_user.id}')

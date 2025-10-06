@@ -11,7 +11,7 @@ from .file import file_router
 from .scsc import scsc_router
 from .bot import bot_router
 from .w import w_router
-from .kv import kv_router
+from .key_value import kv_router
 
 root_router = APIRouter()
 

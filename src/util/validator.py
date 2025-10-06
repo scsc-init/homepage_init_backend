@@ -113,3 +113,4 @@ async def validate_and_read_file(file: UploadFile, *, valid_mime_type: str = '',
     content = await file.read()
     if len(content) > get_settings().file_max_size: raise HTTPException(413, detail=f"cannot upload file larger than {get_settings().file_max_size} bytes")
     return content, basename, ext, file.content_type
+    

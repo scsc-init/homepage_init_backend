@@ -36,14 +36,18 @@ class User(SQLModel, table=True):
     status: UserStatus = Field(default=UserStatus.pending, nullable=False)
 
     discord_id: Optional[int] = Field(default=None, nullable=True, unique=True)
-    discord_name: Optional[str] = Field(default=None, nullable=True, unique=True)
+    discord_name: Optional[str] = Field(
+        default=None, nullable=True, unique=True)
 
     profile_picture: Optional[str] = Field(default=None, nullable=True)
     profile_picture_is_url: bool = Field(default=False, nullable=False)
 
-    last_login: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    last_login: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     major_id: int = Field(foreign_key="major.id", nullable=False)
 
@@ -74,5 +78,7 @@ class OldboyApplicant(SQLModel, table=True):
 
     id: str = Field(foreign_key="user.id", primary_key=True)
     processed: bool = Field(default=False, nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False)

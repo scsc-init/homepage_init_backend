@@ -96,3 +96,4 @@ async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO
         deposit_name=line["보낸분/받는분"]
     ) for line in reader]
     return result
+    
