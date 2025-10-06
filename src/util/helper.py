@@ -50,10 +50,6 @@ def split_filename(filename: str) -> tuple[str, str]:
     return base_name, extension.lower()
 
 
-def get_file_extension(filename: str) -> str:
-    base, ext = split_filename(filename)
-    return ext
-
 def get_user(request: Request) -> User:
     user = request.state.user
     if not user: raise HTTPException(401, detail="Not logged in")

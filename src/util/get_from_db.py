@@ -35,8 +35,7 @@ def get_user_role_level(role_name: str) -> int:
     finally:
         if session: session.close()
 
-def get_kv_entry(session: SessionDep, key: str) -> KeyValue:                                                          
-    """key_value 테이블에서 지정한 키를 읽어온다."""                                                                      
+def get_kv_entry(session: SessionDep, key: str) -> KeyValue:                                                                                                                       
     kv_entry = session.get(KeyValue, key)                                                                             
     if kv_entry is None:                                                                                              
         raise HTTPException(503, detail=f"config entry '{key}' not configured")                                           
@@ -51,8 +50,7 @@ def update_kv_entry(
     value: str,                                                                                                           
     actor_role: int,                                                                                                      
     min_role: int | None = None,                                                                                          
-) -> KeyValue:                                                                                                            
-    """키에 해당하는 값을 갱신하고 권한이 부족하면 403을 던진다."""                                                       
+) -> KeyValue:                                                                                                         
     kv_entry = get_kv_entry(session, key)                                                                         
 
     required_role = kv_entry.writing_permission_level                                                                                        
