@@ -58,7 +58,7 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
 async def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     user = session.get(User, user_id)
     if not user: raise HTTPException(404, detail="user not found")
-    if user.status != UserStatus.pending:raise HTTPException(400, detail="Only user with pending status can enroll")
+    if user.status != UserStatus.pending: raise HTTPException(400, detail="Only user with pending status can enroll")
     user.status = UserStatus.standby
     session.add(user)
     stby_req_tbl = StandbyReqTbl(
@@ -121,7 +121,7 @@ async def process_deposit_ctrl(session: SessionDep, deposit: DepositDTO) -> Proc
             matching_users = [UserResponse.model_validate(u) for u in matching_users_error]
 
             if len(matching_users_error) != 1:
-                if len(matching_users_error) > 1: 
+                if len(matching_users_error) > 1:
                     logger.error(f"err_type=deposit ; err_code=409 ; msg={len(matching_users_error)}users match the following deposit record ; deposit={deposit} ; users={matching_users}")
                     return (ProcessDepositResult(
                         result_code=409,
@@ -199,7 +199,7 @@ async def process_deposit_ctrl(session: SessionDep, deposit: DepositDTO) -> Proc
 
 async def register_oldboy_applicant_ctrl(session: SessionDep, user: User) -> OldboyApplicant:
     user_created_at_aware = user.created_at.replace(tzinfo=timezone.utc)
-    if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3):raise HTTPException(400, detail="must have been a member for at least 3 years.")
+    if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3): raise HTTPException(400, detail="must have been a member for at least 3 years.")
     if user.role != get_user_role_level('member'): raise HTTPException(400, detail="must be a member")
     oldboy_applicant = OldboyApplicant(id=user.id)
     session.add(oldboy_applicant)

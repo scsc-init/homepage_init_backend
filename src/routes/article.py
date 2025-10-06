@@ -29,8 +29,7 @@ async def create_article(session: SessionDep, request: Request, body: BodyCreate
             await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().notice_channel_id, 'content': f"{body.title}\n\n{body.content}"})
         elif body.board_id == 6:  # grant
             await send_discord_bot_request_no_reply(action_code=1002, body={'channel_id': get_settings().grant_channel_id, 'content': body.content})
-    except Exception:
-        logger.error(f'err_type=create_article ; error occurred during connecting to discord ; {body=}', exc_info=True)
+    except Exception: logger.error(f'err_type=create_article ; error occurred during connecting to discord ; {body=}', exc_info=True)
     return ret
 
 
@@ -70,7 +69,8 @@ async def get_article_by_id(id: int, session: SessionDep, request: Request) -> A
 
     if board.reading_permission_level > 0:
         current_user = get_user(request)
-        if current_user.role < board.reading_permission_level: raise HTTPException(403, detail="You are not allowed to read this article")
+        if current_user.role < board.reading_permission_level:
+            raise HTTPException(403, detail="You are not allowed to read this article")
 
     if article.is_deleted: return ArticleResponse(**article.model_dump(), content=DELETED)
 
@@ -122,7 +122,7 @@ async def update_article_by_executive(id: int, session: SessionDep, request: Req
     if not article: raise HTTPException(status_code=404, detail="Article not found",)
     if article.is_deleted: raise HTTPException(status_code=410, detail="Article has been deleted")
     board = session.get(Board, body.board_id)
-    if not board:raise HTTPException(503, detail="board does not exist")
+    if not board: raise HTTPException(503, detail="board does not exist")
     current_user = get_user(request)
     if current_user.role < board.writing_permission_level: raise HTTPException(403, detail="You are not allowed to write to this board")
 

@@ -76,7 +76,7 @@ async def update_w_by_name(name: str, session: SessionDep, request: Request, fil
 @w_router.post('/executive/w/{name}/delete', status_code=204)
 async def delete_w_by_name(name: str, session: SessionDep, request: Request) -> None:
     w_meta = session.get(WHTMLMetadata, name)
-    if not w_meta:  raise HTTPException(404, detail="file not found")
+    if not w_meta: raise HTTPException(404, detail="file not found")
     session.delete(w_meta)
     session.commit()
     current_user = get_user(request)

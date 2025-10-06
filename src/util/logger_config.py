@@ -15,7 +15,7 @@ class InfoFilter(logging.Filter):
 
 class UTCFormatter(logging.Formatter):
     converter = time.gmtime
-
+        
 
 LOGGING_CONFIG = {
     "version": 1,

@@ -13,7 +13,7 @@ class PIG(SQLModel, table=True):
         CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
     )
 
-    id: int = Field(default=None, primary_key=True) # default=None because of autoincrement
+    id: int = Field(default=None, primary_key=True)  # default=None because of autoincrement
 
     title: str = Field(nullable=False)
     description: str = Field(nullable=False)

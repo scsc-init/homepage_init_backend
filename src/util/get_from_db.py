@@ -19,7 +19,7 @@ def get_user_role_level(role_name: str) -> int:
 
     Returns:
         int: The level associated with the role.
-        
+
     Raises:
         HTTPException: 400 if a role with the given name is not found in the database.
     """

@@ -75,8 +75,7 @@ async def delete_sig(id: int, session: SessionDep, request: Request) -> None:
     year = sig.year
     semester = sig.semester
     await send_discord_bot_request_no_reply(action_code=4002, body={'sig_name': sig.title, "previous_semester": f"{year}-{map_semester_name.get(semester)}"})
-    logger.info(
-        f'info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
+    logger.info(f'info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
 
@@ -144,7 +143,7 @@ async def leave_sig(id: int, session: SessionDep, request: Request):
     allowed = (ctrl_status_available.join_sigpig_rolling_admission if sig.is_rolling_admission else ctrl_status_available.join_sigpig)
     if sig.status not in allowed: raise HTTPException(400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다")
     if sig.owner == current_user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
-    sig_members = session.exec(select(SIGMember).where( SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id)).all()
+    sig_members = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id)).all()
     if not sig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
     for member in sig_members:
         session.delete(member)
@@ -172,8 +171,7 @@ async def executive_join_sig(id: int, session: SessionDep, request: Request, bod
         status=sig.status
     )
     session.add(sig_member)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
@@ -198,7 +196,8 @@ async def executive_leave_sig(id: int, session: SessionDep, request: Request, bo
     if sig.owner == user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
     sig_members = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == body.user_id)).all()
     if not sig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-    for member in sig_members: session.delete(member)
+    for member in sig_members: 
+        session.delete(member)
     session.commit()
     session.refresh(user)
     session.refresh(sig)

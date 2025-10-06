@@ -70,7 +70,7 @@ async def get_comments_by_article(article_id: int, session: SessionDep, request:
 @comment_general_router.get('/{id}', response_model=CommentResponse)
 async def get_comment_by_id(id: int, session: SessionDep, request: Request) -> CommentResponse:
     comment = session.get(Comment, id)
-    if not comment:raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
+    if not comment: raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
     article = session.get(Article, comment.article_id)
     if not article: raise HTTPException(503, detail="article does not exist")
     board = session.get(Board, article.board_id)
@@ -130,8 +130,7 @@ async def delete_comment_by_author(id: int, session: SessionDep, request: Reques
 
     comment.is_deleted = True
     comment.deleted_at = datetime.now(timezone.utc)
-    logger.info(
-        f'info_type=comment_deleted ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; remover_id={current_user.id}')
+    logger.info(f'info_type=comment_deleted ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; remover_id={current_user.id}')
     session.commit()
 
 

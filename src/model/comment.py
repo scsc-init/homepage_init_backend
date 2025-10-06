@@ -4,7 +4,7 @@ from sqlmodel import Field, SQLModel
 
 class Comment(SQLModel, table=True):
     __tablename__ = "comment"  # type: ignore
-    id: int = Field(default=None, primary_key=True) # default=None because of autoincrement
+    id: int = Field(default=None, primary_key=True)  # default=None because of autoincrement
     content: str = Field()
     author_id: str = Field(foreign_key="user.id")
     article_id: int = Field(foreign_key="article.id")

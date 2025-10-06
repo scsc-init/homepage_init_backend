@@ -60,7 +60,7 @@ async def login_without_permission():
         logger.error('err_type=bot_discord_login ; err_code=504 ; msg=timeout')
         raise HTTPException(504, "Bot did not respond")
     except httpx.RequestError as e:
-        logger.error( f'err_type=bot_discord_login ; err_code=400 ; msg=request error: {e}')
+        logger.error(f'err_type=bot_discord_login ; err_code=400 ; msg=request error: {e}')
         raise HTTPException(400, str(e))
     if res.status_code != 204:
         logger.error(f'err_type=bot_discord_login ; err_code=400 ; msg=login failed: {res.text}')
