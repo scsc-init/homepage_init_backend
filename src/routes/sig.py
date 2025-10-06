@@ -196,7 +196,7 @@ async def executive_leave_sig(id: int, session: SessionDep, request: Request, bo
     if sig.owner == user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
     sig_members = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == body.user_id)).all()
     if not sig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-    for member in sig_members: 
+    for member in sig_members:
         session.delete(member)
     session.commit()
     session.refresh(user)

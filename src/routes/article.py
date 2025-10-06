@@ -41,7 +41,7 @@ async def get_article_list_by_board(board_id: int, session: SessionDep, request:
 
     if board.reading_permission_level > 0:
         current_user = get_user(request)
-        if current_user.role < board.reading_permission_level:
+        if current_user.role < board.reading_permission_level: 
             raise HTTPException(403, detail="You are not allowed to read this board")
 
     articles = session.exec(select(Article).where(Article.board_id == board_id)).all()
@@ -69,9 +69,9 @@ async def get_article_by_id(id: int, session: SessionDep, request: Request) -> A
 
     if board.reading_permission_level > 0:
         current_user = get_user(request)
-        if current_user.role < board.reading_permission_level:
+        if current_user.role < board.reading_permission_level: 
             raise HTTPException(403, detail="You are not allowed to read this article")
-
+    
     if article.is_deleted: return ArticleResponse(**article.model_dump(), content=DELETED)
 
     try:

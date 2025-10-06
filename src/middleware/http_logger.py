@@ -31,5 +31,5 @@ class HTTPLoggerMiddleware(BaseHTTPMiddleware):
         http_logger.info(
             f"Response: status_code={response.status_code} duration={formatted_process_time}ms"
         )
-
+        
         return response
