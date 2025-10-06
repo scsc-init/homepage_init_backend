@@ -8,19 +8,16 @@ from .scsc_global_status import SCSCStatus
 class PIG(SQLModel, table=True):
     __tablename__ = "pig"  # type: ignore
     __table_args__ = (
-        UniqueConstraint("title", "year", "semester",
-                         name="uq_title_year_semester"),
+        UniqueConstraint("title", "year", "semester", name="uq_title_year_semester"),
         CheckConstraint("year >= 2025", name="ck_year_min"),
         CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
     )
 
-    # default=None because of autoincrement
-    id: int = Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True) # default=None because of autoincrement
 
     title: str = Field(nullable=False)
     description: str = Field(nullable=False)
-    content_id: int = Field(foreign_key="article.id",
-                            nullable=False, unique=True)
+    content_id: int = Field(foreign_key="article.id", nullable=False, unique=True)
 
     status: SCSCStatus = Field(nullable=False)
 
@@ -30,10 +27,8 @@ class PIG(SQLModel, table=True):
     should_extend: bool = Field(default=False, nullable=False)
     is_rolling_admission: bool = Field(default=False, nullable=False)
 
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
 
     owner: str = Field(foreign_key="user.id", nullable=False)
 
@@ -41,16 +36,13 @@ class PIG(SQLModel, table=True):
 class PIGMember(SQLModel, table=True):
     __tablename__ = "pig_member"  # type: ignore
     __table_args__ = (
-        UniqueConstraint("ig_id", "user_id", "status",
-                         name="uq_ig_user_status"),
+        UniqueConstraint("ig_id", "user_id", "status", name="uq_ig_user_status"),
     )
 
-    # default=None because of autoincrement
-    id: int = Field(default=None, primary_key=True)
+    id: int = Field(default=None, primary_key=True)  # default=None because of autoincrement
 
     ig_id: int = Field(foreign_key="pig.id", nullable=False)
     user_id: str = Field(foreign_key="user.id", nullable=False)
     status: SCSCStatus = Field(nullable=False)
 
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)

@@ -6,5 +6,4 @@ from .get_from_db import get_user_role_level, SCSCGlobalStatusDep
 from .rabbitmq import send_discord_bot_request, send_discord_bot_request_no_reply, change_discord_role
 from .logger_config import LOGGING_CONFIG, request_id_var
 
-# used as placeholder for deleted article/comment content
-DELETED: Final[str] = "(삭제됨)"
+DELETED: Final[str] = "(삭제됨)"  # used as placeholder for deleted article/comment content

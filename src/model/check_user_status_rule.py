@@ -20,6 +20,5 @@ class CheckUserStatusRule(SQLModel, table=True):
     path: str = Field(nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("user_status", "method", "path",
-                         name="uq_user_status_method_path"),
+        UniqueConstraint("user_status", "method", "path", name="uq_user_status_method_path"),
     )

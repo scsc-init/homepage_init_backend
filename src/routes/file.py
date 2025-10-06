@@ -35,8 +35,7 @@ async def upload_file(session: SessionDep, request: Request, file: UploadFile = 
 @file_router.get('/file/docs/download/{id}')
 async def get_docs_by_id(id: str, session: SessionDep) -> FileResponse:
     file_meta = session.get(FileMetadata, id)
-    if not file_meta:
-        raise HTTPException(404, detail="file not found")
+    if not file_meta: raise HTTPException(404, detail="file not found")
     _, ext = split_filename(file_meta.original_filename)
     return FileResponse(path.join(get_settings().file_dir, f"{file_meta.id}.{ext}"))
 
@@ -66,7 +65,6 @@ async def upload_image(session: SessionDep, request: Request, file: UploadFile =
 @file_router.get('/file/image/download/{id}')
 async def get_image_by_id(id: str, session: SessionDep) -> FileResponse:
     image = session.get(FileMetadata, id)
-    if not image:
-        raise HTTPException(404, detail="image not found")
+    if not image: raise HTTPException(404, detail="image not found")
     _, ext = split_filename(image.original_filename)
     return FileResponse(path.join(get_settings().image_dir, f"{image.id}.{ext}"))

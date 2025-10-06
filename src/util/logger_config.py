@@ -4,17 +4,14 @@ import time
 
 request_id_var = ContextVar("request_id", default='')
 
-
 class RequestIdFilter(logging.Filter):
     def filter(self, record):
         record.request_id = request_id_var.get()
         return True
 
-
 class InfoFilter(logging.Filter):
     def filter(self, record):
         return record.levelno == logging.INFO
-
 
 class UTCFormatter(logging.Formatter):
     converter = time.gmtime
@@ -79,9 +76,9 @@ LOGGING_CONFIG = {
             "propagate": False,
         },
         "http_access": {
-            "handlers": ["file_access"],
-            "level": "INFO",
-            "propagate": False,
+             "handlers": ["file_access"],
+             "level": "INFO",
+             "propagate": False,
         }
     },
 }

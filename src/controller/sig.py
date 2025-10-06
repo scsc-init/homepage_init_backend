@@ -23,9 +23,7 @@ class BodyCreateSIG(BaseModel):
 
 
 async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> SIG:
-    if scsc_global_status.status not in ctrl_status_available.create_sigpig:
-        raise HTTPException(
-            400, f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다")
+    if scsc_global_status.status not in ctrl_status_available.create_sigpig: raise HTTPException(400, f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다")
 
     sig_article = await create_article_ctrl(
         session,
@@ -45,31 +43,26 @@ async def create_sig_ctrl(session: SessionDep, body: BodyCreateSIG, user_id: str
         is_rolling_admission=body.is_rolling_admission,
     )
     session.add(sig)
-    try:
-        session.flush()
+    try: session.flush()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(sig)
 
-    if sig.id is None:
-        raise HTTPException(503, detail="sig primary key does not exist")
+    if sig.id is None: raise HTTPException(503, detail="sig primary key does not exist")
     sig_member = SIGMember(
         ig_id=sig.id,
         user_id=user_id,
         status=sig.status
     )
     session.add(sig_member)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="시그장 자동 가입 중 중복 오류가 발생했습니다")
     session.refresh(sig)
-    if user_discord_id:
-        await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': sig.title, 'user_id_list': [user_discord_id], "sig_description": sig.description})
-    logger.info(
-        f'info_type=sig_created ; sig_id={sig.id} ; title={sig.title} ; owner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}')
+    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4001, body={'sig_name': sig.title, 'user_id_list': [user_discord_id], "sig_description": sig.description})
+    logger.info(f'info_type=sig_created ; sig_id={sig.id} ; title={sig.title} ; owner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}')
     return sig
 
 
@@ -84,36 +77,27 @@ class BodyUpdateSIG(BaseModel):
 
 async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, user_id: str, is_executive: bool) -> None:
     sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if not is_executive and sig.owner != user_id:
-        raise HTTPException(status_code=403, detail="타인의 시그/피그를 변경할 수 없습니다")
+    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not is_executive and sig.owner != user_id: raise HTTPException(status_code=403, detail="타인의 시그/피그를 변경할 수 없습니다")
     old_title = sig.title
-    if body.title:
-        sig.title = body.title
-    if body.description:
-        sig.description = body.description
+    if body.title: sig.title = body.title
+    if body.description: sig.description = body.description
     if body.content:
         sig_article = await create_article_ctrl(
             session,
-            BodyCreateArticle(
-                title=sig.title, content=body.content, board_id=1),
+            BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
             user_id,
             get_user_role_level('president')
         )
         sig.content_id = sig_article.id
     if body.status:
-        if not is_executive:
-            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
+        if not is_executive: raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
         sig.status = body.status
-    if body.should_extend is not None:
-        sig.should_extend = body.should_extend
-    if body.is_rolling_admission is not None:
-        sig.is_rolling_admission = body.is_rolling_admission
+    if body.should_extend is not None: sig.should_extend = body.should_extend
+    if body.is_rolling_admission is not None: sig.is_rolling_admission = body.is_rolling_admission
 
     session.add(sig)
-    try:
-        session.commit()
+    try: session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
@@ -121,13 +105,9 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
 
     bot_body = {}
     bot_body['sig_name'] = old_title
-    if body.title:
-        bot_body['new_sig_name'] = body.title
-    if body.description:
-        bot_body['new_topic'] = body.description
-    if len(bot_body) > 1:
-        await send_discord_bot_request_no_reply(action_code=4005, body=bot_body)
+    if body.title: bot_body['new_sig_name'] = body.title
+    if body.description: bot_body['new_topic'] = body.description
+    if len(bot_body) > 1: await send_discord_bot_request_no_reply(action_code=4005, body=bot_body)
 
-    logger.info(
-        f'info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}')
+    logger.info(f'info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}')
     return

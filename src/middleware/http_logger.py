@@ -22,8 +22,7 @@ class HTTPLoggerMiddleware(BaseHTTPMiddleware):
 
         start_time = time.time()
 
-        http_logger.info(
-            f"Request: {request.method} {request.url.path} User: {user_id}")
+        http_logger.info(f"Request: {request.method} {request.url.path} User: {user_id}")
 
         response = await call_next(request)
 
@@ -33,5 +32,5 @@ class HTTPLoggerMiddleware(BaseHTTPMiddleware):
         http_logger.info(
             f"Response: status_code={response.status_code} duration={formatted_process_time}ms"
         )
-
+        
         return response
