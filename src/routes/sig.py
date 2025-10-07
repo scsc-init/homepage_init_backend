@@ -6,10 +6,10 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, ctrl_status_available, map_semester_name
+from src.controller import BodyCreateSIG, BodyUpdateSIG, create_sig_ctrl, update_sig_ctrl, ctrl_status_available, map_semester_name, handover_sig_ctrl
 from src.db import SessionDep
 from src.model import SIG, SIGMember, User, SCSCStatus
-from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
+from src.util import SCSCGlobalStatusDep, get_user, send_discord_bot_request_no_reply
 
 logger = logging.getLogger("app")
 
@@ -89,27 +89,6 @@ class BodyHandoverSIG(BaseModel):
     new_owner: str
 
 
-def _handover_sig(session: SessionDep, sig: SIG, new_owner_id: str) -> tuple[SIG, str]:
-    if sig.owner == new_owner_id:
-        raise HTTPException(status_code=400, detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다")
-    new_owner_user = session.get(User, new_owner_id)
-    if not new_owner_user:
-        raise HTTPException(status_code=404, detail="새로운 시그/피그장에 해당하는 사용자가 없습니다")
-    member = session.exec(
-        select(SIGMember).where(
-            SIGMember.ig_id == sig.id,
-            SIGMember.user_id == new_owner_id
-        )
-    ).first()
-    if not member:
-        raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
-
-    old_owner = sig.owner
-    sig.owner = new_owner_id
-    session.add(sig)
-    return sig, old_owner
-
-
 def _execute_handover_and_log(
     session: SessionDep,
     sig: SIG,
@@ -133,25 +112,23 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
     sig = session.get(SIG, id)
     if sig is None:
         raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner:
+    if current_user.id != sig.owner:
         raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
 
-    sig, old_owner = _handover_sig(session, sig, body.new_owner)
-    _execute_handover_and_log(session, sig, current_user.id, body.new_owner, old_owner, current_user.id != old_owner)
+    sig, old_owner = handover_sig_ctrl(session, sig, body.new_owner)
+    _execute_handover_and_log(session, sig, current_user.id, body.new_owner, old_owner, False)
     return
 
 
 @sig_router.post('/executive/sig/{id}/handover', status_code=204)
 async def executive_handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
     current_user = get_user(request)
-    if current_user.role < get_user_role_level('executive'):
-        raise HTTPException(403, detail="임원진만 시그/피그장을 양도할 수 있습니다")
 
     sig = session.get(SIG, id)
     if sig is None:
         raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
 
-    sig, old_owner = _handover_sig(session, sig, body.new_owner)
+    sig, old_owner = handover_sig_ctrl(session, sig, body.new_owner)
     _execute_handover_and_log(session, sig, current_user.id, body.new_owner, old_owner, True)
     return
 

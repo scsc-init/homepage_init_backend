@@ -1,12 +1,13 @@
-from typing import Optional
+from typing import Optional, Tuple
 import logging
 
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
+from sqlmodel import select
 
 from src.db import SessionDep
-from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus
+from src.model import SIG, SCSCGlobalStatus, SIGMember, SCSCStatus, User
 from src.util import get_user_role_level, send_discord_bot_request_no_reply
 
 from .article import BodyCreateArticle, create_article_ctrl
@@ -111,3 +112,22 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
 
     logger.info(f'info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}')
     return
+
+
+def handover_sig_ctrl(session: SessionDep, sig: SIG, new_owner_id: str) -> Tuple[SIG, str]:
+    if sig.owner == new_owner_id:
+        raise HTTPException(status_code=400, detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다")
+
+    new_owner_user = session.get(User, new_owner_id)
+    if not new_owner_user:
+        raise HTTPException(status_code=404, detail="새로운 시그/피그장에 해당하는 사용자가 없습니다")
+
+    member = session.exec(select(SIGMember).where(SIGMember.ig_id == sig.id).where(
+        SIGMember.user_id == new_owner_id)).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
+
+    old_owner = sig.owner
+    sig.owner = new_owner_id
+    session.add(sig)
+    return sig, old_owner
