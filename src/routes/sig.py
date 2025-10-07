@@ -100,6 +100,23 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
     return
 
 
+@sig_router.post('/executive/sig/{id}/handover', status_code=204)
+async def executive_handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
+    current_user = get_user(request)
+    if current_user.role < get_user_role_level('executive'): raise HTTPException(403, detail="임원진만 시그/피그장을 양도할 수 있습니다")
+    sig = session.get(SIG, id)
+    if sig is None: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    user = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(
+        SIGMember.user_id == body.new_owner)).first()
+    if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
+    old_owner = sig.owner
+    sig.owner = body.new_owner
+    session.add(sig)
+    logger.info(f'info_type=sig_handover ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; year={sig.year} ; semester={sig.semester}')
+    session.commit()
+    return
+
+
 @sig_router.get('/sig/{id}/members')
 async def get_sig_members(id: int, session: SessionDep) -> list:
     res = []
