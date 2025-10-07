@@ -25,7 +25,8 @@ async def create_sig(session: SessionDep, scsc_global_status: SCSCGlobalStatusDe
 @sig_router.get('/sig/{id}')
 async def get_sig_by_id(id: int, session: SessionDep) -> SIG:
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not sig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     return sig
 
 
@@ -44,9 +45,12 @@ async def update_my_sig(id: int, session: SessionDep, request: Request, body: Bo
 async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.owner != current_user.id: raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
-    if sig.status == SCSCStatus.inactive: raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
+    if not sig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if sig.owner != current_user.id:
+        raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
+    if sig.status == SCSCStatus.inactive:
+        raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
     sig.status = SCSCStatus.inactive
     session.commit()
     session.refresh(sig)
@@ -67,8 +71,10 @@ async def update_sig(id: int, session: SessionDep, request: Request, body: BodyU
 async def delete_sig(id: int, session: SessionDep, request: Request) -> None:
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.status == SCSCStatus.inactive: raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
+    if not sig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if sig.status == SCSCStatus.inactive:
+        raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
     sig.status = SCSCStatus.inactive
     session.commit()
     session.refresh(sig)
@@ -84,14 +90,41 @@ class BodyHandoverSIG(BaseModel):
 
 
 def _handover_sig(session: SessionDep, sig: SIG, new_owner_id: str) -> tuple[SIG, str]:
-    member = session.exec(select(SIGMember).where(SIGMember.ig_id == sig.id).where(
-        SIGMember.user_id == new_owner_id)).first()
+    if sig.owner == new_owner_id:
+        raise HTTPException(status_code=400, detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다")
+    new_owner_user = session.get(User, new_owner_id)
+    if not new_owner_user:
+        raise HTTPException(status_code=404, detail="새로운 시그/피그장에 해당하는 사용자가 없습니다")
+    member = session.exec(
+        select(SIGMember).where(
+            SIGMember.ig_id == sig.id,
+            SIGMember.user_id == new_owner_id
+        )
+    ).first()
     if not member:
         raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
+
     old_owner = sig.owner
     sig.owner = new_owner_id
     session.add(sig)
     return sig, old_owner
+
+
+def _execute_handover_and_log(
+    session: SessionDep,
+    sig: SIG,
+    executor_id: str,
+    new_owner_id: str,
+    old_owner: str,
+    is_forced: bool
+) -> None:
+    handover_type = 'forced' if is_forced else 'voluntary'
+    logger.info(
+        f'info_type=sig_handover ; handover_type={handover_type} ; sig_id={sig.id} ; title={sig.title} ; '
+        f'executor_id={executor_id} ; old_owner_id={old_owner} ; new_owner_id={new_owner_id} ; '
+        f'year={sig.year} ; semester={sig.semester}'
+    )
+    session.commit()
 
 
 @sig_router.post('/sig/{id}/handover', status_code=204)
@@ -101,15 +134,10 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
     if sig is None:
         raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner:
-        raise HTTPException(403, "타인의 시그/피그를 변경할 수 없습니다")
+        raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
+
     sig, old_owner = _handover_sig(session, sig, body.new_owner)
-    handover_type = 'forced' if current_user.id != old_owner else 'voluntary'
-    logger.info(
-        f'info_type=sig_handover ; handover_type={handover_type} ; sig_id={sig.id} ; title={sig.title} ; '
-        f'executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; '
-        f'year={sig.year} ; semester={sig.semester}'
-    )
-    session.commit()
+    _execute_handover_and_log(session, sig, current_user.id, body.new_owner, old_owner, current_user.id != old_owner)
     return
 
 
@@ -118,16 +146,13 @@ async def executive_handover_sig(id: int, session: SessionDep, request: Request,
     current_user = get_user(request)
     if current_user.role < get_user_role_level('executive'):
         raise HTTPException(403, detail="임원진만 시그/피그장을 양도할 수 있습니다")
+
     sig = session.get(SIG, id)
     if sig is None:
         raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+
     sig, old_owner = _handover_sig(session, sig, body.new_owner)
-    logger.info(
-        f'info_type=sig_handover ; handover_type=forced ; sig_id={sig.id} ; title={sig.title} ; '
-        f'executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; '
-        f'year={sig.year} ; semester={sig.semester}'
-    )
-    session.commit()
+    _execute_handover_and_log(session, sig, current_user.id, body.new_owner, old_owner, True)
     return
 
 
@@ -146,9 +171,11 @@ async def get_sig_members(id: int, session: SessionDep) -> list:
 async def join_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not sig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     allowed = (ctrl_status_available.join_sigpig_rolling_admission if sig.is_rolling_admission else ctrl_status_available.join_sigpig)
-    if sig.status not in allowed: raise HTTPException(400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다")
+    if sig.status not in allowed:
+        raise HTTPException(400, detail=f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다")
 
     sig_member = SIGMember(
         ig_id=id,
@@ -156,12 +183,14 @@ async def join_sig(id: int, session: SessionDep, request: Request):
         status=sig.status
     )
     session.add(sig_member)
-    try: session.commit()
+    try:
+        session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(sig)
-    if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': sig.title})
+    if current_user.discord_id:
+        await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': current_user.discord_id, 'role_name': sig.title})
     logger.info(f'info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
@@ -170,17 +199,30 @@ async def join_sig(id: int, session: SessionDep, request: Request):
 async def leave_sig(id: int, session: SessionDep, request: Request):
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not sig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     allowed = (ctrl_status_available.join_sigpig_rolling_admission if sig.is_rolling_admission else ctrl_status_available.join_sigpig)
-    if sig.status not in allowed: raise HTTPException(400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다")
-    if sig.owner == current_user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
-    sig_members = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == current_user.id)).all()
-    if not sig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
+    if sig.status not in allowed:
+        raise HTTPException(400, detail=f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다")
+    if sig.owner == current_user.id:
+        raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
+
+    sig_members = session.exec(
+        select(SIGMember).where(
+            SIGMember.ig_id == id,
+            SIGMember.user_id == current_user.id
+        )
+    ).all()
+    if not sig_members:
+        raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
+
     for member in sig_members:
         session.delete(member)
+
     session.commit()
     session.refresh(sig)
-    if current_user.discord_id: await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': sig.title})
+    if current_user.discord_id:
+        await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': current_user.discord_id, 'role_name': sig.title})
     logger.info(f'info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}')
     return
 
@@ -193,22 +235,27 @@ class BodyExecutiveJoinSIG(BaseModel):
 async def executive_join_sig(id: int, session: SessionDep, request: Request, body: BodyExecutiveJoinSIG):
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not sig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
-    if not user: raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
+    if not user:
+        raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
+
     sig_member = SIGMember(
         ig_id=id,
         user_id=body.user_id,
         status=sig.status
     )
     session.add(sig_member)
-    try: session.commit()
+    try:
+        session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(user)
     session.refresh(sig)
-    if user.discord_id: await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': sig.title})
+    if user.discord_id:
+        await send_discord_bot_request_no_reply(action_code=2001, body={'user_id': user.discord_id, 'role_name': sig.title})
     logger.info(f'info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}')
     return
 
@@ -221,17 +268,30 @@ class BodyExecutiveLeaveSIG(BaseModel):
 async def executive_leave_sig(id: int, session: SessionDep, request: Request, body: BodyExecutiveLeaveSIG):
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if not sig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not sig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
     user = session.get(User, body.user_id)
-    if not user: raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
-    if sig.owner == user.id: raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
-    sig_members = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(SIGMember.user_id == body.user_id)).all()
-    if not sig_members: raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
+    if not user:
+        raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
+    if sig.owner == user.id:
+        raise HTTPException(409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다")
+
+    sig_members = session.exec(
+        select(SIGMember).where(
+            SIGMember.ig_id == id,
+            SIGMember.user_id == body.user_id
+        )
+    ).all()
+    if not sig_members:
+        raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
+
     for member in sig_members:
         session.delete(member)
+
     session.commit()
     session.refresh(user)
     session.refresh(sig)
-    await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': sig.title})
+    if user.discord_id:
+        await send_discord_bot_request_no_reply(action_code=2002, body={'user_id': user.discord_id, 'role_name': sig.title})
     logger.info(f'info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}')
     return
