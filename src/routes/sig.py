@@ -84,6 +84,19 @@ class BodyHandoverSIG(BaseModel):
 
 
 def _handover_sig(session: SessionDep, sig: SIG, new_owner_id: str) -> tuple[SIG, str]:
+    """
+    Assigns a new owner to a SIG after verifying the specified user is a member.
+    
+    Parameters:
+        sig (SIG): The SIG to update.
+        new_owner_id (str): User ID of the member to become the new owner.
+    
+    Returns:
+        tuple[SIG, str]: A tuple containing the updated SIG and the previous owner's user ID.
+    
+    Raises:
+        HTTPException: 404 if the specified new_owner_id is not a member of the SIG.
+    """
     member = session.exec(select(SIGMember).where(SIGMember.ig_id == sig.id).where(
         SIGMember.user_id == new_owner_id)).first()
     if not member:
@@ -96,6 +109,20 @@ def _handover_sig(session: SessionDep, sig: SIG, new_owner_id: str) -> tuple[SIG
 
 @sig_router.post('/sig/{id}/handover', status_code=204)
 async def handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
+    """
+    Transfer ownership of the specified SIG to another member, performing authorization checks and persisting the change.
+    
+    Parameters:
+        id (int): Primary key of the SIG to transfer.
+        body (BodyHandoverSIG): Request body containing `new_owner` — the user ID of the member to become the new owner.
+    
+    Raises:
+        HTTPException: 404 if the SIG does not exist or the specified new owner is not a member.
+        HTTPException: 403 if the caller is neither the current owner nor has executive privileges.
+    
+    Notes:
+        The function updates the SIG's owner, logs the handover (including whether it was forced or voluntary), and commits the change to the database.
+    """
     current_user = get_user(request)
     sig = session.get(SIG, id)
     if sig is None:
@@ -115,6 +142,17 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
 
 @sig_router.post('/executive/sig/{id}/handover', status_code=204)
 async def executive_handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
+    """
+    Forcefully transfer ownership of a SIG to another member, performed by an executive.
+    
+    Parameters:
+        id (int): Primary key of the SIG to modify.
+        body (BodyHandoverSIG): Payload containing `new_owner`, the user id of the member to become the new owner.
+    
+    Raises:
+        HTTPException(403): If the requester is not an executive.
+        HTTPException(404): If the SIG does not exist or the specified new owner is not a member of the SIG.
+    """
     current_user = get_user(request)
     if current_user.role < get_user_role_level('executive'):
         raise HTTPException(403, detail="임원진만 시그/피그장을 양도할 수 있습니다")
