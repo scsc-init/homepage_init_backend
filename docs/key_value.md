@@ -13,6 +13,18 @@ CREATE TABLE key_value (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
+### SQL관련
+
+```sql
+CREATE TRIGGER trg_key_value_updated_at
+AFTER UPDATE OF key_value
+FOR EACH ROW
+BEGIN
+    UPDATE key_value
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE key = OLD.key;
+END;
+```
 
 ## API 구조
 
