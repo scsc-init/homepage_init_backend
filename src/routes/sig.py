@@ -83,19 +83,32 @@ class BodyHandoverSIG(BaseModel):
     new_owner: str
 
 
+def _handover_sig(session: SessionDep, sig: SIG, new_owner_id: str) -> tuple[SIG, str]:
+    member = session.exec(select(SIGMember).where(SIGMember.ig_id == sig.id).where(
+        SIGMember.user_id == new_owner_id)).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
+    old_owner = sig.owner
+    sig.owner = new_owner_id
+    session.add(sig)
+    return sig, old_owner
+
+
 @sig_router.post('/sig/{id}/handover', status_code=204)
 async def handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
     current_user = get_user(request)
     sig = session.get(SIG, id)
-    if sig is None: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    user = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(
-        SIGMember.user_id == body.new_owner)).first()
-    if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
-    if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner: raise HTTPException(403, "타인의 시그/피그를 변경할 수 없습니다")
-    old_owner = sig.owner
-    sig.owner = body.new_owner
-    session.add(sig)
-    logger.info(f'info_type=sig_handover ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; year={sig.year} ; semester={sig.semester}')
+    if sig is None:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if current_user.role < get_user_role_level('executive') and current_user.id != sig.owner:
+        raise HTTPException(403, "타인의 시그/피그를 변경할 수 없습니다")
+    sig, old_owner = _handover_sig(session, sig, body.new_owner)
+    handover_type = 'forced' if current_user.id != old_owner else 'voluntary'
+    logger.info(
+        f'info_type=sig_handover ; handover_type={handover_type} ; sig_id={sig.id} ; title={sig.title} ; '
+        f'executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; '
+        f'year={sig.year} ; semester={sig.semester}'
+    )
     session.commit()
     return
 
@@ -103,16 +116,17 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
 @sig_router.post('/executive/sig/{id}/handover', status_code=204)
 async def executive_handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
     current_user = get_user(request)
-    if current_user.role < get_user_role_level('executive'): raise HTTPException(403, detail="임원진만 시그/피그장을 양도할 수 있습니다")
+    if current_user.role < get_user_role_level('executive'):
+        raise HTTPException(403, detail="임원진만 시그/피그장을 양도할 수 있습니다")
     sig = session.get(SIG, id)
-    if sig is None: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    user = session.exec(select(SIGMember).where(SIGMember.ig_id == id).where(
-        SIGMember.user_id == body.new_owner)).first()
-    if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
-    old_owner = sig.owner
-    sig.owner = body.new_owner
-    session.add(sig)
-    logger.info(f'info_type=sig_handover ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; year={sig.year} ; semester={sig.semester}')
+    if sig is None:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    sig, old_owner = _handover_sig(session, sig, body.new_owner)
+    logger.info(
+        f'info_type=sig_handover ; handover_type=forced ; sig_id={sig.id} ; title={sig.title} ; '
+        f'executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; '
+        f'year={sig.year} ; semester={sig.semester}'
+    )
     session.commit()
     return
 
