@@ -16,13 +16,14 @@ CREATE TABLE key_value (
 ### SQL관련
 
 ```sql
-CREATE TRIGGER trg_key_value_updated_at
-AFTER UPDATE OF key_value
+REATE TRIGGER key_value_updated_at
+AFTER UPDATE OF value ON key_value
 FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
 BEGIN
     UPDATE key_value
     SET updated_at = CURRENT_TIMESTAMP
-    WHERE key = OLD.key;
+    WHERE key = NEW.key;
 END;
 ```
 

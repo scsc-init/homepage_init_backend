@@ -333,6 +333,17 @@ CREATE TABLE key_value (
     FOREIGN KEY (writing_permission_level) REFERENCES user_role(level) ON DELETE RESTRICT
 );
 
+-- Create trigger to update 'updated_at'
+CREATE TRIGGER key_value_updated_at
+AFTER UPDATE OF value ON key_value
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
+BEGIN
+    UPDATE key_value
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE key = NEW.key;
+END;
+
 EOF
 
 echo "Database initialized and schema created in '$DB_FILE'."

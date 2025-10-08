@@ -1,33 +1,34 @@
-from datetime import datetime, timezone
-
 from fastapi import HTTPException
 
 from src.db import SessionDep
 from src.model import KeyValue
 
 
-def get_kv_entry(session: SessionDep, key: str) -> KeyValue:
+def _ensure_allowed_key(session: SessionDep, key: str) -> KeyValue:
     kv_entry = session.get(KeyValue, key)
     if kv_entry is None:
-        raise HTTPException(503, detail=f"config entry '{key}' not configured")
+        raise HTTPException(status_code=404, detail="unknown kv key")
     return kv_entry
 
 
-def update_kv_entry(
+def get_kv_value(session: SessionDep, key: str) -> KeyValue:
+    return _ensure_allowed_key(session, key)
+
+
+def update_kv_value(
     session: SessionDep,
     *,
     key: str,
     value: str,
     actor_role: int,
 ) -> KeyValue:
-    kv_entry = get_kv_entry(session, key)
+    kv_entry = _ensure_allowed_key(session, key)
 
     required_role = kv_entry.writing_permission_level
     if actor_role < required_role:
-        raise HTTPException(403, detail="insufficient permission")
+        raise HTTPException(status_code=403, detail="insufficient permission")
 
     kv_entry.value = value
-    kv_entry.updated_at = datetime.now(timezone.utc)
 
     session.add(kv_entry)
     session.commit()
