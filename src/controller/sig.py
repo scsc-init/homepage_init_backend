@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional
 import logging
 
 from fastapi import HTTPException
@@ -114,7 +114,13 @@ async def update_sig_ctrl(session: SessionDep, id: int, body: BodyUpdateSIG, use
     return
 
 
-def handover_sig_ctrl(session: SessionDep, sig: SIG, new_owner_id: str) -> Tuple[SIG, str]:
+def handover_sig_ctrl(
+    session: SessionDep,
+    sig: SIG,
+    new_owner_id: str,
+    executor_id: str,
+    is_forced: bool
+) -> SIG:
     if sig.owner == new_owner_id:
         raise HTTPException(status_code=400, detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다")
 
@@ -130,4 +136,14 @@ def handover_sig_ctrl(session: SessionDep, sig: SIG, new_owner_id: str) -> Tuple
     old_owner = sig.owner
     sig.owner = new_owner_id
     session.add(sig)
-    return sig, old_owner
+    session.commit()
+    session.refresh(sig)
+
+    handover_type = 'forced' if is_forced else 'voluntary'
+    logger.info(
+        f'info_type=sig_handover ; handover_type={handover_type} ; sig_id={sig.id} ; title={sig.title} ; '
+        f'executor_id={executor_id} ; old_owner_id={old_owner} ; new_owner_id={new_owner_id} ; '
+        f'year={sig.year} ; semester={sig.semester}'
+    )
+
+    return sig

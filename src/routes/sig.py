@@ -89,23 +89,6 @@ class BodyHandoverSIG(BaseModel):
     new_owner: str
 
 
-def _execute_handover_and_log(
-    session: SessionDep,
-    sig: SIG,
-    executor_id: str,
-    new_owner_id: str,
-    old_owner: str,
-    is_forced: bool
-) -> None:
-    handover_type = 'forced' if is_forced else 'voluntary'
-    logger.info(
-        f'info_type=sig_handover ; handover_type={handover_type} ; sig_id={sig.id} ; title={sig.title} ; '
-        f'executor_id={executor_id} ; old_owner_id={old_owner} ; new_owner_id={new_owner_id} ; '
-        f'year={sig.year} ; semester={sig.semester}'
-    )
-    session.commit()
-
-
 @sig_router.post('/sig/{id}/handover', status_code=204)
 async def handover_sig(id: int, session: SessionDep, request: Request, body: BodyHandoverSIG) -> None:
     current_user = get_user(request)
@@ -115,8 +98,7 @@ async def handover_sig(id: int, session: SessionDep, request: Request, body: Bod
     if current_user.id != sig.owner:
         raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
 
-    sig, old_owner = handover_sig_ctrl(session, sig, body.new_owner)
-    _execute_handover_and_log(session, sig, current_user.id, body.new_owner, old_owner, False)
+    handover_sig_ctrl(session, sig, body.new_owner, current_user.id, False)
     return
 
 
@@ -128,8 +110,7 @@ async def executive_handover_sig(id: int, session: SessionDep, request: Request,
     if sig is None:
         raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
 
-    sig, old_owner = handover_sig_ctrl(session, sig, body.new_owner)
-    _execute_handover_and_log(session, sig, current_user.id, body.new_owner, old_owner, True)
+    handover_sig_ctrl(session, sig, body.new_owner, current_user.id, True)
     return
 
 

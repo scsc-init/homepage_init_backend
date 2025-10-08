@@ -6,10 +6,10 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, ctrl_status_available, map_semester_name
+from src.controller import BodyCreatePIG, BodyUpdatePIG, create_pig_ctrl, update_pig_ctrl, ctrl_status_available, map_semester_name, handover_pig_ctrl
 from src.db import SessionDep
 from src.model import PIG, PIGMember, User, SCSCStatus
-from src.util import SCSCGlobalStatusDep, get_user, get_user_role_level, send_discord_bot_request_no_reply
+from src.util import SCSCGlobalStatusDep, get_user, send_discord_bot_request_no_reply
 
 logger = logging.getLogger("app")
 
@@ -87,16 +87,23 @@ class BodyHandoverPIG(BaseModel):
 async def handover_pig(id: int, session: SessionDep, request: Request, body: BodyHandoverPIG) -> None:
     current_user = get_user(request)
     pig = session.get(PIG, id)
-    if pig is None: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    user = session.exec(select(PIGMember).where(PIGMember.ig_id == id).where(
-        PIGMember.user_id == body.new_owner)).first()
-    if not user: raise HTTPException(status_code=404, detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다")
-    if current_user.role < get_user_role_level('executive') and current_user.id != pig.owner: raise HTTPException(403, "타인의 시그/피그를 변경할 수 없습니다")
-    old_owner = pig.owner
-    pig.owner = body.new_owner
-    session.add(pig)
-    logger.info(f'info_type=pig_handover ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; old_owner_id={old_owner} ; new_owner_id={body.new_owner} ; year={pig.year} ; semester={pig.semester}')
-    session.commit()
+    if pig is None:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if current_user.id != pig.owner:
+        raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
+
+    handover_pig_ctrl(session, pig, body.new_owner, current_user.id, False)
+    return
+
+
+@pig_router.post('/executive/pig/{id}/handover', status_code=204)
+async def executive_handover_pig(id: int, session: SessionDep, request: Request, body: BodyHandoverPIG) -> None:
+    current_user = get_user(request)
+    pig = session.get(PIG, id)
+    if pig is None:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+
+    handover_pig_ctrl(session, pig, body.new_owner, current_user.id, True)
     return
 
 
