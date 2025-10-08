@@ -66,7 +66,7 @@ async def get_article_by_id(id: int, session: SessionDep, request: Request) -> A
     if not article: raise HTTPException(404, detail="Article not found")
     board = session.get(Board, article.board_id)
     if not board: raise HTTPException(503, detail="board does not exist")
-    
+
     if board.reading_permission_level > 0:
         current_user = get_user(request)
         if current_user.role < board.reading_permission_level: 

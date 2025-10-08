@@ -12,10 +12,10 @@ class RequestIdFilter(logging.Filter):
 class InfoFilter(logging.Filter):
     def filter(self, record):
         return record.levelno == logging.INFO
-    
+
 class UTCFormatter(logging.Formatter):
     converter = time.gmtime
-        
+
 
 LOGGING_CONFIG = {
     "version": 1,

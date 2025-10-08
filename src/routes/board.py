@@ -98,4 +98,3 @@ async def delete_board(id: int, session: SessionDep, request: Request) -> None:
         raise HTTPException(409, detail="Cannot delete board because of foreign key restriction")
     session.refresh(board)
     logger.info(f'info_type=board_delete ; board_id={id} ; executor={current_user.id}')
-    
