@@ -10,6 +10,7 @@ CREATE TABLE key_value (
     value TEXT NOT NULL,
     writing_permission_level INTEGER NOT NULL
         REFERENCES user_role(level) ON DELETE RESTRICT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
