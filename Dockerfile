@@ -20,14 +20,19 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
+# Install necessary packages
+RUN apt-get update && apt-get install -y sqlite3 bash && rm -rf /var/lib/apt/lists/*
+
 # Then, use a final image without uv
 FROM debian:bookworm-slim
-
-RUN apt-get update && apt-get install -y sqlite3 bash && rm -rf /var/lib/apt/lists/*
 
 # Setup a non-root user
 RUN groupadd --system nonroot \
  && useradd --system --gid nonroot --create-home nonroot
+
+# Copy necessary packages
+COPY --from=builder --chown=nonroot:nonroot /usr/bin/sqlite3 /usr/bin/sqlite3
+COPY --from=builder --chown=nonroot:nonroot /bin/bash /bin/bash
 
 # Copy the Python version
 COPY --from=builder --chown=python:python /python /python

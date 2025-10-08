@@ -17,7 +17,7 @@ services:
       
       mkdir -p /app/db /app/logs /app/static/article /app/static/image/photo /app/static/image/pfps /app/static/download;
       chown -R nonroot:nonroot /app/db /app/logs /app/static || true;
-      chmod -R u+rwX /app/db /app/logs /app/static /app/download;
+      chmod -R u+rwX /app/db /app/logs /app/static;
 
       chmod a+rwX /app/script/init_db/*.sh;
 
@@ -32,7 +32,7 @@ services:
         echo "Database already exists. Skipping initialization.";
       fi;
 
-      exec fastapi run main.py --host 0.0.0.0 --port 8080;
+      exec fastapi run main.py --host 0.0.0.0 --port 8080
       '
     develop: 
       watch: 
