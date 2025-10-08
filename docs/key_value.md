@@ -16,7 +16,7 @@ CREATE TABLE key_value (
 ### SQL관련
 
 ```sql
-REATE TRIGGER key_value_updated_at
+CREATE TRIGGER key_value_updated_at
 AFTER UPDATE OF value ON key_value
 FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
