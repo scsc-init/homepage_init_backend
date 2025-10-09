@@ -4,9 +4,10 @@ from typing import Optional
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
+from sqlmodel import select
 
 from src.db import SessionDep
-from src.model import PIG, PIGMember, SCSCGlobalStatus, SCSCStatus
+from src.model import PIG, PIGMember, SCSCGlobalStatus, SCSCStatus, User
 from src.util import get_user_role_level, send_discord_bot_request_no_reply
 
 from .article import BodyCreateArticle, create_article_ctrl
@@ -147,3 +148,45 @@ async def update_pig_ctrl(
         f"info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
     )
     return
+
+
+def handover_pig_ctrl(
+    session: SessionDep, pig: PIG, new_owner_id: str, executor_id: str, is_forced: bool
+) -> PIG:
+    if pig.owner == new_owner_id:
+        raise HTTPException(
+            status_code=400,
+            detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다",
+        )
+
+    new_owner_user = session.get(User, new_owner_id)
+    if not new_owner_user:
+        raise HTTPException(
+            status_code=404, detail="새로운 시그/피그장에 해당하는 사용자가 없습니다"
+        )
+
+    member = session.exec(
+        select(PIGMember)
+        .where(PIGMember.ig_id == pig.id)
+        .where(PIGMember.user_id == new_owner_id)
+    ).first()
+    if not member:
+        raise HTTPException(
+            status_code=404,
+            detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다",
+        )
+
+    old_owner = pig.owner
+    pig.owner = new_owner_id
+    session.add(pig)
+    session.commit()
+    session.refresh(pig)
+
+    handover_type = "forced" if is_forced else "voluntary"
+    logger.info(
+        f"info_type=pig_handover ; handover_type={handover_type} ; pig_id={pig.id} ; title={pig.title} ; "
+        f"executor_id={executor_id} ; old_owner_id={old_owner} ; new_owner_id={new_owner_id} ; "
+        f"year={pig.year} ; semester={pig.semester}"
+    )
+
+    return pig

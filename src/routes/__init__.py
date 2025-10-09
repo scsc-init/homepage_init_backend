@@ -5,6 +5,7 @@ from .board import board_router
 from .bot import bot_router
 from .comment import comment_router
 from .file import file_router
+from .key_value import kv_router
 from .major import major_router
 from .pig import pig_router
 from .scsc import scsc_router
@@ -25,3 +26,4 @@ root_router.include_router(file_router, prefix="/api")
 root_router.include_router(scsc_router, prefix="/api")
 root_router.include_router(bot_router, prefix="/api")
 root_router.include_router(w_router, prefix="/api")
+root_router.include_router(kv_router, prefix="/api")
