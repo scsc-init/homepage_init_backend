@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 from src.core import get_settings
 from src.db import SessionDep
@@ -26,12 +28,18 @@ class BodyCreateUser(BaseModel):
     major_id: int
     profile_picture: str
     profile_picture_is_url: bool
+    id_token: str
 
 
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
     if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
     if not is_valid_img_url(body.profile_picture): raise HTTPException(400, detail="invalid image url")
+    
+    try:
+        id_info = id_token.verify_oauth2_token(body.id_token, requests.Request(), get_settings().google_client_id)
+    except ValueError: raise HTTPException(401, detail="invalid Google id_token")
+    if id_info["email"].lower() != body.email.lower(): raise HTTPException(401, detail="Email mismatch")
 
     user = User(
         id=sha256_hash(body.email.lower()),

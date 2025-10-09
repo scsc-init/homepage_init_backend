@@ -35,6 +35,7 @@ DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
 W_HTML_DIR="static/w/"
+GOOGLE_CLIENT_ID="xxxxxx.apps.googleusercontent.com"
 ```
 
 | Key Name             | Description                                                      |
@@ -57,6 +58,7 @@ W_HTML_DIR="static/w/"
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 | `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
+| `GOOGLE_CLIENT_ID`       | 구글 OAuth용으로 생성된 클라이언트의 ID. 구글 클라우드 콘솔에서 확인할 수 있음. |
 
 ## 기타 설정 파일
 

@@ -7,6 +7,8 @@ from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl, ProcessDepositResult, process_deposit_ctrl
 from src.core import get_settings
@@ -139,6 +141,7 @@ async def delete_my_profile(session: SessionDep, request: Request) -> None:
 
 class BodyLogin(BaseModel):
     email: str
+    id_token: str
 
 
 class ResponseLogin(BaseModel):
@@ -147,6 +150,11 @@ class ResponseLogin(BaseModel):
 
 @user_router.post('/user/login')
 async def login(session: SessionDep, body: BodyLogin) -> ResponseLogin:
+    try:
+        id_info = id_token.verify_oauth2_token(body.id_token, requests.Request(), get_settings().google_client_id)
+    except ValueError: raise HTTPException(401, detail="invalid Google id_token")
+    if id_info["email"].lower() != body.email.lower(): raise HTTPException(401, detail="Email mismatch")
+    
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None: raise HTTPException(404, detail="invalid email address")
     result.last_login = datetime.now(timezone.utc)
