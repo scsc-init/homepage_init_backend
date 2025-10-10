@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from google.oauth2 import id_token
 from google.auth.transport import requests
+from google.auth import exceptions as google_auth_exc
 
 from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl, ProcessDepositResult, process_deposit_ctrl
 from src.core import get_settings
@@ -152,8 +153,10 @@ class ResponseLogin(BaseModel):
 async def login(session: SessionDep, body: BodyLogin) -> ResponseLogin:
     try:
         id_info = id_token.verify_oauth2_token(body.id_token, requests.Request(), get_settings().google_client_id)
-    except ValueError: raise HTTPException(401, detail="invalid Google id_token")
-    if id_info["email"].lower() != body.email.lower(): raise HTTPException(401, detail="Email mismatch")
+    except ValueError: raise HTTPException(401, detail="invalid Google id_token") from None
+    except google_auth_exc.GoogleAuthError as err:
+        raise HTTPException(503, detail="verification failed") from err
+    if id_info.get('email').lower() != body.email.lower(): raise HTTPException(401, detail="email mismatch")
     
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None: raise HTTPException(404, detail="invalid email address")

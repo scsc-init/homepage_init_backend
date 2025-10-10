@@ -401,7 +401,7 @@ CREATE TABLE standby_req_tbl (
 
 - **Status Codes**:
   - `200 OK` (기존 유저 로그인)
-  - `401 Bad Request` (id_token 유효하지 않음) 
+  - `401 Unauthorized` (id_token 유효하지 않음) 
   - `404 Not Found` (유효하지 않은 email)
   - `503 Service unavailable` (id_token 검사 중 오류)
 
