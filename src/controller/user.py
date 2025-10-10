@@ -42,7 +42,11 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     except ValueError: raise HTTPException(401, detail="invalid Google id_token") from None
     except google_auth_exc.GoogleAuthError as err:
         raise HTTPException(503, detail="verification failed") from err
-    if id_info.get('email').lower() != body.email.lower(): raise HTTPException(401, detail="email mismatch")
+    email_claim = id_info.get('email')
+    if not email_claim:
+        raise HTTPException(401, detail="missing email claim in id_token")
+    if email_claim.lower() != body.email.lower():
+        raise HTTPException(401, detail="email mismatch")
 
     user = User(
         id=sha256_hash(body.email.lower()),

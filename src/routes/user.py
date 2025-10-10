@@ -156,7 +156,11 @@ async def login(session: SessionDep, body: BodyLogin) -> ResponseLogin:
     except ValueError: raise HTTPException(401, detail="invalid Google id_token") from None
     except google_auth_exc.GoogleAuthError as err:
         raise HTTPException(503, detail="verification failed") from err
-    if id_info.get('email').lower() != body.email.lower(): raise HTTPException(401, detail="email mismatch")
+    email_claim = id_info.get('email')
+    if not email_claim:
+        raise HTTPException(401, detail="missing email claim in id_token")
+    if email_claim.lower() != body.email.lower():
+        raise HTTPException(401, detail="email mismatch")
     
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None: raise HTTPException(404, detail="invalid email address")
