@@ -251,7 +251,9 @@ END;
 
 ---
 
-## Transfer SIG Ownership(Owner / Executive)
+## Transfer SIG Ownership
+
+### Owner Initiated
 
 * **Method**: `POST`
 * **URL**: `/api/sig/:id/handover`
@@ -263,12 +265,40 @@ END;
 }
 ```
 
+* **Notes**:
+  * 새로운 소유자는 해당 SIG의 구성원이어야 하며 기존 소유자와 달라야 함
+  * 요청자는 현재 SIG장과 동일해야 함
 * **Status Codes**:
 
   * `204 No Content`: 소유자 변경 성공
+  * `400 Bad Request`: 새로운 소유자가 기존 소유자와 동일함
   * `401 Unauthorized`
-  * `403 Forbidden`
-  * `404 Not Found`: SIG 존재하지 않음 / 사용자 존재하지 않음
+  * `403 Forbidden`: 요청자가 SIG장이 아님
+  * `404 Not Found`: SIG / 사용자 / 구성원 정보가 존재하지 않음
+  * `422 Unprocessable Content`
+
+### Executive Initiated
+
+* **Method**: `POST`
+* **URL**: `/api/executive/sig/:id/handover`
+* **Request Body** (JSON):
+
+```json
+{
+  "new_owner": "hash_of_new_owner"
+}
+```
+
+* **Notes**:
+  * 임원진이 강제 양도할 때 사용
+  * 새로운 소유자는 해당 SIG의 구성원이어야 하며 기존 소유자와 달라야 함
+* **Status Codes**:
+
+  * `204 No Content`: 소유자 변경 성공
+  * `400 Bad Request`: 새로운 소유자가 기존 소유자와 동일함
+  * `401 Unauthorized`
+  * `403 Forbidden`: 임원 권한 없음
+  * `404 Not Found`: SIG / 사용자 / 구성원 정보가 존재하지 않음
   * `422 Unprocessable Content`
 
 ---
