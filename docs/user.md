@@ -126,7 +126,7 @@ CREATE TABLE standby_req_tbl (
   "major_id": 1,
   "profile_picture": "https://google.oauth.etc",
   "profile_picture_is_url": true,
-  "id_token": "some-id-token"
+  "hashToken": "some-hash-token"
 }
 ```
 - `profile_picture`은 구글 oauth에서 반환된 프로필 사진 URL이 기본으로 전송된다.
@@ -388,7 +388,7 @@ CREATE TABLE standby_req_tbl (
 ```json
 {
   "email": "user@example.com",
-  "id_token": "some-id-token"
+  "hashToken": "some-hash-token"
 }
 ```
 
@@ -401,9 +401,8 @@ CREATE TABLE standby_req_tbl (
 
 - **Status Codes**:
   - `200 OK` (기존 유저 로그인)
-  - `401 Unauthorized` (id_token 유효하지 않음) 
+  - `401 Unauthorized` (hashToken 유효하지 않음) 
   - `404 Not Found` (유효하지 않은 email)
-  - `503 Service unavailable` (id_token 검사 중 오류)
 
 > ⚙ `last_login`은 이 시점에서 자동 업데이트.  
 

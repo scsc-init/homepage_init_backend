@@ -6,9 +6,8 @@ from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from google.auth import exceptions as google_auth_exc
+
+import hmac
 
 from src.core import get_settings
 from src.db import SessionDep
@@ -16,7 +15,7 @@ from src.model import (OldboyApplicant, StandbyReqTbl, User, UserResponse,
                        UserStatus)
 from src.util import (DepositDTO, change_discord_role, get_user_role_level,
                       is_valid_img_url, is_valid_phone, is_valid_student_id,
-                      sha256_hash)
+                      sha256_hash, generate_user_hash)
 
 logger = logging.getLogger("app")
 
@@ -29,7 +28,7 @@ class BodyCreateUser(BaseModel):
     major_id: int
     profile_picture: str
     profile_picture_is_url: bool
-    id_token: str
+    hashToken: str
 
 
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
@@ -37,16 +36,9 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
     if not is_valid_img_url(body.profile_picture): raise HTTPException(400, detail="invalid image url")
     
-    try:
-        id_info = id_token.verify_oauth2_token(body.id_token, requests.Request(), get_settings().google_client_id)
-    except ValueError: raise HTTPException(401, detail="invalid Google id_token") from None
-    except google_auth_exc.GoogleAuthError as err:
-        raise HTTPException(503, detail="verification failed") from err
-    email_claim = id_info.get('email')
-    if not email_claim:
-        raise HTTPException(401, detail="missing email claim in id_token")
-    if email_claim.lower() != body.email.lower():
-        raise HTTPException(401, detail="email mismatch")
+    expected = generate_user_hash(body.email)
+    if not hmac.compare_digest(body.hashToken, expected):
+        raise HTTPException(401, detail="invalid hash token")
 
     user = User(
         id=sha256_hash(body.email.lower()),

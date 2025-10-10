@@ -7,15 +7,14 @@ from fastapi import APIRouter, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
-from google.oauth2 import id_token
-from google.auth.transport import requests
-from google.auth import exceptions as google_auth_exc
+
+import hmac
 
 from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl, ProcessDepositResult, process_deposit_ctrl
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserResponse, UserStatus, StandbyReqTbl, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url, validate_and_read_file
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url, validate_and_read_file, generate_user_hash
 
 
 logger = logging.getLogger("app")
@@ -142,7 +141,7 @@ async def delete_my_profile(session: SessionDep, request: Request) -> None:
 
 class BodyLogin(BaseModel):
     email: str
-    id_token: str
+    hashToken: str
 
 
 class ResponseLogin(BaseModel):
@@ -151,16 +150,9 @@ class ResponseLogin(BaseModel):
 
 @user_router.post('/user/login')
 async def login(session: SessionDep, body: BodyLogin) -> ResponseLogin:
-    try:
-        id_info = id_token.verify_oauth2_token(body.id_token, requests.Request(), get_settings().google_client_id)
-    except ValueError: raise HTTPException(401, detail="invalid Google id_token") from None
-    except google_auth_exc.GoogleAuthError as err:
-        raise HTTPException(503, detail="verification failed") from err
-    email_claim = id_info.get('email')
-    if not email_claim:
-        raise HTTPException(401, detail="missing email claim in id_token")
-    if email_claim.lower() != body.email.lower():
-        raise HTTPException(401, detail="email mismatch")
+    expected = generate_user_hash(body.email)
+    if not hmac.compare_digest(body.hashToken, expected):
+        raise HTTPException(401, detail="invalid hash token")
     
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None: raise HTTPException(404, detail="invalid email address")
