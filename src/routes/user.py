@@ -1,3 +1,4 @@
+import hmac
 import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
@@ -24,6 +25,7 @@ from src.model import OldboyApplicant, StandbyReqTbl, User, UserResponse, UserSt
 from src.util import (
     DepositDTO,
     change_discord_role,
+    generate_user_hash,
     get_user,
     get_user_role_level,
     is_valid_img_url,
@@ -233,6 +235,7 @@ async def delete_my_profile(session: SessionDep, request: Request) -> None:
 
 class BodyLogin(BaseModel):
     email: str
+    hashToken: str
 
 
 class ResponseLogin(BaseModel):
@@ -241,6 +244,10 @@ class ResponseLogin(BaseModel):
 
 @user_router.post("/user/login")
 async def login(session: SessionDep, body: BodyLogin) -> ResponseLogin:
+    expected = generate_user_hash(body.email)
+    if not hmac.compare_digest(body.hashToken, expected):
+        raise HTTPException(401, detail="invalid hash token")
+
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None:
         raise HTTPException(404, detail="invalid email address")

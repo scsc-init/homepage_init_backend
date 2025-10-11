@@ -1,3 +1,4 @@
+import hmac
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -13,6 +14,7 @@ from src.model import OldboyApplicant, StandbyReqTbl, User, UserResponse, UserSt
 from src.util import (
     DepositDTO,
     change_discord_role,
+    generate_user_hash,
     get_user_role_level,
     is_valid_img_url,
     is_valid_phone,
@@ -31,6 +33,7 @@ class BodyCreateUser(BaseModel):
     major_id: int
     profile_picture: str
     profile_picture_is_url: bool
+    hashToken: str
 
 
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
@@ -40,6 +43,10 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
         raise HTTPException(422, detail="invalid student_id")
     if not is_valid_img_url(body.profile_picture):
         raise HTTPException(400, detail="invalid image url")
+
+    expected = generate_user_hash(body.email)
+    if not hmac.compare_digest(body.hashToken, expected):
+        raise HTTPException(401, detail="invalid hash token")
 
     user = User(
         id=sha256_hash(body.email.lower()),

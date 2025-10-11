@@ -1,10 +1,13 @@
 import csv
+import hashlib
+import hmac
 import io
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, Request
 from pydantic import BaseModel, field_validator
 
+from src.core import get_settings
 from src.model import User
 
 map_semester_name = {
@@ -64,6 +67,12 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
 
 def get_new_year_semester(old_year: int, old_semester: int) -> tuple[int, int]:
     return old_year + old_semester // 4, old_semester % 4 + 1
+
+
+def generate_user_hash(email: str) -> str:
+    secret = get_settings().api_secret.encode()
+    msg = email.lower().encode()
+    return hmac.new(secret, msg, hashlib.sha256).hexdigest()
 
 
 class DepositDTO(BaseModel):
