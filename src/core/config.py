@@ -22,7 +22,6 @@ class Settings(BaseSettings):
     notice_channel_id: int
     grant_channel_id: int
     w_html_dir: str
-    google_client_id: str
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 
