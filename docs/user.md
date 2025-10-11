@@ -391,7 +391,14 @@ CREATE TABLE standby_req_tbl (
   "hashToken": "some-hash-token"
 }
 ```
-로그인 시 요구되는 `hashToken`은 HMAC-SHA256 hash 값으로, `x-api-secret`값을 secret으로 하고 유저의 이메일을 메시지로 하여 생성한다. `x-api-secret`을 알고 있는 신뢰할 수 있는 서버에서 생성하도록 한다.
+로그인 시 요구되는 `hashToken`은 HMAC-SHA256 hash 값으로, 생성 방법은 다음과 같다.
+```py
+def generate_user_hash(email: str) -> str:
+    secret = get_settings().api_secret.encode()
+    msg = email.lower().encode()
+    return hmac.new(secret, msg, hashlib.sha256).hexdigest()
+```
+`x-api-secret`값을 secret으로 하고 유저의 이메일을 메시지로 하여 생성한다. `x-api-secret`을 알고 있는 신뢰할 수 있는 서버에서 생성하도록 한다.
 
 - **Request Body**:
 ```json
