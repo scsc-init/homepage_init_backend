@@ -8,11 +8,13 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
+import hmac
+
 from src.controller import BodyCreateUser, create_user_ctrl, enroll_user_ctrl, register_oldboy_applicant_ctrl, process_oldboy_applicant_ctrl, reactivate_oldboy_ctrl, ProcessDepositResult, process_deposit_ctrl
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import User, UserResponse, UserStatus, StandbyReqTbl, OldboyApplicant
-from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url, validate_and_read_file
+from src.util import get_user_role_level, is_valid_phone, is_valid_student_id, sha256_hash, get_user, process_standby_user, change_discord_role, DepositDTO, is_valid_img_url, validate_and_read_file, generate_user_hash
 
 
 logger = logging.getLogger("app")
@@ -139,6 +141,7 @@ async def delete_my_profile(session: SessionDep, request: Request) -> None:
 
 class BodyLogin(BaseModel):
     email: str
+    hashToken: str
 
 
 class ResponseLogin(BaseModel):
@@ -147,6 +150,10 @@ class ResponseLogin(BaseModel):
 
 @user_router.post('/user/login')
 async def login(session: SessionDep, body: BodyLogin) -> ResponseLogin:
+    expected = generate_user_hash(body.email)
+    if not hmac.compare_digest(body.hashToken, expected):
+        raise HTTPException(401, detail="invalid hash token")
+    
     result = session.get(User, sha256_hash(body.email.lower()))
     if result is None: raise HTTPException(404, detail="invalid email address")
     result.last_login = datetime.now(timezone.utc)

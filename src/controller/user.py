@@ -7,13 +7,15 @@ from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
+import hmac
+
 from src.core import get_settings
 from src.db import SessionDep
 from src.model import (OldboyApplicant, StandbyReqTbl, User, UserResponse,
                        UserStatus)
 from src.util import (DepositDTO, change_discord_role, get_user_role_level,
                       is_valid_img_url, is_valid_phone, is_valid_student_id,
-                      sha256_hash)
+                      sha256_hash, generate_user_hash)
 
 logger = logging.getLogger("app")
 
@@ -26,12 +28,17 @@ class BodyCreateUser(BaseModel):
     major_id: int
     profile_picture: str
     profile_picture_is_url: bool
+    hashToken: str
 
 
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     if not is_valid_phone(body.phone): raise HTTPException(422, detail="invalid phone number")
     if not is_valid_student_id(body.student_id): raise HTTPException(422, detail="invalid student_id")
     if not is_valid_img_url(body.profile_picture): raise HTTPException(400, detail="invalid image url")
+    
+    expected = generate_user_hash(body.email)
+    if not hmac.compare_digest(body.hashToken, expected):
+        raise HTTPException(401, detail="invalid hash token")
 
     user = User(
         id=sha256_hash(body.email.lower()),
