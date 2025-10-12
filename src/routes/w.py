@@ -40,9 +40,17 @@ async def upload_file(
     session.add(w_meta)
     try:
         session.commit()
-    except IntegrityError:
+    except IntegrityError as err:
         session.rollback()
-        raise HTTPException(409, detail="unique field exists")
+        try:
+            os.remove(path.join(get_settings().w_html_dir, f"{basename}.html"))
+        except OSError:
+            logger.warning(
+                "warn_type=w_html_create_cleanup_failed ; %s",
+                f"{basename}.html",
+                exc_info=True,
+            )
+        raise HTTPException(409, detail="unique field exists") from err
     session.refresh(w_meta)
     logger.info(
         f"info_type=w_html_created ; {basename=} ; file_size={len(content)} ; executer_id={current_user.id}"

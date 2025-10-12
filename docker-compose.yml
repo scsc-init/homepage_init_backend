@@ -19,10 +19,8 @@ services:
       chown -R nonroot:nonroot /app/db /app/logs /app/static || true;
       chmod -R u+rwX /app/db /app/logs /app/static;
 
-      chmod a+rwX /app/script/init_db/*.sh;
-
-      su - nonroot
-
+      chmod a+rx /app/script/init_db/*.sh;
+      
       echo "Checking DB at /app/${SQLITE_FILENAME}";
 
       if [ ! -f "/app/${SQLITE_FILENAME}" ]; then
@@ -32,7 +30,7 @@ services:
         echo "Database already exists. Skipping initialization.";
       fi;
 
-      exec fastapi run main.py --host 0.0.0.0 --port 8080
+      exec fastapi run main.py --host 0.0.0.0 --port 8080;
       '
     develop: 
       watch: 

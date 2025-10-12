@@ -182,12 +182,6 @@ async def join_sig(id: int, session: SessionDep, request: Request):
         )
 
     sig_member = SIGMember(ig_id=id, user_id=current_user.id, status=sig.status)
-    if sig.status not in allowed:
-        raise HTTPException(
-            400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
-        )
-
-    sig_member = SIGMember(ig_id=id, user_id=current_user.id, status=sig.status)
     session.add(sig_member)
     try:
         session.commit()

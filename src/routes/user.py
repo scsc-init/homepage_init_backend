@@ -171,13 +171,13 @@ async def update_my_profile(
         current_user.phone = body.phone
     if body.student_id:
         current_user.student_id = body.student_id
-    if body.major_id:
+    if body.major_id is not None:
         current_user.major_id = body.major_id
     if body.profile_picture:
         if not is_valid_img_url(body.profile_picture):
             raise HTTPException(400, detail="invalid image url")
         current_user.profile_picture = body.profile_picture
-    if body.profile_picture_is_url:
+    if body.profile_picture_is_url is not None:
         current_user.profile_picture_is_url = body.profile_picture_is_url
     session.add(current_user)
     try:
