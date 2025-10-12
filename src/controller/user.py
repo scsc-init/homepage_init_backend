@@ -1,3 +1,4 @@
+import asyncio
 import hmac
 import logging
 from datetime import datetime, timedelta, timezone
@@ -41,7 +42,8 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
         raise HTTPException(422, detail="invalid phone number")
     if not is_valid_student_id(body.student_id):
         raise HTTPException(422, detail="invalid student_id")
-    if not is_valid_img_url(body.profile_picture):
+    valid = await asyncio.to_thread(is_valid_img_url, body.profile_picture)
+    if body.profile_picture_is_url and not valid:
         raise HTTPException(400, detail="invalid image url")
 
     expected = generate_user_hash(body.email)
