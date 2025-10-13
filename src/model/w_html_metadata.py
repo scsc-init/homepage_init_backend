@@ -9,6 +9,10 @@ class WHTMLMetadata(SQLModel, table=True):
 
     name: str = Field(primary_key=True)
     size: int = Field(nullable=False, ge=0)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
     creator: Optional[str] = Field(nullable=True, foreign_key="user.id")

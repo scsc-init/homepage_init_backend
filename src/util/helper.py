@@ -1,22 +1,20 @@
 import csv
+import hashlib
+import hmac
 import io
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, Request
 from pydantic import BaseModel, field_validator
 
-import hmac
-import hashlib
-
-from src.model import User
 from src.core import get_settings
-
+from src.model import User
 
 map_semester_name = {
-    1: '1',
-    2: 'S',
-    3: '2',
-    4: 'W',
+    1: "1",
+    2: "S",
+    3: "2",
+    4: "W",
 }
 
 
@@ -36,11 +34,11 @@ def split_filename(filename: str) -> tuple[str, str]:
     Returns:
         A tuple containing the base name (str) and the extension (str, without the dot).
     """
-    parts = filename.rsplit('.', 1)
+    parts = filename.rsplit(".", 1)
 
     if len(parts) == 1:
         # No dot found, so the entire filename is the base name, and the extension is empty.
-        return parts[0], ''
+        return parts[0], ""
 
     base_name, extension = parts
 
@@ -48,15 +46,16 @@ def split_filename(filename: str) -> tuple[str, str]:
     # and do not have another dot. rsplit gives ('', 'gitignore').
     # If the original filename *started* with a dot, and there was only one dot found
     # (meaning the base_name is empty), we typically treat the whole thing as the base name.
-    if not base_name and filename.startswith('.'):
-        return filename, ''
+    if not base_name and filename.startswith("."):
+        return filename, ""
 
     return base_name, extension.lower()
 
 
 def get_user(request: Request) -> User:
     user = request.state.user
-    if not user: raise HTTPException(401, detail="Not logged in")
+    if not user:
+        raise HTTPException(401, detail="Not logged in")
     return user
 
 
@@ -76,17 +75,14 @@ def generate_user_hash(email: str) -> str:
     return hmac.new(secret, msg, hashlib.sha256).hexdigest()
 
 
-
 class DepositDTO(BaseModel):
     amount: int
     deposit_time: datetime  # should be utc
     deposit_name: str
 
-    model_config = {
-        "from_attributes": True  # enables reading from ORM objects
-    }
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
 
-    @field_validator('deposit_time')
+    @field_validator("deposit_time")
     @classmethod
     def must_be_utc(cls, v):
         if v.tzinfo != timezone.utc:
@@ -101,10 +97,14 @@ async def process_standby_user(encoding: str, content: bytes) -> list[DepositDTO
     trimmed_lines = lines[4:-1]
     trimmed_csv = io.StringIO("".join(trimmed_lines))
     reader = csv.DictReader(trimmed_csv)
-    result = [DepositDTO(
-        amount=int(str(line["입금액"]).replace(',', '')),
-        deposit_time=kst2utc(datetime.strptime(line["거래일시"], "%Y.%m.%d %H:%M:%S")),
-        deposit_name=line["보낸분/받는분"]
-    ) for line in reader]
+    result = [
+        DepositDTO(
+            amount=int(str(line["입금액"]).replace(",", "")),
+            deposit_time=kst2utc(
+                datetime.strptime(line["거래일시"], "%Y.%m.%d %H:%M:%S")
+            ),
+            deposit_name=line["보낸분/받는분"],
+        )
+        for line in reader
+    ]
     return result
-    

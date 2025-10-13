@@ -3,9 +3,9 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2025-09-23  
-> 최신개정자: 이한경  
-> 작성자: [강명석](tomskang@naver.com), 이한경, 윤영우  
+> 최신개정일: 2025-10-05  
+> 최신개정자: [윤영우](dan.yun0821@gmail.com)  
+> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com)  
 
 ## 브랜치
 
@@ -67,30 +67,29 @@ W_HTML_DIR="static/w/"
 - 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
 - 예시 파일에 포함된 `deposit.app@scsc.dev`를 포함해야 `homepage_init_deposit_app`이 정상적으로 작동합니다
 
-### `logs/`
-
-- 루트에 `logs/` 폴더를 추가합니다
 
 ## 실행 방법(with docker)
 
 linux, docker가 요구됩니다. docker compose>=2.25.0가 요구됩니다.  
 
-### Development 중
-
 docker container를 빌드하고 실행합니다.
 ```bash
 docker-compose up --build
 ```
-vscode의 `Dev Containers` extensions에서 `open folder in container`을 통해 위에서 실행한 컨테이너로 연결합니다.
 
 
 ## 실행 방법(without docker)
 
-conda 환경을 설정 및 실행합니다. linux가 요구됩니다.
+루트에 다음 명령어로 필요한 폴더를 추가합니다.
 
 ```bash
-conda env create --file environment.yml
-conda activate scsc_init_backend
+mkdir -p \
+  ./db \
+  ./logs \
+  ./static/download \
+  ./static/article \
+  ./static/image/photo \
+  ./static/image/pfps
 ```
 
 db 파일을 생성합니다.
@@ -109,9 +108,9 @@ sqlite3 ./YOUR_DB_FILENAME.db "select * from major;"
 sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
 ```
 
-실행합니다. `fastapi-cli`를 요구합니다.
+실행합니다. `uv`를 요구합니다. `uv` 설정에 관련된 내용은 하단의 `developer tips` 절에 설명됩니다.  
 ```bash
-fastapi run main.py --host 0.0.0.0 --port 8080
+uv run python main.py --host 0.0.0.0 --port 8080
 ```
 
 ### 기타
@@ -127,6 +126,49 @@ fastapi run --help
 ```bash
 fastapi dev main.py
 ```
+
+## developer tips
+
+### 개발 환경 설정
+
+package manager로 uv를 사용합니다.  
+
+uv로 파이썬 가상환경을 만듭니다. 가상환경을 실행 후 `uv.lock`에서 명시된 dependency를 모두 설치합니다.  
+
+```bash
+uv venv
+source .venv/bin/activate
+uv sync --locked
+```
+
+다음으로 pre-commit을 uv로 설정합니다.
+
+```bash
+uv run pre-commit install
+```
+
+### dependency 변경
+
+dependency 변경이 필요한 경우, uv를 사용하고, `pyproject.toml`과 `uv.lock`을 변경합니다. 다음은 패키지를 추가하는 예시입니다.  
+
+```bash
+uv add fastapi
+uv add --dev pytest black
+uv lock
+uv sync --locked
+```
+
+이에 맞춰 `requirements.txt`도 반드시 같이 업데이트합니다.
+```bash
+uv pip compile pyproject.toml -o requirements.txt --no-deps
+```
+
+### DB clear
+
+DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파일을 다시 생성할 필요가 있습니다. 단, docker compose 실행 시에는 DB 파일을 체크하고 없을 시 자동으로 entry에서 생성하므로, 수동으로 파일을 생성할 필요는 없습니다.)  
+
+`./script/clear_db.sh`를 실행합니다.
+
 
 ## https 설정 및 실행
 
@@ -166,3 +208,73 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | ├── `/model/`       | DB 테이블 정의 및 ORM 모델 |
 | └── `/routes/`      | API 라우터 모음 |
 | &nbsp;&nbsp;&nbsp;&nbsp;└── `__init__.py` | 루트 라우터 |
+
+## Migration details for devs
+
+### Migration: conda + pip -> uv
+
+package manager을 **conda + pip** 을 **[uv](https://github.com/astral-sh/uv)** 로 변경합니다.([via Pull#121](https://github.com/scsc-init/homepage_init_backend/pull/121))
+
+**배경**  
+
+- 속도가 빠름
+- homepage_init_backend venv는 이 레포지토리 단 하나에서만 쓰일 것이므로 uv로 관리하여도 충분함
+- pyproject.toml을 쓰기 용이하다
+
+**설명**
+
+1. conda 환경 제거
+
+```bash
+conda deactivate
+conda env remove -n homepage_init_backend # or whatever your env name is
+```
+
+2. uv 설치 및 설정
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh # might need to restart shell after installation
+uv venv
+source .venv/bin/activate # or .venv\Scripts\activate on Windows
+uv lock
+uv sync --locked
+```
+
+**기타**
+
+- As of now, **live edits inside the docker container do not work** as the code files are not mounted. Therefore, to apply updates to the code into the container image, devs must rebuild the container.
+
+- In `./Dockerfile`, we setup a nonroot user to execute the application and modify static files. At production, we encourage the devs to add gid and uid that is appropriate for the host server, so that they have access to static files at host machine.
+
+### Migration: Add black, isort, pre-commit
+
+[`black`](https://github.com/psf/black), [`isort`](https://github.com/PyCQA/isort), [`pre-commit`](https://github.com/pre-commit/pre-commit)을 도입합니다.  
+
+**배경**  
+
+- 좋은 포맷
+- 코드의 통일성
+- 버그, 충돌 방지
+
+**설명**
+
+1. deps 변경 (dev deps 추가)
+
+```bash
+uv lock
+uv sync --locked
+```
+
+2. pre-commit 설치
+
+```bash
+uv run pre-commit install
+```
+
+3. (선택) pre-commit 테스트
+
+**주의**: 이 명령은 설정된 모든 파일을 변경합니다.
+
+```bash
+uv run pre-commit run --all-files
+```
