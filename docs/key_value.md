@@ -33,7 +33,7 @@ END;
 | key | value | description |
 |-----|-------|-------------|
 | footer-message | `서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com` | 푸터에 들어가는 문자열 |
-| president | `<hash-of-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
+| president | `<hash-of-main-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
 | vice-president | `<hash-of-vice-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
 
 ## API 구조

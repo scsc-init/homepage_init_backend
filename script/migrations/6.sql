@@ -32,7 +32,7 @@ DROP TABLE key_value_old;
 
 INSERT OR IGNORE INTO key_value (key, value, writing_permission_level)
 VALUES 
-    ('president', NULL, 500),
+    ('main-president', NULL, 500),
     ('vice-president', NULL, 500);
 
 DROP TRIGGER IF EXISTS key_value_updated_at;
