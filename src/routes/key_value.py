@@ -22,7 +22,6 @@ class KvUpdateBody(BaseModel):
 async def get_kv_value(
     key: str,
     session: SessionDep,
-    request: Request,
 ) -> dict[str, Optional[str]]:
     entry = get_kv_value_ctrl(session, key)
     return {"key": entry.key, "value": entry.value}
