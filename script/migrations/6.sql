@@ -1,13 +1,37 @@
-PRAGMA foreign_keys = ON;
+﻿PRAGMA foreign_keys = ON;
 
-CREATE TABLE IF NOT EXISTS key_value (
+BEGIN TRANSACTION;
+
+ALTER TABLE key_value RENAME TO key_value_old;
+
+CREATE TABLE key_value (
     key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
+    value TEXT,
     writing_permission_level INTEGER NOT NULL DEFAULT 500
         REFERENCES user_role(level) ON DELETE RESTRICT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO key_value (
+    key,
+    value,
+    writing_permission_level,
+    created_at,
+    updated_at
+)
+SELECT
+    key,
+    value,
+    writing_permission_level,
+    created_at,
+    updated_at
+FROM key_value_old;
+
+DROP TABLE key_value_old;
+
+INSERT OR IGNORE INTO key_value (key, value, writing_permission_level)
+VALUES ('leaders', NULL, 500);
 
 DROP TRIGGER IF EXISTS key_value_updated_at;
 CREATE TRIGGER key_value_updated_at
@@ -20,5 +44,4 @@ BEGIN
     WHERE key = NEW.key;
 END;
 
-INSERT OR IGNORE INTO key_value (key, value, writing_permission_level)
-VALUES ('footer-message', '서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com', 500);
+COMMIT;
