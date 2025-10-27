@@ -37,7 +37,7 @@ END;
 ###현재 등록된 key-value
 
 - key:footer-message, value:서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com
-- key:leaders, value: null(회장, 부회장장)
+- key:leaders, value: null(회장, 부회장)
 
 ---
 
