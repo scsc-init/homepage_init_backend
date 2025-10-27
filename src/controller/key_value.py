@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Optional
 
 from fastapi import HTTPException
 
@@ -21,7 +21,7 @@ def update_kv_value(
     session: SessionDep,
     *,
     key: str,
-    value: Any | None,
+    value: Optional[str],
     actor_role: int,
 ) -> KeyValue:
     kv_entry = _ensure_allowed_key(session, key)

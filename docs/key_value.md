@@ -7,7 +7,7 @@
 ```sql
 CREATE TABLE key_value (
     key TEXT PRIMARY KEY,
-    value JSON,
+    value TEXT,
     writing_permission_level INTEGER NOT NULL
         REFERENCES user_role(level) ON DELETE RESTRICT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -37,7 +37,7 @@ END;
 ###현재 등록된 key-value
 
 - key:footer-message, value:서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com
-- key:leaders, value: null
+- key:leaders, value: null(회장, 부회장장)
 
 ---
 

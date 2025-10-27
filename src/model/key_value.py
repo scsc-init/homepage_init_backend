@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
-from typing import Any
+from typing import Optional
 
-from sqlalchemy import Column
-from sqlalchemy.dialects.sqlite import JSON
 from sqlmodel import Field, SQLModel
 
 
@@ -10,10 +8,7 @@ class KeyValue(SQLModel, table=True):
     __tablename__ = "key_value"  # type: ignore
 
     key: str = Field(primary_key=True)
-    value: Any | None = Field(
-        default=None,
-        sa_column=Column(JSON, nullable=True),
-    )
+    value: Optional[str] = Field(default=None, nullable=True)
     writing_permission_level: int = Field(
         foreign_key="user_role.level", default=500
     )
