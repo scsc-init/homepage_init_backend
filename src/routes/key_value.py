@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
@@ -14,7 +15,7 @@ kv_router = APIRouter(prefix="/kv", tags=["kv"])
 
 
 class KvUpdateBody(BaseModel):
-    value: str
+    value: Any | None
 
 
 @kv_router.get("/{key}")
@@ -22,7 +23,7 @@ async def get_kv_value(
     key: str,
     session: SessionDep,
     request: Request,
-) -> dict[str, str]:
+) -> dict[str, Any | None]:
     entry = get_kv_value_ctrl(session, key)
     return {"key": entry.key, "value": entry.value}
 
@@ -33,7 +34,7 @@ async def update_kv_value(
     body: KvUpdateBody,
     session: SessionDep,
     request: Request,
-) -> dict[str, str]:
+) -> dict[str, Any | None]:
     current_user = get_user(request)
 
     updated_entry = update_kv_value_ctrl(

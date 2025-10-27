@@ -326,7 +326,7 @@ END;
 -- Create key value table
 CREATE TABLE key_value (
     key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
+    value JSON,
     "writing_permission_level" INTEGER NOT NULL DEFAULT 500,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

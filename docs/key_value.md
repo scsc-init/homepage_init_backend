@@ -7,7 +7,7 @@
 ```sql
 CREATE TABLE key_value (
     key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
+    value JSON,
     writing_permission_level INTEGER NOT NULL
         REFERENCES user_role(level) ON DELETE RESTRICT,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -33,6 +33,11 @@ END;
 ##key-value 관련 API(/api/kv)
 
 - uniquely existed value, runtime-modifiable config value 등 key-value를 필요로 하는 값들을 관리하는 API
+
+###현재 등록된 key-value
+
+- key:footer-message, value:서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com
+- key:leaders, value: null
 
 ---
 
