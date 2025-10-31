@@ -63,7 +63,7 @@ async def create_sig_ctrl(
 
     if sig.id is None:
         raise HTTPException(503, detail="sig primary key does not exist")
-    sig_member = SIGMember(ig_id=sig.id, user_id=user_id, status=sig.status)
+    sig_member = SIGMember(ig_id=sig.id, user_id=user_id)
     session.add(sig_member)
     try:
         session.commit()

@@ -112,6 +112,7 @@ CREATE TABLE scsc_global_status (
     * 3: 2학기 정규학기
     * 4: 겨울 계절학기
 - DB 초기화 시 `script/insert_scsc_global_status.sh` 파일의 값으로 scsc global status가 초기화된다. 
+- status 중 'surveying'은 더이상 사용하지 않습니다. 기존 'surveying'은 모두 'recruiting'으로 변경됩니다. 
 
 ## SQL 관련
 ```sql

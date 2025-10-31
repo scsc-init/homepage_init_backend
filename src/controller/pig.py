@@ -63,7 +63,7 @@ async def create_pig_ctrl(
 
     if pig.id is None:
         raise HTTPException(503, detail="pig primary key does not exist")
-    pig_member = PIGMember(ig_id=pig.id, user_id=user_id, status=pig.status)
+    pig_member = PIGMember(ig_id=pig.id, user_id=user_id)
     session.add(pig_member)
     try:
         session.commit()

@@ -27,7 +27,6 @@ from src.util import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
-
 app = FastAPI()
 
 # CORS must be first

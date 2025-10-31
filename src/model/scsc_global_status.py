@@ -5,7 +5,6 @@ from sqlmodel import CheckConstraint, Field, SQLModel
 
 
 class SCSCStatus(str, Enum):
-    surveying = "surveying"
     recruiting = "recruiting"
     active = "active"
     inactive = "inactive"
