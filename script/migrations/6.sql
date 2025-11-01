@@ -31,7 +31,9 @@ FROM key_value_old;
 DROP TABLE key_value_old;
 
 INSERT OR IGNORE INTO key_value (key, value, writing_permission_level)
-VALUES ('leaders', NULL, 500);
+VALUES 
+    ('main-president', NULL, 500),
+    ('vice-president', NULL, 500);
 
 DROP TRIGGER IF EXISTS key_value_updated_at;
 CREATE TRIGGER key_value_updated_at
