@@ -385,6 +385,8 @@ END;
 
   * `204 No Content`
   * `400 Bad Request`: sig 상태가 가입 가능한 상태가 아닐 때
+    * sig의 `is_rolling_admission`이 `true`이면 `recruiting`, `active`일 때 가입 가능
+    * sig의 `is_rolling_admission`이 `false`이면 `recruiting`일 때 가입 가능
   * `401 Unauthorized`
   * `409 Conflict`: 이미 가입됨
 
