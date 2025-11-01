@@ -181,7 +181,7 @@ async def join_sig(id: int, session: SessionDep, request: Request):
             detail=f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다",
         )
 
-    sig_member = SIGMember(ig_id=id, user_id=current_user.id, status=sig.status)
+    sig_member = SIGMember(ig_id=id, user_id=current_user.id)
     session.add(sig_member)
     try:
         session.commit()
@@ -261,7 +261,7 @@ async def executive_join_sig(
     if not user:
         raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
 
-    sig_member = SIGMember(ig_id=id, user_id=body.user_id, status=sig.status)
+    sig_member = SIGMember(ig_id=id, user_id=body.user_id)
     session.add(sig_member)
     try:
         session.commit()

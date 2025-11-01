@@ -31,31 +31,24 @@ from .user import process_oldboy_applicant_ctrl
 logger = logging.getLogger("app")
 
 _valid_scsc_global_status_update = (
-    (SCSCStatus.inactive, SCSCStatus.surveying),
-    (SCSCStatus.surveying, SCSCStatus.recruiting),
+    (SCSCStatus.inactive, SCSCStatus.recruiting),
     (SCSCStatus.recruiting, SCSCStatus.active),
-    (SCSCStatus.active, SCSCStatus.surveying),
+    (SCSCStatus.active, SCSCStatus.recruiting),
     (SCSCStatus.active, SCSCStatus.inactive),
 )
 
 
 @dataclass
 class _CtrlStatusAvailable:
-    create_sigpig: tuple[SCSCStatus, SCSCStatus]
-    join_sigpig: tuple[SCSCStatus, SCSCStatus]  # also applied to leave
-    join_sigpig_rolling_admission: tuple[
-        SCSCStatus, SCSCStatus, SCSCStatus
-    ]  # also applied to leave
+    create_sigpig: frozenset[SCSCStatus]
+    join_sigpig: frozenset[SCSCStatus]  # also applied to leave
+    join_sigpig_rolling_admission: frozenset[SCSCStatus]  # also applied to leave
 
 
 ctrl_status_available = _CtrlStatusAvailable(
-    create_sigpig=(SCSCStatus.surveying, SCSCStatus.recruiting),
-    join_sigpig=(SCSCStatus.surveying, SCSCStatus.recruiting),
-    join_sigpig_rolling_admission=(
-        SCSCStatus.surveying,
-        SCSCStatus.recruiting,
-        SCSCStatus.active,
-    ),
+    create_sigpig=frozenset({SCSCStatus.recruiting}),
+    join_sigpig=frozenset({SCSCStatus.recruiting}),
+    join_sigpig_rolling_admission=frozenset({SCSCStatus.recruiting, SCSCStatus.active}),
 )
 
 
@@ -136,16 +129,18 @@ async def update_scsc_global_status_ctrl(
 
     # start of recruiting
     if new_status == SCSCStatus.recruiting:
-        for sig in session.exec(
-            select(SIG).where(SIG.status == SCSCStatus.surveying)
-        ).all():
-            sig.status = SCSCStatus.recruiting
-            session.add(sig)
-        for pig in session.exec(
-            select(PIG).where(PIG.status == SCSCStatus.surveying)
-        ).all():
-            pig.status = SCSCStatus.recruiting
-            session.add(pig)
+        await send_discord_bot_request_no_reply(
+            action_code=3002,
+            body={
+                "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+            },
+        )
+        await send_discord_bot_request_no_reply(
+            action_code=3004,
+            body={
+                "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+            },
+        )
 
     # start of active
     if new_status == SCSCStatus.active:
@@ -232,21 +227,6 @@ async def update_scsc_global_status_ctrl(
             select(OldboyApplicant).where(OldboyApplicant.processed == False)
         ).all():
             await process_oldboy_applicant_ctrl(session, applicant.id)
-
-    # start of surveying
-    if new_status == SCSCStatus.surveying:
-        await send_discord_bot_request_no_reply(
-            action_code=3002,
-            body={
-                "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-            },
-        )
-        await send_discord_bot_request_no_reply(
-            action_code=3004,
-            body={
-                "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-            },
-        )
 
     old_status = scsc_global_status.status
     scsc_global_status.status = new_status

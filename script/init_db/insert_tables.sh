@@ -158,10 +158,9 @@ CREATE TABLE sig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id, status),
+    UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES sig(id) ON DELETE CASCADE
 );
@@ -169,10 +168,9 @@ CREATE TABLE pig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id, status),
+    UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES pig(id) ON DELETE CASCADE
 );

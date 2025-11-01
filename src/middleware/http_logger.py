@@ -2,7 +2,7 @@ import logging
 import time
 import uuid
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.util import get_user, request_id_var

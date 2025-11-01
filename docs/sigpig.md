@@ -26,6 +26,7 @@ CREATE TABLE sig (
     FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE RESTRICT
 );
 ```
+- status 중 'surveying'은 더 이상 사용하지 않습니다. 기존 'surveying'은 모두 'recruiting'으로 변경됩니다. 
 
 ```sql
 CREATE TABLE pig (
@@ -39,10 +40,9 @@ CREATE TABLE sig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id, status),
+    UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES sig(id) ON DELETE CASCADE
 );
@@ -53,10 +53,9 @@ CREATE TABLE pig_member (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ig_id INTEGER NOT NULL,
     user_id TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE (ig_id, user_id, status),
+    UNIQUE (ig_id, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (ig_id) REFERENCES pig(id) ON DELETE CASCADE
 );
@@ -125,7 +124,7 @@ END;
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
-  "status": "surveying",
+  "status": "recruiting",
   "year": 2025,
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
@@ -138,7 +137,7 @@ END;
 * **Status Codes**:
 
   * `201 Created`
-  * `400 Bad Request`: sig global status가 surveying이 아닐 때
+  * `400 Bad Request`: sig global status가 recruiting이 아닐 때
   * `401 Unauthorized`: 로그인 하지 않음
   * `409 Conflict`: `title`, `year`, `semester` 중복
   * `422 Unprocessable Content`: 필드 누락 또는 유효하지 않은 값
@@ -385,7 +384,9 @@ END;
 * **Status Codes**:
 
   * `204 No Content`
-  * `400 Bad Request`: sig global status가 surveying/recruiting이 아닐 때
+  * `400 Bad Request`: sig 상태가 가입 가능한 상태가 아닐 때
+    * sig의 `is_rolling_admission`이 `true`이면 `recruiting`, `active`일 때 가입 가능
+    * sig의 `is_rolling_admission`이 `false`이면 `recruiting`일 때 가입 가능
   * `401 Unauthorized`
   * `409 Conflict`: 이미 가입됨
 

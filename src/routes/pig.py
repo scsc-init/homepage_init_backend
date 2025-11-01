@@ -179,7 +179,7 @@ async def join_pig(id: int, session: SessionDep, request: Request):
             400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
         )
 
-    pig_member = PIGMember(ig_id=id, user_id=current_user.id, status=pig.status)
+    pig_member = PIGMember(ig_id=id, user_id=current_user.id)
     session.add(pig_member)
     try:
         session.commit()
@@ -256,7 +256,7 @@ async def executive_join_pig(
     user = session.get(User, body.user_id)
     if not user:
         raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
-    pig_member = PIGMember(ig_id=id, user_id=body.user_id, status=pig.status)
+    pig_member = PIGMember(ig_id=id, user_id=body.user_id)
     session.add(pig_member)
     try:
         session.commit()
