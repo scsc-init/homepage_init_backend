@@ -1,8 +1,9 @@
-from fastapi import Request
+from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core import get_settings
+from src.util import get_user                                                                                             
 
 
 class APISecretMiddleware(BaseHTTPMiddleware):
@@ -11,6 +12,12 @@ class APISecretMiddleware(BaseHTTPMiddleware):
             "GET",
             "POST",
         ):
+            return await call_next(request)
+        try:
+            get_user(request)
+        except HTTPException:
+            pass
+        else:
             return await call_next(request)
         x_api_secret = request.headers.get("x-api-secret")
         if x_api_secret is None:

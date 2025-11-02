@@ -41,13 +41,14 @@ if get_settings().cors_all_accept:
 
 # Custom middleware follows
 # NOTE: Starlette executes middlewares in reverse order of addition.
-# Request flow (outer → inner): APISecret → UserAuth → HTTPLogger → AssertPermission → CheckUserStatus
+# Request flow (outer -> inner): UserAuth -> APISecret -> HTTPLogger -> AssertPermission -> CheckUserStatus
 app.add_middleware(CheckUserStatusMiddleware)
 app.add_middleware(AssertPermissionMiddleware)
 app.add_middleware(HTTPLoggerMiddleware)
-app.add_middleware(UserAuthMiddleware)
 app.add_middleware(APISecretMiddleware)
+app.add_middleware(UserAuthMiddleware)
 
 app.include_router(root_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
