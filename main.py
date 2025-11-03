@@ -51,4 +51,3 @@ app.add_middleware(UserAuthMiddleware)
 app.include_router(root_router)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-

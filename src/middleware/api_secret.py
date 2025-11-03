@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core import get_settings
-from src.util import get_user                                                                                             
+from src.util import get_user
 
 
 class APISecretMiddleware(BaseHTTPMiddleware):
