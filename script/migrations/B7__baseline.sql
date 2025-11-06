@@ -345,7 +345,7 @@ CREATE TEMP TABLE major_temp (
     csv_college TEXT,
     csv_major_name TEXT
 );
-.import "./majors.csv" major_temp --csv --skip 1
+.import "./B7/majors.csv" major_temp --csv --skip 1
 INSERT INTO major (college, major_name)
 SELECT 
     csv_college, 
@@ -376,7 +376,7 @@ CREATE TEMP TABLE rules_temp (
     csv_method TEXT,
     csv_path TEXT
 );
-.import "./check_user_status_rules.csv" rules_temp --csv --skip 1
+.import "./B7/check_user_status_rules.csv" rules_temp --csv --skip 1
 INSERT INTO check_user_status_rule (user_status, method, path)
 SELECT
     csv_user_status,

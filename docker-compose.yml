@@ -20,6 +20,7 @@ services:
       chmod -R u+rwX /app/db /app/logs /app/static;
 
       chmod a+rx /app/script/migrations/*.sh;
+      chmod a+rx /app/script/insert_sample_data/*.sh;
 
       echo "Checking DB at /app/${SQLITE_FILENAME}";
 
