@@ -69,7 +69,7 @@ PRAGMA foreign_keys = ON;
 ```
 
 ## 테이블 생성
-db 파일이 없을 때 `/docker-compose.yml`에 작성된 명령어에 따라 `/script/init_db.sh`, `/script/insert_user_roles.sh`, `/script/insert_majors.sh`를 순차적으로 실행하여 db 파일을 초기화한다. 모든 테이블은 `/script/init_db.sh`에서 생성되어야 한다. 
+db 파일이 없을 때 `/docker-compose.yml`에 작성된 명령어에 따라 `/script/migrations/index.sh`을 실행하여 db 파일을 초기화한다.
 
 ## 권한 DB
 ```sql

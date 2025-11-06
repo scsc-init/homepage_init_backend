@@ -45,4 +45,4 @@ services:
           path: ./uv.lock
 
         - action: rebuild
-          path: ./script/init_db
+          path: ./script/migrations

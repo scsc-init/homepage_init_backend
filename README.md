@@ -60,10 +60,10 @@ W_HTML_DIR="static/w/"
 
 ## 기타 설정 파일
 
-### `script/init_db/president.csv`
+### `script/migrations/president.csv`
 
 - DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
-- `script/init_db/president.example.csv`의 형식을 참고하여 작성합니다
+- `script/migrations/president.example.csv`의 형식을 참고하여 작성합니다
 - 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
 - 예시 파일에 포함된 `deposit.app@scsc.dev`를 포함해야 `homepage_init_deposit_app`이 정상적으로 작동합니다
 
@@ -94,7 +94,7 @@ mkdir -p \
 
 db 파일을 생성합니다.
 ```bash
-./script/init_db/index.sh ./db/YOUR_DB_FILENAME.db
+./script/migrations/index.sh ./db/YOUR_DB_FILENAME.db
 ```
 
 (선택) 예시 데이터를 db에 추가합니다. 
@@ -196,7 +196,7 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | `/docs/`            | API 문서 등 프로젝트 관련 문서 |
 | ├── `common.md`    | 여러 라우터에서 사용되거나 중요한 로직 관련 문서 |
 | ├── `majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
-| `/script/`          | 프로젝트 관련 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
+| `/script/`          | 프로젝트 관련 명령어 |
 | ├── `migrations/`    | sql 관련 명령어 |
 | `/static/image/photo/` | 업로드된 이미지 보관 폴더 |
 | `/static/image/pfps/`  | 업로드된 프로필 이미지 보관 폴더 |
