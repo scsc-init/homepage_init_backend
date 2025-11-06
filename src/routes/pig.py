@@ -1,4 +1,3 @@
-import logging
 from typing import Sequence
 
 from fastapi import APIRouter, HTTPException, Request
@@ -15,11 +14,10 @@ from src.controller import (
     map_semester_name,
     update_pig_ctrl,
 )
+from src.core import logger
 from src.db import SessionDep
 from src.model import PIG, PIGMember, SCSCStatus, User
 from src.util import SCSCGlobalStatusDep, get_user, send_discord_bot_request_no_reply
-
-logger = logging.getLogger("app")
 
 pig_router = APIRouter(tags=["pig"])
 

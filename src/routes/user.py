@@ -1,5 +1,4 @@
 import hmac
-import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Sequence
 
@@ -19,7 +18,7 @@ from src.controller import (
     reactivate_oldboy_ctrl,
     register_oldboy_applicant_ctrl,
 )
-from src.core import get_settings
+from src.core import get_settings, logger
 from src.db import SessionDep
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserResponse, UserStatus
 from src.util import (
@@ -35,8 +34,6 @@ from src.util import (
     sha256_hash,
     validate_and_read_file,
 )
-
-logger = logging.getLogger("app")
 
 user_router = APIRouter(tags=["user"])
 

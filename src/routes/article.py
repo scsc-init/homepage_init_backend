@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timezone
 from os import path
 
@@ -8,12 +7,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.controller import BodyCreateArticle, create_article_ctrl
-from src.core import get_settings
+from src.core import get_settings, logger
 from src.db import SessionDep
 from src.model import Article, ArticleResponse, Board
 from src.util import DELETED, get_user, send_discord_bot_request_no_reply
-
-logger = logging.getLogger("app")
 
 article_router = APIRouter(tags=["article"])
 article_general_router = APIRouter(prefix="/article")

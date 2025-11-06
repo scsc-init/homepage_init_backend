@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timezone
 from typing import Optional, Sequence
 
@@ -7,11 +6,10 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
+from src.core import logger
 from src.db import SessionDep
 from src.model import Board
 from src.util import get_user
-
-logger = logging.getLogger("app")
 
 board_router = APIRouter(tags=["board"])
 

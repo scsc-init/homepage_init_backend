@@ -1,4 +1,3 @@
-import logging
 from typing import Optional
 
 from fastapi import APIRouter, Request
@@ -6,10 +5,9 @@ from pydantic import BaseModel
 
 from src.controller.key_value import get_kv_value as get_kv_value_ctrl
 from src.controller.key_value import update_kv_value as update_kv_value_ctrl
+from src.core import logger
 from src.db import SessionDep
 from src.util import get_user
-
-logger = logging.getLogger("app")
 
 kv_router = APIRouter(prefix="/kv", tags=["kv"])
 

@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 from os import path
@@ -9,12 +8,10 @@ from fastapi.responses import FileResponse
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.core import get_settings
+from src.core import get_settings, logger
 from src.db import SessionDep
 from src.model import User, WHTMLMetadata
 from src.util import get_user, validate_and_read_file
-
-logger = logging.getLogger("app")
 
 w_router = APIRouter(tags=["w"])
 

@@ -1,13 +1,9 @@
-import logging
-
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from src.core import get_settings
+from src.core import get_settings, logger
 from src.util import send_discord_bot_request, send_discord_bot_request_no_reply
-
-logger = logging.getLogger("app")
 
 bot_router = APIRouter(tags=["bot"])
 
