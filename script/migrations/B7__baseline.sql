@@ -386,4 +386,30 @@ FROM
     rules_temp;
 DROP TABLE rules_temp;
 
+-- insert_predisent_users
+INSERT INTO user (id, email, name, phone, student_id, role, status, major_id)
+VALUES
+/* Row 1: bot@discord.com, Discord Bot */
+(
+  'a44946fbf09c326520c2ca0a324b19100381911c9afe5af06a90b636d8f35dd5', -- SHA256 Hash of 'bot@discord.com'
+  'bot@discord.com',
+  'Discord Bot',
+  '09900000001',
+  '200000001',
+  1000,
+  'active',
+  1
+),
+/* Row 2: deposit.app@scsc.dev, Deposit App */
+(
+  '0bf31e3f7519f1a089553e619c01b015fbe206b37634ad27b056d0059d41786d', -- SHA256 Hash of 'deposit.app@scsc.dev'
+  'deposit.app@scsc.dev',
+  'Deposit App',
+  '09900000002',
+  '200000002',
+  1000,
+  'active',
+  1
+);
+
 COMMIT;

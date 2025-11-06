@@ -60,12 +60,11 @@ W_HTML_DIR="static/w/"
 
 ## 기타 설정 파일
 
-### `script/migrations/president.csv`
+### `script/migrations/president.csv`(Optional)
 
 - DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
-- `script/migrations/president.example.csv`의 형식을 참고하여 작성합니다
-- 예시 파일에 포함된 `bot@discord.com`을 포함해야 `homepage_init_bot`이 정상적으로 작동합니다
-- 예시 파일에 포함된 `deposit.app@scsc.dev`를 포함해야 `homepage_init_deposit_app`이 정상적으로 작동합니다
+- `script/insert_sample_data/president.example.csv`의 형식을 참고하여 작성합니다
+- 예시 파일에 포함된 값은 마이그래이션 파일에 의해 이미 추가된 값으로 `presidents.csv` 파일에 포함할 필요가 없습니다. 포함하면 오류 없이 무시됩니다. 
 
 
 ## 실행 방법(with docker)

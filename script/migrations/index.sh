@@ -37,6 +37,5 @@ cleanup() {
 trap cleanup EXIT
 
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "B7__baseline.sql")
-"$SCRIPT_DIR/insert_president_users.sh" "$DB_FILE" "$SCRIPT_DIR/presidents.csv"
 
 echo "Database initialization and inserts completed successfully."
