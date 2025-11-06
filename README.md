@@ -194,19 +194,20 @@ uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfi
 | `/.env`             | 환경 변수 설정 파일 |
 | `/logs/`            | 로그 파일이 저장되는 폴더 |
 | `/docs/`            | API 문서 등 프로젝트 관련 문서 |
-| ├── `/common.md`    | 여러 라우터에서 사용되거나 중요한 로직 관련 문서 |
-| ├── `/majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
-| `/script/`          | 프로젝트 관련 shell 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
+| ├── `common.md`    | 여러 라우터에서 사용되거나 중요한 로직 관련 문서 |
+| ├── `majors.csv`   | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
+| `/script/`          | 프로젝트 관련 명령어. `init_db.sh`은 DB 테이블 정의가 포함됨. |
+| ├── `migrations/`    | sql 관련 명령어 |
 | `/static/image/photo/` | 업로드된 이미지 보관 폴더 |
 | `/static/image/pfps/`  | 업로드된 프로필 이미지 보관 폴더 |
 | `/download/`        | 업로드된 이미지 외 파일 보관 폴더 |
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
-| ├── `/controller/`  | 여러 테이블을 조작하는 중요 로직 |
-| ├── `/core/`        | 환경 변수 등 프로젝트 전역 설정 로직 |
-| ├── `/db/`          | SQLite3 DB 연결 및 설정 관련 코드 |
-| ├── `/middleware/`  | 미들웨어 정의 및 처리 |
-| ├── `/model/`       | DB 테이블 정의 및 ORM 모델 |
-| └── `/routes/`      | API 라우터 모음 |
+| ├── `controller/`  | 여러 테이블을 조작하는 중요 로직 |
+| ├── `core/`        | 환경 변수 등 프로젝트 전역 설정 로직 |
+| ├── `db/`          | SQLite3 DB 연결 및 설정 관련 코드 |
+| ├── `middleware/`  | 미들웨어 정의 및 처리 |
+| ├── `model/`       | DB 테이블 정의 및 ORM 모델 |
+| └── `routes/`      | API 라우터 모음 |
 | &nbsp;&nbsp;&nbsp;&nbsp;└── `__init__.py` | 루트 라우터 |
 
 ## Migration details for devs

@@ -1,23 +1,7 @@
-#!/bin/bash
+BEGIN TRANSACTION;
 
-set -e
+-- insert_tables
 
-# Check if a database file name is provided
-if [ -z "$1" ]; then
-    echo "Usage: $0 <database_file_name>"
-    exit 1
-fi
-
-DB_FILE="$1"
-
-# Check if the database file exists
-if [ ! -f "$DB_FILE" ]; then
-  echo "Error: Database file '$DB_FILE' does not exist."
-  exit 1
-fi
-
-# Execute SQL commands using a here-document
-sqlite3 "$DB_FILE" <<EOF
 -- Create 'user_role' table
 CREATE TABLE user_role (
     level INTEGER PRIMARY KEY,
@@ -342,6 +326,64 @@ BEGIN
     WHERE key = NEW.key;
 END;
 
-EOF
+-- insert_scsc_global_status
+INSERT INTO scsc_global_status (id, status, year, semester) VALUES (1, 'inactive', 2025, 1);
 
-echo "Database initialized and schema created in '$DB_FILE'."
+-- insert_user_roles
+INSERT INTO user_role (level, name, kor_name)
+VALUES
+    (0, 'lowest', '최저권한'),
+    (100, 'dormant', '휴회원'),
+    (200, 'newcomer', '준회원'),
+    (300, 'member', '정회원'),
+    (400, 'oldboy', '졸업생'),
+    (500, 'executive', '운영진'),
+    (1000, 'president', '회장');
+
+-- insert_majors
+CREATE TEMP TABLE major_temp (
+    csv_college TEXT,
+    csv_major_name TEXT
+);
+.import "./majors.csv" major_temp --csv --skip 1
+INSERT INTO major (college, major_name)
+SELECT 
+    csv_college, 
+    csv_major_name 
+FROM 
+    major_temp;
+DROP TABLE major_temp;
+
+-- insert_boards
+INSERT INTO board (id, name, description, writing_permission_level, reading_permission_level) VALUES 
+    (1, 'Sig', 'sig advertising board', 1000, 0),
+    (2, 'Pig', 'pig advertising board', 1000, 0),
+    (3, 'Project Archive', 'archive of various projects held in the club', 300, 0),
+    (4, 'Album', 'photos of club members and activities', 500, 0),
+    (5, 'Notice', 'notices from club executive', 500, 100),
+    (6, 'Grant', 'applications for sig/pig grant', 200, 500);
+
+-- insert_kv
+INSERT INTO key_value (key, value, writing_permission_level) 
+VALUES 
+    ('footer-message', '서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com', 500),
+    ('main-president', NULL, 500),
+    ('vice-president', NULL, 500);
+
+-- insert_check_user_status_rules
+CREATE TEMP TABLE rules_temp (
+    csv_user_status TEXT,
+    csv_method TEXT,
+    csv_path TEXT
+);
+.import "./check_user_status_rules.csv" rules_temp --csv --skip 1
+INSERT INTO check_user_status_rule (user_status, method, path)
+SELECT
+    csv_user_status,
+    csv_method,
+    csv_path
+FROM
+    rules_temp;
+DROP TABLE rules_temp;
+
+COMMIT;

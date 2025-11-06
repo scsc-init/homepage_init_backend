@@ -20,9 +20,7 @@ from .validator import (
     create_uuid,
     is_valid_img_url,
     is_valid_phone,
-    is_valid_semester,
     is_valid_student_id,
-    is_valid_year,
     sha256_hash,
     validate_and_read_file,
 )
