@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime, timezone
 from os import path
 from typing import Annotated
@@ -8,12 +7,10 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.core import get_settings
+from src.core import get_settings, logger
 from src.db import SessionDep
-from src.model import Article, ArticleResponse, Board
+from src.model import Article, ArticleResponse, Board, User
 from src.util import DELETED, get_user, send_discord_bot_request_no_reply
-
-logger = logging.getLogger("app")
 
 
 class BodyCreateArticle(BaseModel):
@@ -176,23 +173,9 @@ class ArticleService:
             content = ""
         return ArticleResponse(**article.model_dump(), content=content)
 
-    def update_article_by_author(
-        self, id: int, request: Request, body: BodyUpdateArticle
+    def _update_article(
+        self, article: Article, body: BodyUpdateArticle, current_user: User
     ) -> None:
-        article = self.session.get(Article, id)
-        if not article:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
-        current_user = get_user(request)
-        if current_user.id != article.author_id:
-            raise HTTPException(
-                status_code=403,
-                detail="You are not the author of this article",
-            )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
         board = self.session.get(Board, body.board_id)
         if not board:
             raise HTTPException(503, detail="board does not exist")
@@ -223,6 +206,25 @@ class ArticleService:
                 exc_info=True,
             )
 
+    def update_article_by_author(
+        self, id: int, request: Request, body: BodyUpdateArticle
+    ) -> None:
+        article = self.session.get(Article, id)
+        if not article:
+            raise HTTPException(
+                status_code=404,
+                detail="Article not found",
+            )
+        current_user = get_user(request)
+        if current_user.id != article.author_id:
+            raise HTTPException(
+                status_code=403,
+                detail="You are not the author of this article",
+            )
+        if article.is_deleted:
+            raise HTTPException(status_code=410, detail="Article has been deleted")
+        self._update_article(article, body, current_user)
+
     def update_article_by_executive(
         self, id: int, request: Request, body: BodyUpdateArticle
     ) -> None:
@@ -234,36 +236,8 @@ class ArticleService:
             )
         if article.is_deleted:
             raise HTTPException(status_code=410, detail="Article has been deleted")
-        board = self.session.get(Board, body.board_id)
-        if not board:
-            raise HTTPException(503, detail="board does not exist")
         current_user = get_user(request)
-        if current_user.role < board.writing_permission_level:
-            raise HTTPException(
-                403, detail="You are not allowed to write to this board"
-            )
-
-        article.title = body.title
-        article.board_id = body.board_id
-        article.updated_at = datetime.now(timezone.utc)
-        try:
-            self.session.commit()
-        except IntegrityError:
-            self.session.rollback()
-            raise HTTPException(status_code=409, detail="unique field already exists")
-        self.session.refresh(article)
-        logger.info(
-            f"info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}"
-        )
-        try:
-            file_path = path.join(get_settings().article_dir, f"{article.id}.md")
-            with open(file_path, "w", encoding="utf-8") as fp:
-                fp.write(body.content)
-        except Exception:
-            logger.error(
-                f"err_type=update_article_by_executive ; failed to write file ; {article.id=}",
-                exc_info=True,
-            )
+        self._update_article(article, body, current_user)
 
     def delete_article_by_author(self, id: int, request: Request) -> None:
         article = self.session.get(Article, id)

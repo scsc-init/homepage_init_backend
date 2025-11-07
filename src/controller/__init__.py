@@ -4,6 +4,7 @@ from .article import (
     BodyUpdateArticle,
     create_article_ctrl,
 )
+from .board import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
 from .pig import (
     BodyCreatePIG,
     BodyUpdatePIG,
