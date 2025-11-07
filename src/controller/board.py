@@ -80,13 +80,13 @@ class BoardService:
                 detail="Board not found",
             )
         # TODO: Who can, What can?
-        if body.name:
+        if body.name is not None:
             board.name = body.name
-        if body.description:
+        if body.description is not None:
             board.description = body.description
-        if body.writing_permission_level:
+        if body.writing_permission_level is not None:
             board.writing_permission_level = body.writing_permission_level
-        if body.reading_permission_level:
+        if body.reading_permission_level is not None:
             board.reading_permission_level = body.reading_permission_level
         board.updated_at = datetime.now(timezone.utc)
         try:

@@ -5,6 +5,7 @@ from .article import (
     create_article_ctrl,
 )
 from .board import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
+from .bot import BodySendMessageToID, BotServiceDep
 from .pig import (
     BodyCreatePIG,
     BodyUpdatePIG,
