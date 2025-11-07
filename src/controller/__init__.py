@@ -13,6 +13,7 @@ from .major import BodyCreateMajor, MajorServiceDep
 from .pig import (
     BodyCreatePIG,
     BodyUpdatePIG,
+    PigServiceDep,
     create_pig_ctrl,
     handover_pig_ctrl,
     update_pig_ctrl,
