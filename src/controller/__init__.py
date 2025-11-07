@@ -1,4 +1,9 @@
-from .article import BodyCreateArticle, create_article_ctrl
+from .article import (
+    ArticleServiceDep,
+    BodyCreateArticle,
+    BodyUpdateArticle,
+    create_article_ctrl,
+)
 from .pig import (
     BodyCreatePIG,
     BodyUpdatePIG,
