@@ -46,7 +46,7 @@ class _CtrlStatusAvailable:
 
 
 ctrl_status_available = _CtrlStatusAvailable(
-    create_sigpig=frozenset({SCSCStatus.recruiting}),
+    create_sigpig=frozenset({SCSCStatus.recruiting, SCSCStatus.active}),
     join_sigpig=frozenset({SCSCStatus.recruiting}),
     join_sigpig_rolling_admission=frozenset({SCSCStatus.recruiting, SCSCStatus.active}),
 )
