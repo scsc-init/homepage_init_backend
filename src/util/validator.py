@@ -38,14 +38,6 @@ def is_valid_student_id(student_id: str) -> bool:
     return 1946 <= year <= _current_year
 
 
-def is_valid_year(year: int):
-    return year >= 2025
-
-
-def is_valid_semester(semester: int):
-    return semester in (1, 2)
-
-
 def is_valid_img_url(url: str, timeout: int = 5) -> bool:
     """
     Checks if the given URL string is likely an image URL by:

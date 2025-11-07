@@ -49,7 +49,7 @@ SQL_VALUES=$(echo -e "$SQL_VALUES")
 SQL_VALUES="${SQL_VALUES%,*}"
 
 sqlite3 "$DB_FILE" <<EOF
-INSERT INTO user (id, email, name, phone, student_id, role, status, last_login, created_at, updated_at, major_id)
+INSERT OR IGNORE INTO user (id, email, name, phone, student_id, role, status, last_login, created_at, updated_at, major_id)
 VALUES
 $SQL_VALUES;
 EOF

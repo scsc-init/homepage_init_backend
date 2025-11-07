@@ -11,7 +11,7 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-DB_FILE="$1"
+DB_FILE="$(realpath "$1")"  # Convert to absolute path
 
 # Check if the database file already exists
 if [ -f "$DB_FILE" ]; then
@@ -36,13 +36,6 @@ cleanup() {
 # Trap EXIT signal to call cleanup function on exit (error or success)
 trap cleanup EXIT
 
-"$SCRIPT_DIR/insert_tables.sh" "$DB_FILE"
-"$SCRIPT_DIR/insert_scsc_global_status.sh" "$DB_FILE"
-"$SCRIPT_DIR/insert_user_roles.sh" "$DB_FILE"
-"$SCRIPT_DIR/insert_majors.sh" "$DB_FILE" "$SCRIPT_DIR/majors.csv"
-"$SCRIPT_DIR/insert_boards.sh" "$DB_FILE"
-"$SCRIPT_DIR/insert_kv.sh" "$DB_FILE"
-"$SCRIPT_DIR/insert_president_users.sh" "$DB_FILE" "$SCRIPT_DIR/presidents.csv"
-"$SCRIPT_DIR/insert_check_user_status_rules.sh" "$DB_FILE" "$SCRIPT_DIR/check_user_status_rules.csv"
+(cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "B7__baseline.sql")
 
 echo "Database initialization and inserts completed successfully."

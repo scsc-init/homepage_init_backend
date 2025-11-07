@@ -14,26 +14,28 @@ services:
     command: >
       -c '
       set -e
-      
+
       mkdir -p /app/db /app/logs /app/static/article /app/static/image/photo /app/static/image/pfps /app/static/download;
       chown -R nonroot:nonroot /app/db /app/logs /app/static || true;
       chmod -R u+rwX /app/db /app/logs /app/static;
 
-      chmod a+rx /app/script/init_db/*.sh;
-      
+      chmod a+rx /app/script/migrations/*.sh;
+      chmod a+rx /app/script/insert_sample_data/*.sh;
+
       echo "Checking DB at /app/${SQLITE_FILENAME}";
 
       if [ ! -f "/app/${SQLITE_FILENAME}" ]; then
         echo "Database was not found. Initializing...";
-        /app/script/init_db/index.sh "/app/${SQLITE_FILENAME}";
+        /app/script/migrations/index.sh "/app/${SQLITE_FILENAME}";
+        /app/script/insert_sample_data/insert_president_users.sh "/app/${SQLITE_FILENAME}" /app/script/insert_sample_data/presidents.csv || true;
       else
         echo "Database already exists. Skipping initialization.";
       fi;
 
       exec fastapi run main.py --host 0.0.0.0 --port 8080;
       '
-    develop: 
-      watch: 
+    develop:
+      watch:
         - action: sync
           path: .
           target: /app
@@ -45,4 +47,4 @@ services:
           path: ./uv.lock
 
         - action: rebuild
-          path: ./script/init_db
+          path: ./script/migrations
