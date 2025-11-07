@@ -6,6 +6,7 @@ from .article import (
 )
 from .board import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
 from .bot import BodySendMessageToID, BotServiceDep
+from .comment import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from .pig import (
     BodyCreatePIG,
     BodyUpdatePIG,

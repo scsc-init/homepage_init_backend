@@ -47,12 +47,12 @@ class BoardService:
         except IntegrityError:
             self.session.rollback()
             logger.warning(
-                f"err_type=board_update err_code=409 ; msg=unique field already exists ; executor={current_user.id}"
+                f"err_type=board_create err_code=409 ; msg=unique field already exists ; executor={current_user.id}"
             )
             raise HTTPException(status_code=409, detail="unique field already exists")
         self.session.refresh(board)
         logger.info(
-            f"info_type=board_update ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
+            f"info_type=board_create ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
         )
         return board
 
