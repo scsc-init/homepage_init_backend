@@ -9,6 +9,7 @@ from .bot import BodySendMessageToID, BotServiceDep
 from .comment import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from .file import FileServiceDep
 from .key_value import KvServiceDep, KvUpdateBody
+from .major import BodyCreateMajor, MajorServiceDep
 from .pig import (
     BodyCreatePIG,
     BodyUpdatePIG,
