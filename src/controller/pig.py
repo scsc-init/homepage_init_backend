@@ -1,12 +1,13 @@
-from typing import Optional
 import logging
+from typing import Optional
 
 from fastapi import HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
+from sqlmodel import select
 
 from src.db import SessionDep
-from src.model import PIG, SCSCGlobalStatus, PIGMember, SCSCStatus
+from src.model import PIG, PIGMember, SCSCGlobalStatus, SCSCStatus, User
 from src.util import get_user_role_level, send_discord_bot_request_no_reply
 
 from .article import BodyCreateArticle, create_article_ctrl
@@ -22,14 +23,24 @@ class BodyCreatePIG(BaseModel):
     is_rolling_admission: bool = False
 
 
-async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str, user_discord_id: Optional[int], scsc_global_status: SCSCGlobalStatus) -> PIG:
-    if scsc_global_status.status not in ctrl_status_available.create_sigpig: raise HTTPException(400, f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다")
+async def create_pig_ctrl(
+    session: SessionDep,
+    body: BodyCreatePIG,
+    user_id: str,
+    user_discord_id: Optional[int],
+    scsc_global_status: SCSCGlobalStatus,
+) -> PIG:
+    if scsc_global_status.status not in ctrl_status_available.create_sigpig:
+        raise HTTPException(
+            400,
+            f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다",
+        )
 
     pig_article = await create_article_ctrl(
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
-        get_user_role_level('president')
+        get_user_role_level("president"),
     )
 
     pig = PIG(
@@ -43,26 +54,35 @@ async def create_pig_ctrl(session: SessionDep, body: BodyCreatePIG, user_id: str
         is_rolling_admission=body.is_rolling_admission,
     )
     session.add(pig)
-    try: session.flush()
+    try:
+        session.flush()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(pig)
 
-    if pig.id is None: raise HTTPException(503, detail="pig primary key does not exist")
-    pig_member = PIGMember(
-        ig_id=pig.id,
-        user_id=user_id,
-        status=pig.status
-    )
+    if pig.id is None:
+        raise HTTPException(503, detail="pig primary key does not exist")
+    pig_member = PIGMember(ig_id=pig.id, user_id=user_id)
     session.add(pig_member)
-    try: session.commit()
+    try:
+        session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="피그장 자동 가입 중 중복 오류가 발생했습니다")
     session.refresh(pig)
-    if user_discord_id: await send_discord_bot_request_no_reply(action_code=4003, body={'pig_name': pig.title, 'user_id_list': [user_discord_id], "pig_description": pig.description})
-    logger.info(f'info_type=pig_created ; pig_id={pig.id} ; title={pig.title} ; owner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}')
+    if user_discord_id:
+        await send_discord_bot_request_no_reply(
+            action_code=4003,
+            body={
+                "pig_name": pig.title,
+                "user_id_list": [user_discord_id],
+                "pig_description": pig.description,
+            },
+        )
+    logger.info(
+        f"info_type=pig_created ; pig_id={pig.id} ; title={pig.title} ; owner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
+    )
     return pig
 
 
@@ -75,39 +95,98 @@ class BodyUpdatePIG(BaseModel):
     is_rolling_admission: Optional[bool] = None
 
 
-async def update_pig_ctrl(session: SessionDep, id: int, body: BodyUpdatePIG, user_id: str, is_executive: bool) -> None:
+async def update_pig_ctrl(
+    session: SessionDep, id: int, body: BodyUpdatePIG, user_id: str, is_executive: bool
+) -> None:
     pig = session.get(PIG, id)
-    if not pig: raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if not is_executive and pig.owner != user_id: raise HTTPException(status_code=403, detail="타인의 시그/피그를 변경할 수 없습니다")
+    if not pig:
+        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
+    if not is_executive and pig.owner != user_id:
+        raise HTTPException(
+            status_code=403, detail="타인의 시그/피그를 변경할 수 없습니다"
+        )
     old_title = pig.title
-    if body.title: pig.title = body.title
-    if body.description: pig.description = body.description
+    if body.title:
+        pig.title = body.title
+    if body.description:
+        pig.description = body.description
     if body.content:
         pig_article = await create_article_ctrl(
             session,
             BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
             user_id,
-            get_user_role_level('president')
+            get_user_role_level("president"),
         )
         pig.content_id = pig_article.id
     if body.status:
-        if not is_executive: raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
+        if not is_executive:
+            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
         pig.status = body.status
-    if body.should_extend is not None: pig.should_extend = body.should_extend
-    if body.is_rolling_admission is not None: pig.is_rolling_admission = body.is_rolling_admission
+    if body.should_extend is not None:
+        pig.should_extend = body.should_extend
+    if body.is_rolling_admission is not None:
+        pig.is_rolling_admission = body.is_rolling_admission
 
     session.add(pig)
-    try: session.commit()
+    try:
+        session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
     session.refresh(pig)
 
     bot_body = {}
-    bot_body['pig_name'] = old_title
-    if body.title: bot_body['new_pig_name'] = body.title
-    if body.description: bot_body['new_topic'] = body.description
-    if len(bot_body) > 1: await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
+    bot_body["pig_name"] = old_title
+    if body.title:
+        bot_body["new_pig_name"] = body.title
+    if body.description:
+        bot_body["new_topic"] = body.description
+    if len(bot_body) > 1:
+        await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
 
-    logger.info(f'info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}')
+    logger.info(
+        f"info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={user_id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
+    )
     return
+
+
+def handover_pig_ctrl(
+    session: SessionDep, pig: PIG, new_owner_id: str, executor_id: str, is_forced: bool
+) -> PIG:
+    if pig.owner == new_owner_id:
+        raise HTTPException(
+            status_code=400,
+            detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다",
+        )
+
+    new_owner_user = session.get(User, new_owner_id)
+    if not new_owner_user:
+        raise HTTPException(
+            status_code=404, detail="새로운 시그/피그장에 해당하는 사용자가 없습니다"
+        )
+
+    member = session.exec(
+        select(PIGMember)
+        .where(PIGMember.ig_id == pig.id)
+        .where(PIGMember.user_id == new_owner_id)
+    ).first()
+    if not member:
+        raise HTTPException(
+            status_code=404,
+            detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다",
+        )
+
+    old_owner = pig.owner
+    pig.owner = new_owner_id
+    session.add(pig)
+    session.commit()
+    session.refresh(pig)
+
+    handover_type = "forced" if is_forced else "voluntary"
+    logger.info(
+        f"info_type=pig_handover ; handover_type={handover_type} ; pig_id={pig.id} ; title={pig.title} ; "
+        f"executor_id={executor_id} ; old_owner_id={old_owner} ; new_owner_id={new_owner_id} ; "
+        f"year={pig.year} ; semester={pig.semester}"
+    )
+
+    return pig

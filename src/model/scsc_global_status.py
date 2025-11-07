@@ -5,7 +5,6 @@ from sqlmodel import CheckConstraint, Field, SQLModel
 
 
 class SCSCStatus(str, Enum):
-    surveying = "surveying"
     recruiting = "recruiting"
     active = "active"
     inactive = "inactive"
@@ -23,4 +22,6 @@ class SCSCGlobalStatus(SQLModel, table=True):
     status: SCSCStatus = Field(nullable=False)
     year: int = Field(nullable=False)
     semester: int = Field(nullable=False)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )

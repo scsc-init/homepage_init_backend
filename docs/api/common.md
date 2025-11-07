@@ -69,7 +69,7 @@ PRAGMA foreign_keys = ON;
 ```
 
 ## 테이블 생성
-db 파일이 없을 때 `/docker-compose.yml`에 작성된 명령어에 따라 `/script/init_db.sh`, `/script/insert_user_roles.sh`, `/script/insert_majors.sh`를 순차적으로 실행하여 db 파일을 초기화한다. 모든 테이블은 `/script/init_db.sh`에서 생성되어야 한다. 
+db 파일이 없을 때 `/docker-compose.yml`에 작성된 명령어에 따라 `/script/migrations/index.sh`을 실행하여 db 파일을 초기화한다.
 
 ## 권한 DB
 ```sql
@@ -112,6 +112,7 @@ CREATE TABLE scsc_global_status (
     * 3: 2학기 정규학기
     * 4: 겨울 계절학기
 - DB 초기화 시 `script/insert_scsc_global_status.sh` 파일의 값으로 scsc global status가 초기화된다. 
+- status 중 'surveying'은 더이상 사용하지 않습니다. 기존 'surveying'은 모두 'recruiting'으로 변경됩니다. 
 
 ## SQL 관련
 ```sql

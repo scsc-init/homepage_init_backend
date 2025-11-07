@@ -26,18 +26,22 @@ def get_user_role_level(role_name: str) -> int:
     session = None
     try:
         session = SessionLocal()  # Get a new session
-        user_role = session.exec(select(UserRole).where(UserRole.name == role_name)).first()
+        user_role = session.exec(
+            select(UserRole).where(UserRole.name == role_name)
+        ).first()
         if not user_role:
             raise HTTPException(400, f"Role '{role_name}' not found in the database.")
         return user_role.level
 
     finally:
-        if session: session.close()
+        if session:
+            session.close()
 
 
 def _get_scsc_global_status(session: SessionDep) -> SCSCGlobalStatus:
     status = session.get(SCSCGlobalStatus, 1)
-    if status is None: raise HTTPException(503, detail="scsc global status does not exist")
+    if status is None:
+        raise HTTPException(503, detail="scsc global status does not exist")
     return status
 
 

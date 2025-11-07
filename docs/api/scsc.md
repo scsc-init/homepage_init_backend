@@ -42,7 +42,7 @@
 
 ```json
 {
-  "statuses": [ "surveying", "recruiting", "active", "inactive" ]
+  "statuses": ["recruiting", "active", "inactive"]
 }
 ```
 
@@ -64,15 +64,14 @@
   "status": "active"
 }
 ```
-status는 ('surveying', 'recruiting', 'active', 'inactive') 중 하나
+status는 ('recruiting', 'active', 'inactive') 중 하나
 * **유효한 status 변경 방법**
 
 |기존 status|변경 status|
 |---|---|
-|inactive|surveying|
-|surveying|recruiting|
+|inactive|recruiting|
 |recruiting|active|
-|active|surveying|
+|active|recruiting|
 |active|inactive|
 
 * **Status Codes**:
