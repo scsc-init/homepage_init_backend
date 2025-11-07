@@ -19,6 +19,8 @@ from .pig import (
     update_pig_ctrl,
 )
 from .scsc import (
+    BodyUpdateSCSCGlobalStatus,
+    SCSCServiceDep,
     ctrl_status_available,
     map_semester_name,
     update_scsc_global_status_ctrl,
@@ -26,6 +28,7 @@ from .scsc import (
 from .sig import (
     BodyCreateSIG,
     BodyUpdateSIG,
+    SigServiceDep,
     create_sig_ctrl,
     handover_sig_ctrl,
     update_sig_ctrl,
