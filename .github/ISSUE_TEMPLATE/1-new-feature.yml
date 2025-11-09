@@ -1,0 +1,14 @@
+name: '✨ New Feature'
+description: 'Request a new feature to be added'
+labels: ['feature']
+body:
+  - type: input
+    id: summary
+    attributes:
+      label: 'Feature summary'
+      description: 'Briefly describe the new feature'
+  - type: textarea
+    id: details
+    attributes:
+      label: 'Details'
+      description: 'What should this feature do?'
