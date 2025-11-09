@@ -1,0 +1,9 @@
+name: 'Other'
+description: 'Use this for anything else not covered above'
+labels: ['misc']
+body:
+  - type: textarea
+    id: details
+    attributes:
+      label: 'Details'
+      description: 'Describe your issue or request'

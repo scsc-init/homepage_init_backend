@@ -1,0 +1,14 @@
+name: '⚡ Enhancement'
+description: 'Suggest an improvement to an existing feature'
+labels: ['enhancement']
+body:
+  - type: input
+    id: target
+    attributes:
+      label: 'Target area'
+      description: 'Which part of the project does this enhance?'
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 'Proposed change'
+      description: 'What improvement would you like to see?'
