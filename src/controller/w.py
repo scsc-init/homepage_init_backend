@@ -31,7 +31,7 @@ class WService:
                 detail="filename should consist of alphabets, numbers, underscores, and hyphens",
             )
 
-        with open(path.join(get_settings().w_html_dir, f"{file.filename}"), "wb") as fp:
+        with open(path.join(get_settings().w_html_dir, f"{basename}.html"), "wb") as fp:
             fp.write(content)
 
         current_user = get_user(request)
@@ -81,14 +81,15 @@ class WService:
             file, valid_mime_type="text/html", valid_ext=frozenset({"html"})
         )
 
-        with open(path.join(get_settings().w_html_dir, f"{name}.html"), "wb") as fp:
-            fp.write(content)
-
         current_user = get_user(request)
         w_meta.size = len(content)
         w_meta.creator = current_user.id
         self.session.commit()
         self.session.refresh(w_meta)
+
+        with open(path.join(get_settings().w_html_dir, f"{name}.html"), "wb") as fp:
+            fp.write(content)
+
         logger.info(
             f"info_type=w_html_updated ; {name=} ; file_size={len(content)} ; executer_id={current_user.id}"
         )

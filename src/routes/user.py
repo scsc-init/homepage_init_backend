@@ -58,9 +58,27 @@ async def get_user_by_id(
 @user_router.get("/users")
 async def get_users(
     user_service: UserServiceDep,
-    **filters,
+    email: Optional[str] = None,
+    name: Optional[str] = None,
+    phone: Optional[str] = None,
+    student_id: Optional[str] = None,
+    user_role: Optional[str] = None,
+    status: Optional[str] = None,
+    discord_id: Optional[str] = None,
+    discord_name: Optional[str] = None,
+    major_id: Optional[int] = None,
 ) -> Sequence[User]:
-    return user_service.get_users(**filters)
+    return user_service.get_users(
+        email,
+        name,
+        phone,
+        student_id,
+        user_role,
+        status,
+        discord_id,
+        discord_name,
+        major_id,
+    )
 
 
 @user_router.get("/role_names")

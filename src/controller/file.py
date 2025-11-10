@@ -80,7 +80,19 @@ class FileService:
             owner=current_user.id,
         )
         self.session.add(image)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            try:
+                os.remove(path.join(get_settings().image_dir, f"{uuid}.{ext}"))
+            except OSError:
+                logger.warning(
+                    "warn_type=image_upload_cleanup_failed ; %s",
+                    f"{uuid}.{ext}",
+                    exc_info=True,
+                )
+            raise
         self.session.refresh(image)
         return image
 

@@ -2,7 +2,7 @@ import asyncio
 import hmac
 import os
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Sequence
 
 import jwt
 from fastapi import Depends, HTTPException, UploadFile
@@ -382,22 +382,31 @@ class UserService:
             raise HTTPException(404, detail="user not found")
         return UserResponse.model_validate(user)
 
-    def get_users(self, **filters):
+    def get_users(
+        self,
+        email: Optional[str] = None,
+        name: Optional[str] = None,
+        phone: Optional[str] = None,
+        student_id: Optional[str] = None,
+        user_role: Optional[str] = None,
+        status: Optional[str] = None,
+        discord_id: Optional[str] = None,
+        discord_name: Optional[str] = None,
+        major_id: Optional[int] = None,
+    ) -> Sequence[User]:
         query = select(User)
-        if filters.get("email"):
-            query = query.where(User.email == filters["email"])
-        if filters.get("name"):
-            query = query.where(User.name == filters["name"])
-        if filters.get("phone"):
-            query = query.where(User.phone == filters["phone"])
-        if filters.get("student_id"):
-            query = query.where(User.student_id == filters["student_id"])
-        if filters.get("user_role"):
-            query = query.where(User.role == get_user_role_level(filters["user_role"]))
-        if filters.get("status"):
-            query = query.where(User.status == filters["status"])
-
-        discord_id = filters.get("discord_id")
+        if email:
+            query = query.where(User.email == email)
+        if name:
+            query = query.where(User.name == name)
+        if phone:
+            query = query.where(User.phone == phone)
+        if student_id:
+            query = query.where(User.student_id == student_id)
+        if user_role:
+            query = query.where(User.role == get_user_role_level(user_role))
+        if status:
+            query = query.where(User.status == status)
         if discord_id is not None:
             if discord_id == "":
                 query = query.where(User.discord_id == None)
@@ -416,16 +425,13 @@ class UserService:
                             }
                         ],
                     )
-
-        discord_name = filters.get("discord_name")
         if discord_name is not None:
             if discord_name == "":
                 query = query.where(User.discord_name == None)
             else:
                 query = query.where(User.discord_name == discord_name)
-
-        if filters.get("major_id"):
-            query = query.where(User.major_id == filters["major_id"])
+        if major_id:
+            query = query.where(User.major_id == major_id)
         return self.session.exec(query).all()
 
     @staticmethod
