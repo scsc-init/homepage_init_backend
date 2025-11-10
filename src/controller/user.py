@@ -1,15 +1,16 @@
 import asyncio
 import hmac
-import logging
 from datetime import datetime, timedelta, timezone
+from typing import Annotated, Optional
 
-from fastapi import HTTPException
+import jwt
+from fastapi import Depends, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from src.core import get_settings
+from src.core import get_settings, logger
 from src.db import SessionDep
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserResponse, UserStatus
 from src.util import (
@@ -20,10 +21,10 @@ from src.util import (
     is_valid_img_url,
     is_valid_phone,
     is_valid_student_id,
+    process_standby_user,
     sha256_hash,
+    validate_and_read_file,
 )
-
-logger = logging.getLogger("app")
 
 
 class BodyCreateUser(BaseModel):
@@ -35,6 +36,60 @@ class BodyCreateUser(BaseModel):
     profile_picture: str
     profile_picture_is_url: bool
     hashToken: str
+
+
+class BodyLogin(BaseModel):
+    email: str
+    hashToken: str
+
+
+class ResponseLogin(BaseModel):
+    jwt: str
+
+
+class BodyUpdateUser(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    student_id: Optional[str] = None
+    major_id: Optional[int] = None
+    role: Optional[str] = None
+    status: Optional[UserStatus] = None
+    discord_id: Optional[int] = None
+    discord_name: Optional[str] = None
+
+
+class BodyUpdateMyProfile(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    student_id: Optional[str] = None
+    major_id: Optional[int] = None
+    profile_picture: Optional[str] = None
+    profile_picture_is_url: Optional[bool] = None
+
+
+class ProcessStandbyListManuallyBody(BaseModel):
+    id: str
+
+
+class ProcessDepositResult(BaseModel):
+    result_code: int
+    result_msg: str
+    record: DepositDTO
+    users: list[UserResponse]
+
+
+class ProcessStandbyListResponse(BaseModel):
+    cnt_succeeded_records: int
+    cnt_failed_records: int
+    results: list[ProcessDepositResult]
+
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
+
+
+class ProcessDepositResponse(BaseModel):
+    result: ProcessDepositResult
+
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
@@ -72,7 +127,7 @@ async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
     return user
 
 
-async def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
+def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(404, detail="user not found")
@@ -93,7 +148,7 @@ async def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     return stby_req_tbl
 
 
-async def verify_enroll_user_ctrl(
+def verify_enroll_user_ctrl(
     session: SessionDep, user: User, stby_req: StandbyReqTbl, deposit: DepositDTO
 ) -> None:
     user.status = UserStatus.active
@@ -104,13 +159,6 @@ async def verify_enroll_user_ctrl(
     session.add(stby_req)
     session.commit()
     return
-
-
-class ProcessDepositResult(BaseModel):
-    result_code: int
-    result_msg: str
-    record: DepositDTO
-    users: list[UserResponse]
 
 
 async def process_deposit_ctrl(
@@ -196,7 +244,7 @@ async def process_deposit_ctrl(
                     record=deposit,
                     users=matching_users,
                 )
-            matching_standbyreqs = [await enroll_user_ctrl(session, user.id)]
+            matching_standbyreqs = [enroll_user_ctrl(session, user.id)]
 
         # len(matching_standbyreqs) == 1:
         if deposit.amount < get_settings().enrollment_fee:
@@ -242,7 +290,7 @@ async def process_deposit_ctrl(
                 record=deposit,
                 users=matching_users,
             )
-        await verify_enroll_user_ctrl(session, user, stby_user, deposit)
+        verify_enroll_user_ctrl(session, user, stby_user, deposit)
         logger.info(f"info_type=deposit ; deposit={deposit} ; users={matching_users}")
         return ProcessDepositResult(
             result_code=200, result_msg="성공", record=deposit, users=matching_users
@@ -315,3 +363,350 @@ async def reactivate_oldboy_ctrl(session: SessionDep, user: User) -> None:
         await change_discord_role(session, user.discord_id, "member")
     session.commit()
     return
+
+
+class UserService:
+    def __init__(self, session: SessionDep):
+        self.session = session
+
+    async def create_user(self, body):
+        return await create_user_ctrl(self.session, body)
+
+    async def enroll_user(self, user_id: str):
+        enroll_user_ctrl(self.session, user_id)
+
+    def get_user_by_id(self, id: str) -> UserResponse:
+        user = self.session.get(User, id)
+        if not user:
+            raise HTTPException(404, detail="user not found")
+        return UserResponse.model_validate(user)
+
+    def get_users(self, **filters):
+        query = select(User)
+        if filters.get("email"):
+            query = query.where(User.email == filters["email"])
+        if filters.get("name"):
+            query = query.where(User.name == filters["name"])
+        if filters.get("phone"):
+            query = query.where(User.phone == filters["phone"])
+        if filters.get("student_id"):
+            query = query.where(User.student_id == filters["student_id"])
+        if filters.get("user_role"):
+            query = query.where(User.role == get_user_role_level(filters["user_role"]))
+        if filters.get("status"):
+            query = query.where(User.status == filters["status"])
+
+        discord_id = filters.get("discord_id")
+        if discord_id is not None:
+            if discord_id == "":
+                query = query.where(User.discord_id == None)
+            else:
+                try:
+                    query = query.where(User.discord_id == int(discord_id))
+                except ValueError:
+                    raise HTTPException(
+                        422,
+                        detail=[
+                            {
+                                "type": "int_parsing",
+                                "loc": ["query", "discord_id"],
+                                "msg": "Input should be a valid integer, unable to parse string as an integer",
+                                "input": discord_id,
+                            }
+                        ],
+                    )
+
+        discord_name = filters.get("discord_name")
+        if discord_name is not None:
+            if discord_name == "":
+                query = query.where(User.discord_name == None)
+            else:
+                query = query.where(User.discord_name == discord_name)
+
+        if filters.get("major_id"):
+            query = query.where(User.major_id == filters["major_id"])
+        return self.session.exec(query).all()
+
+    @staticmethod
+    def get_role_names(lang: str | None = "en"):
+        if lang == "ko":
+            return {
+                "role_names": {
+                    "0": "최저권한",
+                    "100": "휴회원",
+                    "200": "준회원",
+                    "300": "정회원",
+                    "400": "졸업생",
+                    "500": "운영진",
+                    "1000": "회장",
+                }
+            }
+        return {
+            "role_names": {
+                "0": "lowest",
+                "100": "dormant",
+                "200": "newcomer",
+                "300": "member",
+                "400": "oldboy",
+                "500": "executive",
+                "1000": "president",
+            }
+        }
+
+    async def update_my_profile(self, current_user, body):
+        if body.phone and not is_valid_phone(body.phone):
+            raise HTTPException(422, detail="invalid phone number")
+        if body.student_id and not is_valid_student_id(body.student_id):
+            raise HTTPException(422, detail="invalid student_id")
+        if body.name:
+            current_user.name = body.name
+        if body.phone:
+            current_user.phone = body.phone
+        if body.student_id:
+            current_user.student_id = body.student_id
+        if body.major_id is not None:
+            current_user.major_id = body.major_id
+        if body.profile_picture:
+            if not is_valid_img_url(body.profile_picture):
+                raise HTTPException(400, detail="invalid image url")
+            current_user.profile_picture = body.profile_picture
+        if body.profile_picture_is_url is not None:
+            current_user.profile_picture_is_url = body.profile_picture_is_url
+        self.session.add(current_user)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise HTTPException(409, detail="unique field already exists")
+        return
+
+    async def update_my_pfp_file(self, current_user, file: UploadFile):
+        content, _, ext, _ = await validate_and_read_file(
+            file, valid_mime_type="image/", valid_ext=frozenset({"png", "jpg", "jpeg"})
+        )
+
+        filename = f"{current_user.id}.{ext}"
+        path = f"static/image/pfps/{filename}"
+        with open(path, "wb") as fp:
+            fp.write(content)
+        current_user.profile_picture = path
+        current_user.profile_picture_is_url = False
+        self.session.add(current_user)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise HTTPException(409, detail="unique field already exists")
+
+    async def delete_my_profile(self, current_user):
+        if current_user.role >= get_user_role_level("executive"):
+            raise HTTPException(
+                403,
+                detail="임원진 이상의 권한은 휴회원으로 전환할 수 없습니다.",
+            )
+        current_user.role = get_user_role_level("dormant")
+        self.session.add(current_user)
+        self.session.commit()
+        self.session.refresh(current_user)
+        if current_user.discord_id:
+            await change_discord_role(self.session, current_user.discord_id, "dormant")
+
+    async def login(self, body):
+        expected = generate_user_hash(body.email)
+        if not hmac.compare_digest(body.hashToken, expected):
+            raise HTTPException(401, detail="invalid hash token")
+
+        result = self.session.get(User, sha256_hash(body.email.lower()))
+        if result is None:
+            raise HTTPException(404, detail="invalid email address")
+        result.last_login = datetime.now(timezone.utc)
+        self.session.add(result)
+        self.session.commit()
+
+        payload = {
+            "user_id": result.id,
+            "exp": datetime.now(timezone.utc)
+            + timedelta(seconds=get_settings().jwt_valid_seconds),
+        }
+        encoded_jwt = jwt.encode(payload, get_settings().jwt_secret, "HS256")
+        return ResponseLogin(jwt=encoded_jwt)
+
+    async def update_user(self, current_user, id, body):
+        user = self.session.get(User, id)
+        if user is None:
+            raise HTTPException(404, detail="no user exists")
+        old_role = user.role
+
+        if (current_user.role <= user.role) and not (
+            current_user.role == user.role == 1000
+        ):
+            raise HTTPException(
+                403,
+                detail=f"Cannot update user with a higher or equal role than yourself, current role: {current_user.role}, {user.email}, user role: {user.role}",
+            )
+        if body.role:
+            level = get_user_role_level(body.role)
+            if current_user.role < level:
+                raise HTTPException(403, detail="Cannot assign role higher than yours")
+            user.role = level
+
+        if body.phone:
+            if not is_valid_phone(body.phone):
+                raise HTTPException(422, detail="invalid phone number")
+            user.phone = body.phone
+        if body.student_id:
+            if not is_valid_student_id(body.student_id):
+                raise HTTPException(422, detail="invalid student_id")
+            user.student_id = body.student_id
+
+        if body.name:
+            user.name = body.name
+        if body.major_id:
+            user.major_id = body.major_id
+        if body.status:
+            user.status = body.status
+        if body.discord_id:
+            user.discord_id = body.discord_id
+        if body.discord_name:
+            user.discord_name = body.discord_name
+
+        self.session.add(user)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise HTTPException(409, detail="unique field already exists")
+        if body.role:
+            self.session.refresh(user)
+            logger.info(
+                f"info_type=user_role_updated ; user_id={id} ; old_role={old_role} ; new_role={get_user_role_level(body.role)} ; executor={current_user.id}"
+            )
+            if user.discord_id:
+                await change_discord_role(self.session, user.discord_id, body.role)
+
+
+class OldboyService:
+    def __init__(self, session: SessionDep):
+        self.session = session
+
+    async def register_applicant(self, current_user):
+        return await register_oldboy_applicant_ctrl(self.session, current_user)
+
+    def get_applicant_self(self, user_id: str) -> OldboyApplicant:
+        applicant = self.session.get(OldboyApplicant, user_id)
+        if applicant is None:
+            raise HTTPException(404, detail="applicant not found for user")
+        return applicant
+
+    def get_all_applicants(self):
+        return self.session.exec(select(OldboyApplicant)).all()
+
+    async def process_applicant(self, id: str):
+        await process_oldboy_applicant_ctrl(self.session, id)
+
+    async def delete_applicant_self(self, user_id: str):
+        oldboy_applicant = self.session.get(OldboyApplicant, user_id)
+        if not oldboy_applicant:
+            raise HTTPException(404, detail="oldboy_applicant not found")
+        if oldboy_applicant.processed:
+            raise HTTPException(409, detail="oldboy_applicant already processed")
+        self.session.delete(oldboy_applicant)
+        self.session.commit()
+
+    async def delete_applicant_executive(self, id: str):
+        user = self.session.get(User, id)
+        if not user:
+            raise HTTPException(404, detail="user does not exist")
+        oldboy_applicant = self.session.get(OldboyApplicant, user.id)
+        if not oldboy_applicant:
+            raise HTTPException(404, detail="oldboy_applicant not found")
+        self.session.delete(oldboy_applicant)
+        self.session.commit()
+
+    async def reactivate(self, current_user):
+        await reactivate_oldboy_ctrl(self.session, current_user)
+
+
+class StandbyService:
+    def __init__(self, session: SessionDep):
+        self.session = session
+
+    def get_standby_list(self):
+        return self.session.exec(select(StandbyReqTbl)).all()
+
+    async def process_standby_list_manually(
+        self, current_user, body: ProcessStandbyListManuallyBody
+    ):
+        user = self.session.get(User, body.id)
+        if not user:
+            raise HTTPException(404, detail="user not found")
+        if user.status == UserStatus.active:
+            raise HTTPException(409, detail="the user is already active")
+        user.status = UserStatus.active
+        self.session.add(user)
+        standbyreq = self.session.exec(
+            select(StandbyReqTbl)
+            .where(StandbyReqTbl.standby_user_id == body.id)
+            .where(StandbyReqTbl.is_checked == False)
+        ).first()
+        if standbyreq:
+            standbyreq.is_checked = True
+            standbyreq.deposit_name = f"Manually by {current_user.name}"
+            standbyreq.deposit_time = datetime.now(timezone.utc)
+        else:
+            standbyreq = StandbyReqTbl(
+                standby_user_id=user.id,
+                user_name=user.name,
+                deposit_name=f"Manually by {current_user.name}",
+                deposit_time=datetime.now(timezone.utc),
+                is_checked=True,
+            )
+        self.session.add(standbyreq)
+        self.session.commit()
+
+    async def process_standby_list(
+        self, file: UploadFile
+    ) -> ProcessStandbyListResponse:
+        content, _, _, _ = await validate_and_read_file(
+            file, valid_ext=frozenset({"csv"})
+        )
+        try:
+            deposit_array = await process_standby_user("utf-8", content)
+        except UnicodeDecodeError:
+            try:
+                deposit_array = await process_standby_user("euc-kr", content)
+            except UnicodeDecodeError:
+                raise HTTPException(
+                    400,
+                    detail="파일 읽기 실패: utf-8, euc-kr 인코딩만 읽을 수 있습니다",
+                )
+            except Exception as e:
+                raise HTTPException(400, detail=f"파일 읽기 실패: {e}")
+        except Exception as e:
+            raise HTTPException(400, detail=f"파일 읽기 실패: {e}")
+
+        cnt_succeeded_records = 0
+        cnt_failed_records = 0
+        results: list[ProcessDepositResult] = []
+        for deposit in deposit_array:
+            result = await process_deposit_ctrl(self.session, deposit)
+            if result.result_code == 200:
+                cnt_succeeded_records += 1
+            else:
+                cnt_failed_records += 1
+            results.append(result)
+
+        return ProcessStandbyListResponse(
+            cnt_succeeded_records=cnt_succeeded_records,
+            cnt_failed_records=cnt_failed_records,
+            results=results,
+        )
+
+    async def process_deposit(self, body: DepositDTO) -> ProcessDepositResponse:
+        result = await process_deposit_ctrl(self.session, body)
+        return ProcessDepositResponse(result=result)
+
+
+UserServiceDep = Annotated[UserService, Depends()]
+StandbyServiceDep = Annotated[StandbyService, Depends()]
+OldboyServiceDep = Annotated[OldboyService, Depends()]

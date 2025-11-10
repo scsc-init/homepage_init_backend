@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Type
@@ -7,6 +6,7 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import select
 
+from src.core import logger
 from src.db import SessionDep
 from src.model import (
     PIG,
@@ -29,8 +29,6 @@ from src.util import (
 )
 
 from .user import process_oldboy_applicant_ctrl
-
-logger = logging.getLogger("app")
 
 _valid_scsc_global_status_update = (
     (SCSCStatus.inactive, SCSCStatus.recruiting),

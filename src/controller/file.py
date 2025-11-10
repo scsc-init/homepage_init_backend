@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
+from sqlmodel import select
 
 from src.core import get_settings
 from src.db import SessionDep

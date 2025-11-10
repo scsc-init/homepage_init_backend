@@ -1,4 +1,3 @@
-import logging
 from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
@@ -6,10 +5,10 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
+from src.core import logger
 from src.db import SessionDep
 from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, User
 from src.util import (
-    SCSCGlobalStatusDep,
     get_user_role_level,
     map_semester_name,
     send_discord_bot_request_no_reply,
@@ -18,14 +17,33 @@ from src.util import (
 from .article import BodyCreateArticle, create_article_ctrl
 from .scsc import ctrl_status_available
 
-logger = logging.getLogger("app")
-
 
 class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
     is_rolling_admission: bool = False
+
+
+class BodyUpdateSIG(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    content: Optional[str] = None
+    status: Optional[SCSCStatus] = None
+    should_extend: Optional[bool] = None
+    is_rolling_admission: Optional[bool] = None
+
+
+class BodyHandoverSIG(BaseModel):
+    new_owner: str
+
+
+class BodyExecutiveJoinSIG(BaseModel):
+    user_id: str
+
+
+class BodyExecutiveLeaveSIG(BaseModel):
+    user_id: str
 
 
 async def create_sig_ctrl(
@@ -89,15 +107,6 @@ async def create_sig_ctrl(
         f"info_type=sig_created ; sig_id={sig.id} ; title={sig.title} ; owner_id={user_id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
     )
     return sig
-
-
-class BodyUpdateSIG(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    content: Optional[str] = None
-    status: Optional[SCSCStatus] = None
-    should_extend: Optional[bool] = None
-    is_rolling_admission: Optional[bool] = None
 
 
 async def update_sig_ctrl(
@@ -201,18 +210,21 @@ class SigService:
     def __init__(
         self,
         session: SessionDep,
-        scsc_global_status: SCSCGlobalStatusDep,
     ):
         self.session = session
-        self.scsc_global_status = scsc_global_status
 
-    async def create_sig(self, body: BodyCreateSIG, current_user: User):
+    async def create_sig(
+        self,
+        scsc_global_status: SCSCGlobalStatus,
+        body: BodyCreateSIG,
+        current_user: User,
+    ):
         return await create_sig_ctrl(
             self.session,
             body,
             current_user.id,
             current_user.discord_id,
-            self.scsc_global_status,
+            scsc_global_status,
         )
 
     def get_by_id(self, id: int) -> SIG:
@@ -253,12 +265,14 @@ class SigService:
         )
 
     def handover_sig(
-        self, id: int, new_owner: str, current_user: User, is_executive: bool
+        self, id: int, body: BodyHandoverSIG, current_user: User, is_executive: bool
     ):
         sig = self.get_by_id(id)
         if not is_executive and current_user.id != sig.owner:
             raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
-        handover_sig_ctrl(self.session, sig, new_owner, current_user.id, is_executive)
+        handover_sig_ctrl(
+            self.session, sig, body.new_owner, current_user.id, is_executive
+        )
 
     def get_members(self, id: int):
         res = []
@@ -280,7 +294,7 @@ class SigService:
         )
         if sig.status not in allowed:
             raise HTTPException(
-                400, f"시그/피그 상태가 {allowed}일 때만 가입할 수 있습니다"
+                400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
             )
 
         sig_member = SIGMember(ig_id=id, user_id=current_user.id)
@@ -290,14 +304,41 @@ class SigService:
         except IntegrityError:
             self.session.rollback()
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
-
+        self.session.refresh(sig)
         if current_user.discord_id:
             await send_discord_bot_request_no_reply(
                 action_code=2001,
                 body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
+        logger.info(
+            f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
+        )
 
-        logger.info(f"info_type=sig_join ; sig_id={sig.id} ; user_id={current_user.id}")
+    async def executive_join_sig(
+        self, id: int, current_user: User, body: BodyExecutiveJoinSIG
+    ):
+        sig = self.get_by_id(id)
+        user = self.session.get(User, body.user_id)
+        if not user:
+            raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
+        sig_member = SIGMember(ig_id=id, user_id=body.user_id)
+        self.session.add(sig_member)
+        try:
+            self.session.commit()
+        except IntegrityError:
+            self.session.rollback()
+            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+        self.session.refresh(user)
+        self.session.refresh(sig)
+        if user.discord_id:
+            await send_discord_bot_request_no_reply(
+                action_code=2001,
+                body={"user_id": user.discord_id, "role_name": sig.title},
+            )
+        logger.info(
+            f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
+        )
+        return
 
     async def leave_sig(self, id: int, current_user: User):
         sig = self.get_by_id(id)
@@ -308,34 +349,67 @@ class SigService:
         )
         if sig.status not in allowed:
             raise HTTPException(
-                400, f"시그/피그 상태가 {allowed}일 때만 탈퇴할 수 있습니다"
+                400,
+                f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다",
             )
-
         if sig.owner == current_user.id:
-            raise HTTPException(409, detail="시그/피그장은 탈퇴할 수 없습니다")
-
-        members = self.session.exec(
+            raise HTTPException(
+                409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
+            )
+        sig_members = self.session.exec(
             select(SIGMember)
             .where(SIGMember.ig_id == id)
             .where(SIGMember.user_id == current_user.id)
         ).all()
-
-        if not members:
+        if not sig_members:
             raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
 
-        for m in members:
-            self.session.delete(m)
-        self.session.commit()
+        for member in sig_members:
+            self.session.delete(member)
 
+        self.session.commit()
+        self.session.refresh(sig)
         if current_user.discord_id:
             await send_discord_bot_request_no_reply(
                 action_code=2002,
                 body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
-
         logger.info(
-            f"info_type=sig_leave ; sig_id={sig.id} ; user_id={current_user.id}"
+            f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
         )
+
+    async def executive_leave_sig(
+        self, id: int, current_user: User, body: BodyExecutiveLeaveSIG
+    ):
+        sig = self.get_by_id(id)
+        user = self.session.get(User, body.user_id)
+        if not user:
+            raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
+        if sig.owner == user.id:
+            raise HTTPException(
+                409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
+            )
+        sig_members = self.session.exec(
+            select(SIGMember)
+            .where(SIGMember.ig_id == id)
+            .where(SIGMember.user_id == body.user_id)
+        ).all()
+        if not sig_members:
+            raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
+        for member in sig_members:
+            self.session.delete(member)
+        self.session.commit()
+        self.session.refresh(user)
+        self.session.refresh(sig)
+        if user.discord_id:
+            await send_discord_bot_request_no_reply(
+                action_code=2002,
+                body={"user_id": user.discord_id, "role_name": sig.title},
+            )
+        logger.info(
+            f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
+        )
+        return
 
 
 SigServiceDep = Annotated[SigService, Depends()]
