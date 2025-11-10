@@ -64,7 +64,7 @@ async def get_users(
 
 
 @user_router.get("/role_names")
-async def get_role_names(lang: Optional[str]):
+async def get_role_names(lang: Optional[str] = None):
     return UserService.get_role_names(lang)
 
 

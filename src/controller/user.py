@@ -1,5 +1,6 @@
 import asyncio
 import hmac
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 
@@ -494,9 +495,15 @@ class UserService:
         self.session.add(current_user)
         try:
             self.session.commit()
-        except IntegrityError:
+        except IntegrityError as err:
             self.session.rollback()
-            raise HTTPException(409, detail="unique field already exists")
+            try:
+                os.remove(path)
+            except OSError:
+                logger.warning(
+                    "warn_type=pfp_upload_cleanup_failed ; %s", path, exc_info=True
+                )
+            raise HTTPException(409, detail="unique field already exists") from err
 
     async def delete_my_profile(self, current_user):
         if current_user.role >= get_user_role_level("executive"):

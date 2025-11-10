@@ -1,11 +1,11 @@
+import os
 from os import path
 from typing import Annotated
 
 from fastapi import Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-from sqlmodel import select
 
-from src.core import get_settings
+from src.core import get_settings, logger
 from src.db import SessionDep
 from src.model import FileMetadata
 from src.util import create_uuid, get_user, split_filename, validate_and_read_file
@@ -37,7 +37,19 @@ class FileService:
             owner=current_user.id,
         )
         self.session.add(file_meta)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            try:
+                os.remove(path.join(get_settings().file_dir, f"{uuid}.{ext}"))
+            except OSError:
+                logger.warning(
+                    "warn_type=file_upload_cleanup_failed ; %s",
+                    f"{uuid}.{ext}",
+                    exc_info=True,
+                )
+            raise
         self.session.refresh(file_meta)
         return file_meta
 

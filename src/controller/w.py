@@ -99,7 +99,14 @@ class WService:
         if not w_meta:
             raise HTTPException(404, detail="file not found")
         self.session.delete(w_meta)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            logger.error(
+                f"err_type=delete_w_by_name ; {name=} ; msg=failed to remove file"
+            )
+            raise
         current_user = get_user(request)
         try:
             os.remove(path.join(get_settings().w_html_dir, f"{name}.html"))
