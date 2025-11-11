@@ -1,11 +1,12 @@
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Type
+from typing import Annotated, Type
 
-from fastapi import HTTPException
+from fastapi import Depends, HTTPException
+from pydantic import BaseModel
 from sqlmodel import select
 
+from src.core import logger
 from src.db import SessionDep
 from src.model import (
     PIG,
@@ -18,6 +19,7 @@ from src.model import (
     UserStatus,
 )
 from src.util import (
+    SCSCGlobalStatusDep,
     change_discord_role,
     get_new_year_semester,
     get_user_role_level,
@@ -27,8 +29,6 @@ from src.util import (
 )
 
 from .user import process_oldboy_applicant_ctrl
-
-logger = logging.getLogger("app")
 
 _valid_scsc_global_status_update = (
     (SCSCStatus.inactive, SCSCStatus.recruiting),
@@ -236,3 +236,35 @@ async def update_scsc_global_status_ctrl(
     )
     session.commit()
     return
+
+
+class BodyUpdateSCSCGlobalStatus(BaseModel):
+    status: SCSCStatus
+
+
+class SCSCService:
+    def __init__(
+        self,
+        session: SessionDep,
+        scsc_global_status: SCSCGlobalStatusDep,
+    ):
+        self.session = session
+        self.scsc_global_status = scsc_global_status
+
+    def get_global_status(self) -> SCSCGlobalStatus:
+        return self.scsc_global_status
+
+    def get_all_statuses(self) -> dict[str, list[str]]:
+        return {"statuses": ["recruiting", "active", "inactive"]}
+
+    async def update_global_status(
+        self,
+        current_user_id: str,
+        new_status: SCSCStatus,
+    ):
+        await update_scsc_global_status_ctrl(
+            self.session, current_user_id, new_status, self.scsc_global_status
+        )
+
+
+SCSCServiceDep = Annotated[SCSCService, Depends()]

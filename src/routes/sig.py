@@ -1,324 +1,111 @@
-import logging
-from typing import Sequence
-
-from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
-from sqlalchemy.exc import IntegrityError
-from sqlmodel import select
+from fastapi import APIRouter, Request
 
 from src.controller import (
     BodyCreateSIG,
+    BodyExecutiveJoinSIG,
+    BodyExecutiveLeaveSIG,
+    BodyHandoverSIG,
     BodyUpdateSIG,
-    create_sig_ctrl,
-    ctrl_status_available,
-    handover_sig_ctrl,
-    map_semester_name,
-    update_sig_ctrl,
+    SigServiceDep,
 )
-from src.db import SessionDep
-from src.model import SIG, SCSCStatus, SIGMember, User
-from src.util import SCSCGlobalStatusDep, get_user, send_discord_bot_request_no_reply
-
-logger = logging.getLogger("app")
+from src.util import SCSCGlobalStatusDep, get_user
 
 sig_router = APIRouter(tags=["sig"])
 
 
 @sig_router.post("/sig/create", status_code=201)
 async def create_sig(
-    session: SessionDep,
     scsc_global_status: SCSCGlobalStatusDep,
     request: Request,
     body: BodyCreateSIG,
-) -> SIG:
+    sig_service: SigServiceDep,
+):
     current_user = get_user(request)
-    return await create_sig_ctrl(
-        session, body, current_user.id, current_user.discord_id, scsc_global_status
-    )
+    return await sig_service.create_sig(scsc_global_status, body, current_user)
 
 
 @sig_router.get("/sig/{id}")
-async def get_sig_by_id(id: int, session: SessionDep) -> SIG:
-    sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    return sig
+async def get_sig_by_id(id: int, sig_service: SigServiceDep):
+    return sig_service.get_by_id(id)
 
 
 @sig_router.get("/sigs")
-async def get_all_sigs(session: SessionDep) -> Sequence[SIG]:
-    return session.exec(select(SIG)).all()
+async def get_all_sigs(sig_service: SigServiceDep):
+    return sig_service.get_all()
 
 
 @sig_router.post("/sig/{id}/update", status_code=204)
 async def update_my_sig(
-    id: int, session: SessionDep, request: Request, body: BodyUpdateSIG
-) -> None:
+    id: int, request: Request, body: BodyUpdateSIG, sig_service: SigServiceDep
+):
     current_user = get_user(request)
-    await update_sig_ctrl(session, id, body, current_user.id, False)
+    await sig_service.update_sig(id, body, current_user, False)
 
 
 @sig_router.post("/sig/{id}/delete", status_code=204)
-async def delete_my_sig(id: int, session: SessionDep, request: Request) -> None:
+async def delete_my_sig(id: int, request: Request, sig_service: SigServiceDep):
     current_user = get_user(request)
-    sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.owner != current_user.id:
-        raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
-    if sig.status == SCSCStatus.inactive:
-        raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
-    sig.status = SCSCStatus.inactive
-    session.commit()
-    session.refresh(sig)
-    year = sig.year
-    semester = sig.semester
-    await send_discord_bot_request_no_reply(
-        action_code=4002,
-        body={
-            "sig_name": sig.title,
-            "previous_semester": f"{year}-{map_semester_name.get(semester)}",
-        },
-    )
-    logger.info(
-        f"info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
-    )
-    return
+    await sig_service.delete_sig(id, current_user, False)
 
 
 @sig_router.post("/executive/sig/{id}/update", status_code=204)
-async def update_sig(
-    id: int, session: SessionDep, request: Request, body: BodyUpdateSIG
-) -> None:
+async def exec_update_sig(
+    id: int, request: Request, body: BodyUpdateSIG, sig_service: SigServiceDep
+):
     current_user = get_user(request)
-    await update_sig_ctrl(session, id, body, current_user.id, True)
+    await sig_service.update_sig(id, body, current_user, True)
 
 
 @sig_router.post("/executive/sig/{id}/delete", status_code=204)
-async def delete_sig(id: int, session: SessionDep, request: Request) -> None:
+async def exec_delete_sig(id: int, request: Request, sig_service: SigServiceDep):
     current_user = get_user(request)
-    sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if sig.status == SCSCStatus.inactive:
-        raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
-    sig.status = SCSCStatus.inactive
-    session.commit()
-    session.refresh(sig)
-    year = sig.year
-    semester = sig.semester
-    await send_discord_bot_request_no_reply(
-        action_code=4002,
-        body={
-            "sig_name": sig.title,
-            "previous_semester": f"{year}-{map_semester_name.get(semester)}",
-        },
-    )
-    logger.info(
-        f"info_type=sig_deleted ; sig_id={sig.id} ; title={sig.title} ; remover_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
-    )
-    return
-
-
-class BodyHandoverSIG(BaseModel):
-    new_owner: str
+    await sig_service.delete_sig(id, current_user, True)
 
 
 @sig_router.post("/sig/{id}/handover", status_code=204)
 async def handover_sig(
-    id: int, session: SessionDep, request: Request, body: BodyHandoverSIG
+    id: int, request: Request, body: BodyHandoverSIG, sig_service: SigServiceDep
 ) -> None:
     current_user = get_user(request)
-    sig = session.get(SIG, id)
-    if sig is None:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    if current_user.id != sig.owner:
-        raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
-
-    handover_sig_ctrl(session, sig, body.new_owner, current_user.id, False)
-    return
+    sig_service.handover_sig(id, body, current_user, False)
 
 
 @sig_router.post("/executive/sig/{id}/handover", status_code=204)
 async def executive_handover_sig(
-    id: int, session: SessionDep, request: Request, body: BodyHandoverSIG
+    id: int, request: Request, body: BodyHandoverSIG, sig_service: SigServiceDep
 ) -> None:
     current_user = get_user(request)
-
-    sig = session.get(SIG, id)
-    if sig is None:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-
-    handover_sig_ctrl(session, sig, body.new_owner, current_user.id, True)
-    return
+    sig_service.handover_sig(id, body, current_user, True)
 
 
 @sig_router.get("/sig/{id}/members")
-async def get_sig_members(id: int, session: SessionDep) -> list:
-    res = []
-    for member in session.exec(select(SIGMember).where(SIGMember.ig_id == id)).all():
-        user = session.get(User, member.user_id)
-        member_dict = member.model_dump()
-        member_dict["user"] = user.model_dump() if user else {}
-        res.append(member_dict)
-    return res
+async def get_sig_members(id: int, sig_service: SigServiceDep) -> list:
+    return sig_service.get_members(id)
 
 
 @sig_router.post("/sig/{id}/member/join", status_code=204)
-async def join_sig(id: int, session: SessionDep, request: Request):
+async def join_sig(id: int, request: Request, sig_service: SigServiceDep):
     current_user = get_user(request)
-    sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    allowed = (
-        ctrl_status_available.join_sigpig_rolling_admission
-        if sig.is_rolling_admission
-        else ctrl_status_available.join_sigpig
-    )
-    if sig.status not in allowed:
-        raise HTTPException(
-            400,
-            detail=f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다",
-        )
-
-    sig_member = SIGMember(ig_id=id, user_id=current_user.id)
-    session.add(sig_member)
-    try:
-        session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
-    session.refresh(sig)
-    if current_user.discord_id:
-        await send_discord_bot_request_no_reply(
-            action_code=2001,
-            body={"user_id": current_user.discord_id, "role_name": sig.title},
-        )
-    logger.info(
-        f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
-    )
-    return
+    await sig_service.join_sig(id, current_user)
 
 
 @sig_router.post("/sig/{id}/member/leave", status_code=204)
-async def leave_sig(id: int, session: SessionDep, request: Request):
+async def leave_sig(id: int, request: Request, sig_service: SigServiceDep):
     current_user = get_user(request)
-    sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    allowed = (
-        ctrl_status_available.join_sigpig_rolling_admission
-        if sig.is_rolling_admission
-        else ctrl_status_available.join_sigpig
-    )
-    if sig.status not in allowed:
-        raise HTTPException(
-            400,
-            detail=f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다",
-        )
-    if sig.owner == current_user.id:
-        raise HTTPException(
-            409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
-        )
-
-    sig_members = session.exec(
-        select(SIGMember).where(
-            SIGMember.ig_id == id, SIGMember.user_id == current_user.id
-        )
-    ).all()
-    if not sig_members:
-        raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-
-    for member in sig_members:
-        session.delete(member)
-
-    session.commit()
-    session.refresh(sig)
-    if current_user.discord_id:
-        await send_discord_bot_request_no_reply(
-            action_code=2002,
-            body={"user_id": current_user.discord_id, "role_name": sig.title},
-        )
-    logger.info(
-        f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
-    )
-    return
-
-
-class BodyExecutiveJoinSIG(BaseModel):
-    user_id: str
+    await sig_service.leave_sig(id, current_user)
 
 
 @sig_router.post("/executive/sig/{id}/member/join", status_code=204)
 async def executive_join_sig(
-    id: int, session: SessionDep, request: Request, body: BodyExecutiveJoinSIG
+    id: int, request: Request, body: BodyExecutiveJoinSIG, sig_service: SigServiceDep
 ):
     current_user = get_user(request)
-    sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    user = session.get(User, body.user_id)
-    if not user:
-        raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
-
-    sig_member = SIGMember(ig_id=id, user_id=body.user_id)
-    session.add(sig_member)
-    try:
-        session.commit()
-    except IntegrityError:
-        session.rollback()
-        raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
-    session.refresh(user)
-    session.refresh(sig)
-    if user.discord_id:
-        await send_discord_bot_request_no_reply(
-            action_code=2001, body={"user_id": user.discord_id, "role_name": sig.title}
-        )
-    logger.info(
-        f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
-    )
-    return
-
-
-class BodyExecutiveLeaveSIG(BaseModel):
-    user_id: str
+    await sig_service.executive_join_sig(id, current_user, body)
 
 
 @sig_router.post("/executive/sig/{id}/member/leave", status_code=204)
 async def executive_leave_sig(
-    id: int, session: SessionDep, request: Request, body: BodyExecutiveLeaveSIG
+    id: int, request: Request, body: BodyExecutiveLeaveSIG, sig_service: SigServiceDep
 ):
     current_user = get_user(request)
-    sig = session.get(SIG, id)
-    if not sig:
-        raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-    user = session.get(User, body.user_id)
-    if not user:
-        raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
-    if sig.owner == user.id:
-        raise HTTPException(
-            409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
-        )
-
-    sig_members = session.exec(
-        select(SIGMember).where(
-            SIGMember.ig_id == id, SIGMember.user_id == body.user_id
-        )
-    ).all()
-    if not sig_members:
-        raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-
-    for member in sig_members:
-        session.delete(member)
-
-    session.commit()
-    session.refresh(user)
-    session.refresh(sig)
-    if user.discord_id:
-        await send_discord_bot_request_no_reply(
-            action_code=2002, body={"user_id": user.discord_id, "role_name": sig.title}
-        )
-    logger.info(
-        f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
-    )
-    return
+    await sig_service.executive_leave_sig(id, current_user, body)
