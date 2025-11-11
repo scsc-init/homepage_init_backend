@@ -1,0 +1,13 @@
+name: '📝 Documentation'
+description: 'Report issues or suggest improvements for documentation'
+labels: ['documentation']
+body:
+  - type: input
+    id: area
+    attributes:
+      label: 'Documentation section'
+      description: 'Which part of the docs is affected?'
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 'Suggestion or issue'
