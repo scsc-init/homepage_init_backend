@@ -2,13 +2,13 @@ import os
 from os import path
 from typing import Annotated
 
-from fastapi import Depends, File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from src.core import get_settings, logger
 from src.db import SessionDep
-from src.model import FileMetadata
-from src.util import create_uuid, get_user, split_filename, validate_and_read_file
+from src.model import FileMetadata, User
+from src.util import create_uuid, split_filename, validate_and_read_file
 
 
 class FileService:
@@ -19,9 +19,8 @@ class FileService:
         self.session = session
 
     async def upload_file(
-        self, request: Request, file: UploadFile = File(...)
+        self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
-        current_user = get_user(request)
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_ext=frozenset({"pdf", "docx", "pptx"})
         )
@@ -61,9 +60,8 @@ class FileService:
         return FileResponse(path.join(get_settings().file_dir, f"{file_meta.id}.{ext}"))
 
     async def upload_image(
-        self, request: Request, file: UploadFile = File(...)
+        self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
-        current_user = get_user(request)
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_mime_type="image/", valid_ext=frozenset({"jpg", "jpeg", "png"})
         )

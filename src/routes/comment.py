@@ -1,9 +1,10 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from src.model import Comment, CommentResponse
+from src.util import UserDep
 
 comment_router = APIRouter(tags=["comment"])
 comment_general_router = APIRouter(
@@ -14,50 +15,54 @@ comment_executive_router = APIRouter(prefix="/executive/comment", tags=["executi
 
 @comment_general_router.post("/create", status_code=201)
 async def create_comment(
-    request: Request, body: BodyCreateComment, comment_service: CommentServiceDep
+    body: BodyCreateComment,
+    comment_service: CommentServiceDep,
+    current_user: UserDep,
 ) -> Comment:
-    return comment_service.create_comment(request=request, body=body)
+    return comment_service.create_comment(body=body, current_user=current_user)
 
 
 # This works as "api/comment" + "s/{article_id}" (="api/comments/{article_id}")
 @comment_general_router.get("s/{article_id}", response_model=Sequence[CommentResponse])
 async def get_comments_by_article(
-    article_id: int, request: Request, comment_service: CommentServiceDep
+    article_id: int, comment_service: CommentServiceDep, current_user: UserDep
 ) -> Sequence[CommentResponse]:
     return comment_service.get_comments_by_article(
-        article_id=article_id, request=request
+        article_id=article_id, current_user=current_user
     )
 
 
 @comment_general_router.get("/{id}", response_model=CommentResponse)
 async def get_comment_by_id(
-    id: int, request: Request, comment_service: CommentServiceDep
+    id: int, comment_service: CommentServiceDep, current_user: UserDep
 ) -> CommentResponse:
-    return comment_service.get_comment_by_id(id=id, request=request)
+    return comment_service.get_comment_by_id(id=id, current_user=current_user)
 
 
 @comment_general_router.post("/update/{id}", status_code=204)
 async def update_comment_by_author(
     id: int,
-    request: Request,
     body: BodyUpdateComment,
     comment_service: CommentServiceDep,
+    current_user: UserDep,
 ) -> None:
-    comment_service.update_comment_by_author(id=id, request=request, body=body)
+    comment_service.update_comment_by_author(
+        id=id, body=body, current_user=current_user
+    )
 
 
 @comment_general_router.post("/delete/{id}", status_code=204)
 async def delete_comment_by_author(
-    id: int, request: Request, comment_service: CommentServiceDep
+    id: int, comment_service: CommentServiceDep, current_user: UserDep
 ) -> None:
-    comment_service.delete_comment_by_author(id=id, request=request)
+    comment_service.delete_comment_by_author(id=id, current_user=current_user)
 
 
 @comment_executive_router.post("/delete/{id}", status_code=204)
 async def delete_comment_by_executive(
-    id: int, request: Request, comment_service: CommentServiceDep
+    id: int, comment_service: CommentServiceDep, current_user: UserDep
 ) -> None:
-    comment_service.delete_comment_by_executive(id=id, request=request)
+    comment_service.delete_comment_by_executive(id=id, current_user=current_user)
 
 
 comment_router.include_router(

@@ -1,12 +1,11 @@
 from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 
 from src.core import logger
 from src.db import SessionDep
-from src.model import KeyValue
-from src.util import get_user
+from src.model import KeyValue, User
 
 
 def _ensure_allowed_key(session: SessionDep, key: str) -> KeyValue:
@@ -56,9 +55,8 @@ class KvService:
         return {"key": entry.key, "value": entry.value}
 
     def update_kv_value(
-        self, key: str, body: KvUpdateBody, request: Request
+        self, key: str, body: KvUpdateBody, current_user: User
     ) -> dict[str, Optional[str]]:
-        current_user = get_user(request)
 
         updated_entry = update_kv_value(
             self.session,

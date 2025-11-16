@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import BodyUpdateSCSCGlobalStatus, SCSCServiceDep
 from src.model import SCSCGlobalStatus
-from src.util import get_user
+from src.util import UserDep
 
 scsc_router = APIRouter(tags=["scsc"])
 
@@ -23,9 +23,8 @@ async def get_scsc_global_statuses(
 
 @scsc_router.post("/executive/scsc/global/status", status_code=204)
 async def update_scsc_global_status(
-    request: Request,
     body: BodyUpdateSCSCGlobalStatus,
     scsc_service: SCSCServiceDep,
+    current_user: UserDep,
 ):
-    current_user = get_user(request)
     await scsc_service.update_global_status(current_user.id, body.status)

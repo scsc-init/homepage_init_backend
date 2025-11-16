@@ -3,7 +3,7 @@ import re
 from os import path
 from typing import Annotated, Sequence
 
-from fastapi import Depends, HTTPException, Request, UploadFile
+from fastapi import Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -11,7 +11,7 @@ from sqlmodel import select
 from src.core import get_settings, logger
 from src.db import SessionDep
 from src.model import User, WHTMLMetadata
-from src.util import get_user, validate_and_read_file
+from src.util import validate_and_read_file
 
 
 class WService:
@@ -21,7 +21,7 @@ class WService:
     ) -> None:
         self.session = session
 
-    async def upload_file(self, request: Request, file: UploadFile) -> WHTMLMetadata:
+    async def upload_file(self, file: UploadFile, current_user: User) -> WHTMLMetadata:
         content, basename, _, _ = await validate_and_read_file(
             file, valid_mime_type="text/html", valid_ext=frozenset({"html"})
         )
@@ -34,7 +34,6 @@ class WService:
         with open(path.join(get_settings().w_html_dir, f"{basename}.html"), "wb") as fp:
             fp.write(content)
 
-        current_user = get_user(request)
         w_meta = WHTMLMetadata(
             name=basename, size=len(content), creator=current_user.id
         )
@@ -72,7 +71,7 @@ class WService:
         ).all()
 
     async def update_w_by_name(
-        self, name: str, request: Request, file: UploadFile
+        self, name: str, file: UploadFile, current_user: User
     ) -> WHTMLMetadata:
         w_meta = self.session.get(WHTMLMetadata, name)
         if not w_meta:
@@ -81,7 +80,6 @@ class WService:
             file, valid_mime_type="text/html", valid_ext=frozenset({"html"})
         )
 
-        current_user = get_user(request)
         w_meta.size = len(content)
         w_meta.creator = current_user.id
         self.session.commit()
@@ -95,7 +93,7 @@ class WService:
         )
         return w_meta
 
-    def delete_w_by_name(self, name: str, request: Request) -> None:
+    def delete_w_by_name(self, name: str, current_user: User) -> None:
         w_meta = self.session.get(WHTMLMetadata, name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
@@ -108,7 +106,6 @@ class WService:
                 f"err_type=delete_w_by_name ; {name=} ; msg=failed to remove file"
             )
             raise
-        current_user = get_user(request)
         try:
             os.remove(path.join(get_settings().w_html_dir, f"{name}.html"))
         except OSError:
