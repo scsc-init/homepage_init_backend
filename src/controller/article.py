@@ -149,8 +149,6 @@ class ArticleService:
             raise HTTPException(503, detail="board does not exist")
 
         if board.reading_permission_level > 0:
-            if current_user is None:
-                raise HTTPException(401, detail="Not logged in")
             if current_user.role < board.reading_permission_level:
                 raise HTTPException(
                     403, detail="You are not allowed to read this article"
