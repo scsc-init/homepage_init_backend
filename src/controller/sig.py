@@ -216,8 +216,8 @@ class SigService:
     async def create_sig(
         self,
         scsc_global_status: SCSCGlobalStatus,
-        body: BodyCreateSIG,
         current_user: User,
+        body: BodyCreateSIG,
     ):
         return await create_sig_ctrl(
             self.session,
@@ -237,11 +237,20 @@ class SigService:
         return self.session.exec(select(SIG)).all()
 
     async def update_sig(
-        self, id: int, body: BodyUpdateSIG, current_user: User, is_executive: bool
+        self,
+        id: int,
+        current_user: User,
+        body: BodyUpdateSIG,
+        is_executive: bool,
     ):
         await update_sig_ctrl(self.session, id, body, current_user.id, is_executive)
 
-    async def delete_sig(self, id: int, current_user: User, is_executive: bool = False):
+    async def delete_sig(
+        self,
+        id: int,
+        current_user: User,
+        is_executive: bool,
+    ):
         sig = self.get_by_id(id)
         if not is_executive and sig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
@@ -265,7 +274,11 @@ class SigService:
         )
 
     def handover_sig(
-        self, id: int, body: BodyHandoverSIG, current_user: User, is_executive: bool
+        self,
+        id: int,
+        current_user: User,
+        body: BodyHandoverSIG,
+        is_executive: bool,
     ):
         sig = self.get_by_id(id)
         if not is_executive and current_user.id != sig.owner:
@@ -315,7 +328,10 @@ class SigService:
         )
 
     async def executive_join_sig(
-        self, id: int, current_user: User, body: BodyExecutiveJoinSIG
+        self,
+        id: int,
+        current_user: User,
+        body: BodyExecutiveJoinSIG,
     ):
         sig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)
@@ -379,7 +395,10 @@ class SigService:
         )
 
     async def executive_leave_sig(
-        self, id: int, current_user: User, body: BodyExecutiveLeaveSIG
+        self,
+        id: int,
+        current_user: User,
+        body: BodyExecutiveLeaveSIG,
     ):
         sig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)

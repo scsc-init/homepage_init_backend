@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from os import path
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -10,7 +10,7 @@ from sqlmodel import select
 from src.core import get_settings, logger
 from src.db import SessionDep
 from src.model import Article, ArticleResponse, Board, User
-from src.util import DELETED, get_user, send_discord_bot_request_no_reply
+from src.util import DELETED, send_discord_bot_request_no_reply
 
 
 class BodyCreateArticle(BaseModel):
@@ -71,9 +71,8 @@ class ArticleService:
         self.session = session
 
     async def create_article(
-        self, request: Request, body: BodyCreateArticle
+        self, current_user: User, body: BodyCreateArticle
     ) -> ArticleResponse:
-        current_user = get_user(request)
         ret = create_article_ctrl(
             self.session, body, current_user.id, current_user.role
         )
@@ -102,14 +101,13 @@ class ArticleService:
         return ret
 
     def get_article_list_by_board(
-        self, board_id: int, request: Request
+        self, board_id: int, current_user: User
     ) -> list[ArticleResponse]:
         board = self.session.get(Board, board_id)
         if not board:
             raise HTTPException(404, detail="Board not found")
 
         if board.reading_permission_level > 0:
-            current_user = get_user(request)
             if current_user.role < board.reading_permission_level:
                 raise HTTPException(
                     403, detail="You are not allowed to read this board"
@@ -140,7 +138,7 @@ class ArticleService:
 
         return result
 
-    def get_article_by_id(self, id: int, request: Request) -> ArticleResponse:
+    def get_article_by_id(self, id: int, current_user: User) -> ArticleResponse:
         article = self.session.get(Article, id)
         if not article:
             raise HTTPException(404, detail="Article not found")
@@ -149,7 +147,6 @@ class ArticleService:
             raise HTTPException(503, detail="board does not exist")
 
         if board.reading_permission_level > 0:
-            current_user = get_user(request)
             if current_user.role < board.reading_permission_level:
                 raise HTTPException(
                     403, detail="You are not allowed to read this article"
@@ -207,7 +204,7 @@ class ArticleService:
             )
 
     def update_article_by_author(
-        self, id: int, request: Request, body: BodyUpdateArticle
+        self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.session.get(Article, id)
         if not article:
@@ -215,7 +212,6 @@ class ArticleService:
                 status_code=404,
                 detail="Article not found",
             )
-        current_user = get_user(request)
         if current_user.id != article.author_id:
             raise HTTPException(
                 status_code=403,
@@ -226,7 +222,7 @@ class ArticleService:
         self._update_article(article, body, current_user)
 
     def update_article_by_executive(
-        self, id: int, request: Request, body: BodyUpdateArticle
+        self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.session.get(Article, id)
         if not article:
@@ -236,17 +232,15 @@ class ArticleService:
             )
         if article.is_deleted:
             raise HTTPException(status_code=410, detail="Article has been deleted")
-        current_user = get_user(request)
         self._update_article(article, body, current_user)
 
-    def delete_article_by_author(self, id: int, request: Request) -> None:
+    def delete_article_by_author(self, id: int, current_user: User) -> None:
         article = self.session.get(Article, id)
         if not article:
             raise HTTPException(
                 status_code=404,
                 detail="Article not found",
             )
-        current_user = get_user(request)
         if current_user.id != article.author_id:
             raise HTTPException(
                 status_code=403,
@@ -267,7 +261,7 @@ class ArticleService:
         )
         self.session.commit()
 
-    def delete_article_by_executive(self, id: int, request: Request) -> None:
+    def delete_article_by_executive(self, id: int, current_user: User) -> None:
         article = self.session.get(Article, id)
         if not article:
             raise HTTPException(
@@ -280,7 +274,6 @@ class ArticleService:
         article.is_deleted = True
         article.deleted_at = datetime.now(timezone.utc)
 
-        current_user = get_user(request)
         logger.info(
             f"info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}"
         )

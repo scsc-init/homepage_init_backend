@@ -1,15 +1,14 @@
 from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.core import logger
 from src.db import SessionDep
-from src.model import Board
-from src.util import get_user
+from src.model import Board, User
 
 
 class BodyCreateBoard(BaseModel):
@@ -33,8 +32,7 @@ class BoardService:
     ) -> None:
         self.session = session
 
-    def create_board(self, request: Request, body: BodyCreateBoard) -> Board:
-        current_user = get_user(request)
+    def create_board(self, current_user: User, body: BodyCreateBoard) -> Board:
         board = Board(
             name=body.name,
             description=body.description,
@@ -71,8 +69,7 @@ class BoardService:
         boards = self.session.exec(select(Board))
         return boards.all()
 
-    def update_board(self, id: int, request: Request, body: BodyUpdateBoard) -> None:
-        current_user = get_user(request)
+    def update_board(self, id: int, current_user: User, body: BodyUpdateBoard) -> None:
         board = self.session.get(Board, id)
         if not board:
             raise HTTPException(
@@ -101,8 +98,7 @@ class BoardService:
             f"info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
         )
 
-    def delete_board(self, id: int, request: Request) -> None:
-        current_user = get_user(request)
+    def delete_board(self, id: int, current_user: User) -> None:
         board = self.session.get(Board, id)
         if not board:
             raise HTTPException(

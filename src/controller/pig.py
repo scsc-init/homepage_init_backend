@@ -216,8 +216,8 @@ class PigService:
     async def create_pig(
         self,
         scsc_global_status: SCSCGlobalStatus,
-        body: BodyCreatePIG,
         current_user: User,
+        body: BodyCreatePIG,
     ):
         return await create_pig_ctrl(
             self.session,
@@ -237,11 +237,20 @@ class PigService:
         return self.session.exec(select(PIG)).all()
 
     async def update_pig(
-        self, id: int, body: BodyUpdatePIG, current_user: User, is_executive: bool
+        self,
+        id: int,
+        current_user: User,
+        body: BodyUpdatePIG,
+        is_executive: bool,
     ):
         await update_pig_ctrl(self.session, id, body, current_user.id, is_executive)
 
-    async def delete_pig(self, id: int, current_user: User, is_executive: bool = False):
+    async def delete_pig(
+        self,
+        id: int,
+        current_user: User,
+        is_executive: bool,
+    ):
         pig = self.get_by_id(id)
         if not is_executive and pig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
@@ -265,7 +274,11 @@ class PigService:
         )
 
     def handover_pig(
-        self, id: int, body: BodyHandoverPIG, current_user: User, is_executive: bool
+        self,
+        id: int,
+        current_user: User,
+        body: BodyHandoverPIG,
+        is_executive: bool,
     ):
         pig = self.get_by_id(id)
         if not is_executive and current_user.id != pig.owner:
@@ -315,7 +328,10 @@ class PigService:
         )
 
     async def executive_join_pig(
-        self, id: int, current_user: User, body: BodyExecutiveJoinPIG
+        self,
+        id: int,
+        current_user: User,
+        body: BodyExecutiveJoinPIG,
     ):
         pig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)
@@ -379,7 +395,10 @@ class PigService:
         )
 
     async def executive_leave_pig(
-        self, id: int, current_user: User, body: BodyExecutiveLeavePIG
+        self,
+        id: int,
+        current_user: User,
+        body: BodyExecutiveLeavePIG,
     ):
         pig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)

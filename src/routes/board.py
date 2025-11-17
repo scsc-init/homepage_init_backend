@@ -1,18 +1,21 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
 from src.model import Board
+from src.util import UserDep
 
 board_router = APIRouter(tags=["board"])
 
 
 @board_router.post("/executive/board/create", status_code=201)
 async def create_board(
-    request: Request, body: BodyCreateBoard, board_service: BoardServiceDep
+    current_user: UserDep,
+    body: BodyCreateBoard,
+    board_service: BoardServiceDep,
 ) -> Board:
-    return board_service.create_board(request=request, body=body)
+    return board_service.create_board(current_user, body)
 
 
 @board_router.get("/board/{id}")
@@ -27,13 +30,18 @@ async def get_board_list(board_service: BoardServiceDep) -> Sequence[Board]:
 
 @board_router.post("/executive/board/update/{id}", status_code=204)
 async def update_board(
-    id: int, request: Request, body: BodyUpdateBoard, board_service: BoardServiceDep
+    id: int,
+    current_user: UserDep,
+    body: BodyUpdateBoard,
+    board_service: BoardServiceDep,
 ) -> None:
-    board_service.update_board(id=id, request=request, body=body)
+    board_service.update_board(id, current_user, body)
 
 
 @board_router.post("/executive/board/delete/{id}", status_code=204)
 async def delete_board(
-    id: int, request: Request, board_service: BoardServiceDep
+    id: int,
+    current_user: UserDep,
+    board_service: BoardServiceDep,
 ) -> None:
-    board_service.delete_board(id=id, request=request)
+    board_service.delete_board(id, current_user)

@@ -3,8 +3,10 @@ import hashlib
 import hmac
 import io
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
-from fastapi import HTTPException, Request
+import jwt
+from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel, field_validator
 
 from src.core import get_settings
@@ -54,9 +56,12 @@ def split_filename(filename: str) -> tuple[str, str]:
 
 def get_user(request: Request) -> User:
     user = request.state.user
-    if not user:
-        raise HTTPException(401, detail="Not logged in")
-    return user
+    if user:
+        return user
+    raise HTTPException(status_code=401, detail="User not found")
+
+
+UserDep = Annotated[User, Depends(get_user)]
 
 
 def kst2utc(kst_naive_dt: datetime) -> datetime:
