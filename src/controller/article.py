@@ -204,7 +204,7 @@ class ArticleService:
             )
 
     def update_article_by_author(
-        self, current_user: User, id: int, body: BodyUpdateArticle
+        self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.session.get(Article, id)
         if not article:
