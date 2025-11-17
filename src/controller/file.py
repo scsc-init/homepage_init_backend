@@ -2,7 +2,7 @@ import os
 from os import path
 from typing import Annotated
 
-from fastapi import Depends, File, HTTPException, Request, UploadFile
+from fastapi import Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from src.core import get_settings, logger
@@ -19,7 +19,7 @@ class FileService:
         self.session = session
 
     async def upload_file(
-        self, current_user: User, file: UploadFile = File(...), request: Request
+        self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_ext=frozenset({"pdf", "docx", "pptx"})
@@ -60,7 +60,7 @@ class FileService:
         return FileResponse(path.join(get_settings().file_dir, f"{file_meta.id}.{ext}"))
 
     async def upload_image(
-        self, current_user: User, file: UploadFile = File(...), request: Request
+        self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_mime_type="image/", valid_ext=frozenset({"jpg", "jpeg", "png"})

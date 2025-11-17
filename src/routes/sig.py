@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import (
     BodyCreateSIG,
@@ -19,9 +19,8 @@ async def create_sig(
     current_user: UserDep,
     body: BodyCreateSIG,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    return await sig_service.create_sig(scsc_global_status, current_user, body, request)
+    return await sig_service.create_sig(scsc_global_status, current_user, body)
 
 
 @sig_router.get("/sig/{id}")
@@ -40,9 +39,8 @@ async def update_my_sig(
     current_user: UserDep,
     body: BodyUpdateSIG,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.update_sig(id, current_user, body, False, request)
+    await sig_service.update_sig(id, current_user, body, False)
 
 
 @sig_router.post("/sig/{id}/delete", status_code=204)
@@ -50,9 +48,8 @@ async def delete_my_sig(
     id: int,
     current_user: UserDep,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.delete_sig(id, current_user, False, request)
+    await sig_service.delete_sig(id, current_user, False)
 
 
 @sig_router.post("/executive/sig/{id}/update", status_code=204)
@@ -61,9 +58,8 @@ async def exec_update_sig(
     current_user: UserDep,
     body: BodyUpdateSIG,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.update_sig(id, current_user, body, True, request)
+    await sig_service.update_sig(id, current_user, body, True)
 
 
 @sig_router.post("/executive/sig/{id}/delete", status_code=204)
@@ -71,9 +67,8 @@ async def exec_delete_sig(
     id: int,
     current_user: UserDep,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.delete_sig(id, current_user, True, request)
+    await sig_service.delete_sig(id, current_user, True)
 
 
 @sig_router.post("/sig/{id}/handover", status_code=204)
@@ -82,9 +77,8 @@ async def handover_sig(
     current_user: UserDep,
     body: BodyHandoverSIG,
     sig_service: SigServiceDep,
-    request: Request,
 ) -> None:
-    sig_service.handover_sig(id, current_user, body, False, request)
+    sig_service.handover_sig(id, current_user, body, False)
 
 
 @sig_router.post("/executive/sig/{id}/handover", status_code=204)
@@ -93,9 +87,8 @@ async def executive_handover_sig(
     current_user: UserDep,
     body: BodyHandoverSIG,
     sig_service: SigServiceDep,
-    request: Request,
 ) -> None:
-    sig_service.handover_sig(id, current_user, body, True, request)
+    sig_service.handover_sig(id, current_user, body, True)
 
 
 @sig_router.get("/sig/{id}/members")
@@ -108,9 +101,8 @@ async def join_sig(
     id: int,
     current_user: UserDep,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.join_sig(id, current_user, request)
+    await sig_service.join_sig(id, current_user)
 
 
 @sig_router.post("/sig/{id}/member/leave", status_code=204)
@@ -118,9 +110,8 @@ async def leave_sig(
     id: int,
     current_user: UserDep,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.leave_sig(id, current_user, request)
+    await sig_service.leave_sig(id, current_user)
 
 
 @sig_router.post("/executive/sig/{id}/member/join", status_code=204)
@@ -129,9 +120,8 @@ async def executive_join_sig(
     current_user: UserDep,
     body: BodyExecutiveJoinSIG,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.executive_join_sig(id, current_user, body, request)
+    await sig_service.executive_join_sig(id, current_user, body)
 
 
 @sig_router.post("/executive/sig/{id}/member/leave", status_code=204)
@@ -140,6 +130,5 @@ async def executive_leave_sig(
     current_user: UserDep,
     body: BodyExecutiveLeaveSIG,
     sig_service: SigServiceDep,
-    request: Request,
 ):
-    await sig_service.executive_leave_sig(id, current_user, body, request)
+    await sig_service.executive_leave_sig(id, current_user, body)

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional, Sequence
 
 import jwt
-from fastapi import Depends, HTTPException, Request, UploadFile
+from fastapi import Depends, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -373,7 +373,7 @@ class UserService:
     async def create_user(self, body):
         return await create_user_ctrl(self.session, body)
 
-    async def enroll_user(self, user_id: str, request: Request):
+    async def enroll_user(self, user_id: str):
         enroll_user_ctrl(self.session, user_id)
 
     def get_user_by_id(self, id: str) -> UserResponse:
@@ -460,9 +460,7 @@ class UserService:
             }
         }
 
-    async def update_my_profile(
-        self, current_user, body: BodyUpdateMyProfile, request: Request
-    ):
+    async def update_my_profile(self, current_user, body: BodyUpdateMyProfile):
         if body.phone and not is_valid_phone(body.phone):
             raise HTTPException(422, detail="invalid phone number")
         if body.student_id and not is_valid_student_id(body.student_id):
@@ -489,9 +487,7 @@ class UserService:
             raise HTTPException(409, detail="unique field already exists")
         return
 
-    async def update_my_pfp_file(
-        self, current_user, file: UploadFile, request: Request
-    ):
+    async def update_my_pfp_file(self, current_user, file: UploadFile):
         content, _, ext, _ = await validate_and_read_file(
             file, valid_mime_type="image/", valid_ext=frozenset({"png", "jpg", "jpeg"})
         )
@@ -515,7 +511,7 @@ class UserService:
                 )
             raise HTTPException(409, detail="unique field already exists") from err
 
-    async def delete_my_profile(self, current_user, request: Request):
+    async def delete_my_profile(self, current_user):
         if current_user.role >= get_user_role_level("executive"):
             raise HTTPException(
                 403,
@@ -548,9 +544,7 @@ class UserService:
         encoded_jwt = jwt.encode(payload, get_settings().jwt_secret, "HS256")
         return ResponseLogin(jwt=encoded_jwt)
 
-    async def update_user(
-        self, current_user, id: str, body: BodyUpdateUser, request: Request
-    ):
+    async def update_user(self, current_user, id: str, body: BodyUpdateUser):
         user = self.session.get(User, id)
         if user is None:
             raise HTTPException(404, detail="no user exists")
@@ -608,10 +602,10 @@ class OldboyService:
     def __init__(self, session: SessionDep):
         self.session = session
 
-    async def register_applicant(self, current_user, request: Request):
+    async def register_applicant(self, current_user):
         return await register_oldboy_applicant_ctrl(self.session, current_user)
 
-    def get_applicant_self(self, user_id: str, request: Request) -> OldboyApplicant:
+    def get_applicant_self(self, user_id: str) -> OldboyApplicant:
         applicant = self.session.get(OldboyApplicant, user_id)
         if applicant is None:
             raise HTTPException(404, detail="applicant not found for user")
@@ -623,7 +617,7 @@ class OldboyService:
     async def process_applicant(self, id: str):
         await process_oldboy_applicant_ctrl(self.session, id)
 
-    async def delete_applicant_self(self, user_id: str, request: Request):
+    async def delete_applicant_self(self, user_id: str):
         oldboy_applicant = self.session.get(OldboyApplicant, user_id)
         if not oldboy_applicant:
             raise HTTPException(404, detail="oldboy_applicant not found")
@@ -642,7 +636,7 @@ class OldboyService:
         self.session.delete(oldboy_applicant)
         self.session.commit()
 
-    async def reactivate(self, current_user, request: Request):
+    async def reactivate(self, current_user):
         await reactivate_oldboy_ctrl(self.session, current_user)
 
 
@@ -654,7 +648,7 @@ class StandbyService:
         return self.session.exec(select(StandbyReqTbl)).all()
 
     async def process_standby_list_manually(
-        self, current_user, body: ProcessStandbyListManuallyBody, request: Request
+        self, current_user, body: ProcessStandbyListManuallyBody
     ):
         user = self.session.get(User, body.id)
         if not user:

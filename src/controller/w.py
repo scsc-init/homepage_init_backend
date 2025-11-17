@@ -3,7 +3,7 @@ import re
 from os import path
 from typing import Annotated, Sequence
 
-from fastapi import Depends, HTTPException, Request, UploadFile
+from fastapi import Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -21,9 +21,7 @@ class WService:
     ) -> None:
         self.session = session
 
-    async def upload_file(
-        self, current_user: User, file: UploadFile, request: Request
-    ) -> WHTMLMetadata:
+    async def upload_file(self, current_user: User, file: UploadFile) -> WHTMLMetadata:
         content, basename, _, _ = await validate_and_read_file(
             file, valid_mime_type="text/html", valid_ext=frozenset({"html"})
         )
@@ -73,7 +71,7 @@ class WService:
         ).all()
 
     async def update_w_by_name(
-        self, name: str, current_user: User, file: UploadFile, request: Request
+        self, name: str, current_user: User, file: UploadFile
     ) -> WHTMLMetadata:
         w_meta = self.session.get(WHTMLMetadata, name)
         if not w_meta:
@@ -95,7 +93,7 @@ class WService:
         )
         return w_meta
 
-    def delete_w_by_name(self, name: str, current_user: User, request: Request) -> None:
+    def delete_w_by_name(self, name: str, current_user: User) -> None:
         w_meta = self.session.get(WHTMLMetadata, name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")

@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Request, UploadFile
+from fastapi import APIRouter, UploadFile
 from fastapi.responses import FileResponse
 
 from src.controller import WServiceDep
@@ -15,9 +15,8 @@ async def upload_file(
     current_user: UserDep,
     file: UploadFile,
     w_service: WServiceDep,
-    request: Request,
 ) -> WHTMLMetadata:
-    return await w_service.upload_file(current_user, file, request)
+    return await w_service.upload_file(current_user, file)
 
 
 @w_router.get("/w/{name}")
@@ -38,9 +37,8 @@ async def update_w_by_name(
     current_user: UserDep,
     file: UploadFile,
     w_service: WServiceDep,
-    request: Request,
 ) -> WHTMLMetadata:
-    return await w_service.update_w_by_name(name, current_user, file, request)
+    return await w_service.update_w_by_name(name, current_user, file)
 
 
 @w_router.post("/executive/w/{name}/delete", status_code=204)
@@ -48,6 +46,5 @@ async def delete_w_by_name(
     name: str,
     current_user: UserDep,
     w_service: WServiceDep,
-    request: Request,
 ) -> None:
-    w_service.delete_w_by_name(name, current_user, request)
+    w_service.delete_w_by_name(name, current_user)

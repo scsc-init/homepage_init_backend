@@ -1,6 +1,6 @@
 from typing import Annotated, Optional, Sequence
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -218,7 +218,6 @@ class SigService:
         scsc_global_status: SCSCGlobalStatus,
         current_user: User,
         body: BodyCreateSIG,
-        request: Request,
     ):
         return await create_sig_ctrl(
             self.session,
@@ -243,7 +242,6 @@ class SigService:
         current_user: User,
         body: BodyUpdateSIG,
         is_executive: bool,
-        request: Request,
     ):
         await update_sig_ctrl(self.session, id, body, current_user.id, is_executive)
 
@@ -252,7 +250,6 @@ class SigService:
         id: int,
         current_user: User,
         is_executive: bool,
-        request: Request,
     ):
         sig = self.get_by_id(id)
         if not is_executive and sig.owner != current_user.id:
@@ -282,7 +279,6 @@ class SigService:
         current_user: User,
         body: BodyHandoverSIG,
         is_executive: bool,
-        request: Request,
     ):
         sig = self.get_by_id(id)
         if not is_executive and current_user.id != sig.owner:
@@ -302,7 +298,7 @@ class SigService:
             res.append(member_dict)
         return res
 
-    async def join_sig(self, id: int, current_user: User, request: Request):
+    async def join_sig(self, id: int, current_user: User):
         sig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
@@ -336,7 +332,6 @@ class SigService:
         id: int,
         current_user: User,
         body: BodyExecutiveJoinSIG,
-        request: Request,
     ):
         sig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)
@@ -361,7 +356,7 @@ class SigService:
         )
         return
 
-    async def leave_sig(self, id: int, current_user: User, request: Request):
+    async def leave_sig(self, id: int, current_user: User):
         sig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
@@ -404,7 +399,6 @@ class SigService:
         id: int,
         current_user: User,
         body: BodyExecutiveLeaveSIG,
-        request: Request,
     ):
         sig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)

@@ -1,6 +1,6 @@
 from typing import Annotated, Optional, Sequence
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -218,7 +218,6 @@ class PigService:
         scsc_global_status: SCSCGlobalStatus,
         current_user: User,
         body: BodyCreatePIG,
-        request: Request,
     ):
         return await create_pig_ctrl(
             self.session,
@@ -243,7 +242,6 @@ class PigService:
         current_user: User,
         body: BodyUpdatePIG,
         is_executive: bool,
-        request: Request,
     ):
         await update_pig_ctrl(self.session, id, body, current_user.id, is_executive)
 
@@ -252,7 +250,6 @@ class PigService:
         id: int,
         current_user: User,
         is_executive: bool,
-        request: Request,
     ):
         pig = self.get_by_id(id)
         if not is_executive and pig.owner != current_user.id:
@@ -282,7 +279,6 @@ class PigService:
         current_user: User,
         body: BodyHandoverPIG,
         is_executive: bool,
-        request: Request,
     ):
         pig = self.get_by_id(id)
         if not is_executive and current_user.id != pig.owner:
@@ -302,7 +298,7 @@ class PigService:
             res.append(member_dict)
         return res
 
-    async def join_pig(self, id: int, current_user: User, request: Request):
+    async def join_pig(self, id: int, current_user: User):
         pig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
@@ -336,7 +332,6 @@ class PigService:
         id: int,
         current_user: User,
         body: BodyExecutiveJoinPIG,
-        request: Request,
     ):
         pig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)
@@ -361,7 +356,7 @@ class PigService:
         )
         return
 
-    async def leave_pig(self, id: int, current_user: User, request: Request):
+    async def leave_pig(self, id: int, current_user: User):
         pig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
@@ -404,7 +399,6 @@ class PigService:
         id: int,
         current_user: User,
         body: BodyExecutiveLeavePIG,
-        request: Request,
     ):
         pig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)

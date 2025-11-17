@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import (
     BodyCreatePIG,
@@ -19,9 +19,8 @@ async def create_pig(
     current_user: UserDep,
     body: BodyCreatePIG,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    return await pig_service.create_pig(scsc_global_status, current_user, body, request)
+    return await pig_service.create_pig(scsc_global_status, current_user, body)
 
 
 @pig_router.get("/pig/{id}")
@@ -40,9 +39,8 @@ async def update_my_pig(
     current_user: UserDep,
     body: BodyUpdatePIG,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.update_pig(id, current_user, body, False, request)
+    await pig_service.update_pig(id, current_user, body, False)
 
 
 @pig_router.post("/pig/{id}/delete", status_code=204)
@@ -50,9 +48,8 @@ async def delete_my_pig(
     id: int,
     current_user: UserDep,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.delete_pig(id, current_user, False, request)
+    await pig_service.delete_pig(id, current_user, False)
 
 
 @pig_router.post("/executive/pig/{id}/update", status_code=204)
@@ -61,9 +58,8 @@ async def exec_update_pig(
     current_user: UserDep,
     body: BodyUpdatePIG,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.update_pig(id, current_user, body, True, request)
+    await pig_service.update_pig(id, current_user, body, True)
 
 
 @pig_router.post("/executive/pig/{id}/delete", status_code=204)
@@ -71,9 +67,8 @@ async def exec_delete_pig(
     id: int,
     current_user: UserDep,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.delete_pig(id, current_user, True, request)
+    await pig_service.delete_pig(id, current_user, True)
 
 
 @pig_router.post("/pig/{id}/handover", status_code=204)
@@ -82,9 +77,8 @@ async def handover_pig(
     current_user: UserDep,
     body: BodyHandoverPIG,
     pig_service: PigServiceDep,
-    request: Request,
 ) -> None:
-    pig_service.handover_pig(id, current_user, body, False, request)
+    pig_service.handover_pig(id, current_user, body, False)
 
 
 @pig_router.post("/executive/pig/{id}/handover", status_code=204)
@@ -93,9 +87,8 @@ async def executive_handover_pig(
     current_user: UserDep,
     body: BodyHandoverPIG,
     pig_service: PigServiceDep,
-    request: Request,
 ) -> None:
-    pig_service.handover_pig(id, current_user, body, True, request)
+    pig_service.handover_pig(id, current_user, body, True)
 
 
 @pig_router.get("/pig/{id}/members")
@@ -108,9 +101,8 @@ async def join_pig(
     id: int,
     current_user: UserDep,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.join_pig(id, current_user, request)
+    await pig_service.join_pig(id, current_user)
 
 
 @pig_router.post("/pig/{id}/member/leave", status_code=204)
@@ -118,9 +110,8 @@ async def leave_pig(
     id: int,
     current_user: UserDep,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.leave_pig(id, current_user, request)
+    await pig_service.leave_pig(id, current_user)
 
 
 @pig_router.post("/executive/pig/{id}/member/join", status_code=204)
@@ -129,9 +120,8 @@ async def executive_join_pig(
     current_user: UserDep,
     body: BodyExecutiveJoinPIG,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.executive_join_pig(id, current_user, body, request)
+    await pig_service.executive_join_pig(id, current_user, body)
 
 
 @pig_router.post("/executive/pig/{id}/member/leave", status_code=204)
@@ -140,6 +130,5 @@ async def executive_leave_pig(
     current_user: UserDep,
     body: BodyExecutiveLeavePIG,
     pig_service: PigServiceDep,
-    request: Request,
 ):
-    await pig_service.executive_leave_pig(id, current_user, body, request)
+    await pig_service.executive_leave_pig(id, current_user, body)

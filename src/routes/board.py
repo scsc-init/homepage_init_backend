@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
 from src.model import Board
@@ -14,9 +14,8 @@ async def create_board(
     current_user: UserDep,
     body: BodyCreateBoard,
     board_service: BoardServiceDep,
-    request: Request,
 ) -> Board:
-    return board_service.create_board(current_user, body, request)
+    return board_service.create_board(current_user, body)
 
 
 @board_router.get("/board/{id}")
@@ -35,9 +34,8 @@ async def update_board(
     current_user: UserDep,
     body: BodyUpdateBoard,
     board_service: BoardServiceDep,
-    request: Request,
 ) -> None:
-    board_service.update_board(id, current_user, body, request)
+    board_service.update_board(id, current_user, body)
 
 
 @board_router.post("/executive/board/delete/{id}", status_code=204)
@@ -45,6 +43,5 @@ async def delete_board(
     id: int,
     current_user: UserDep,
     board_service: BoardServiceDep,
-    request: Request,
 ) -> None:
-    board_service.delete_board(id, current_user, request)
+    board_service.delete_board(id, current_user)

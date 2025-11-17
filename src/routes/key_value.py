@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import KvServiceDep, KvUpdateBody
 from src.util import UserDep
@@ -22,6 +22,5 @@ async def update_kv_value(
     current_user: UserDep,
     body: KvUpdateBody,
     kv_service: KvServiceDep,
-    request: Request,
 ) -> dict[str, Optional[str]]:
-    return kv_service.update_kv_value(key, current_user, body, request)
+    return kv_service.update_kv_value(key, current_user, body)

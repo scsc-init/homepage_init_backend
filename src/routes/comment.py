@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from src.model import Comment, CommentResponse
@@ -18,9 +18,8 @@ async def create_comment(
     current_user: UserDep,
     body: BodyCreateComment,
     comment_service: CommentServiceDep,
-    request: Request,
 ) -> Comment:
-    return comment_service.create_comment(current_user, body, request)
+    return comment_service.create_comment(current_user, body)
 
 
 # This works as "api/comment" + "s/{article_id}" (="api/comments/{article_id}")
@@ -29,9 +28,8 @@ async def get_comments_by_article(
     article_id: int,
     current_user: UserDep,
     comment_service: CommentServiceDep,
-    request: Request,
 ) -> Sequence[CommentResponse]:
-    return comment_service.get_comments_by_article(article_id, current_user, request)
+    return comment_service.get_comments_by_article(article_id, current_user)
 
 
 @comment_general_router.get("/{id}", response_model=CommentResponse)
@@ -39,9 +37,8 @@ async def get_comment_by_id(
     id: int,
     current_user: UserDep,
     comment_service: CommentServiceDep,
-    request: Request,
 ) -> CommentResponse:
-    return comment_service.get_comment_by_id(id, current_user, request)
+    return comment_service.get_comment_by_id(id, current_user)
 
 
 @comment_general_router.post("/update/{id}", status_code=204)
@@ -50,9 +47,8 @@ async def update_comment_by_author(
     current_user: UserDep,
     body: BodyUpdateComment,
     comment_service: CommentServiceDep,
-    request: Request,
 ) -> None:
-    comment_service.update_comment_by_author(id, current_user, body, request)
+    comment_service.update_comment_by_author(id, current_user, body)
 
 
 @comment_general_router.post("/delete/{id}", status_code=204)
@@ -60,9 +56,8 @@ async def delete_comment_by_author(
     id: int,
     current_user: UserDep,
     comment_service: CommentServiceDep,
-    request: Request,
 ) -> None:
-    comment_service.delete_comment_by_author(id, current_user, request)
+    comment_service.delete_comment_by_author(id, current_user)
 
 
 @comment_executive_router.post("/delete/{id}", status_code=204)
@@ -70,9 +65,8 @@ async def delete_comment_by_executive(
     id: int,
     current_user: UserDep,
     comment_service: CommentServiceDep,
-    request: Request,
 ) -> None:
-    comment_service.delete_comment_by_executive(id, current_user, request)
+    comment_service.delete_comment_by_executive(id, current_user)
 
 
 comment_router.include_router(

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Type
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import select
 
@@ -261,7 +261,6 @@ class SCSCService:
         self,
         current_user_id: str,
         new_status: SCSCStatus,
-        request: Request,
     ):
         await update_scsc_global_status_ctrl(
             self.session, current_user_id, new_status, self.scsc_global_status

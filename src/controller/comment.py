@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -29,9 +29,7 @@ class CommentService:
     ) -> None:
         self.session = session
 
-    def create_comment(
-        self, current_user: User, body: BodyCreateComment, request: Request
-    ) -> Comment:
+    def create_comment(self, current_user: User, body: BodyCreateComment) -> Comment:
         article = self.session.get(Article, body.article_id)
         if not article:
             raise HTTPException(
@@ -69,7 +67,7 @@ class CommentService:
         return comment
 
     def get_comments_by_article(
-        self, article_id: int, current_user: User, request: Request
+        self, article_id: int, current_user: User
     ) -> Sequence[CommentResponse]:
         article = self.session.get(Article, article_id)
         if not article:
@@ -97,9 +95,7 @@ class CommentService:
             result.append(comment)
         return result
 
-    def get_comment_by_id(
-        self, id: int, current_user: User, request: Request
-    ) -> CommentResponse:
+    def get_comment_by_id(self, id: int, current_user: User) -> CommentResponse:
         comment = self.session.get(Comment, id)
         if not comment:
             raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
@@ -122,7 +118,7 @@ class CommentService:
         return comment
 
     def update_comment_by_author(
-        self, id: int, current_user: User, body: BodyUpdateComment, request: Request
+        self, id: int, current_user: User, body: BodyUpdateComment
     ) -> None:
         comment = self.session.get(Comment, id)
         if not comment:
@@ -150,9 +146,7 @@ class CommentService:
             self.session.rollback()
             raise HTTPException(status_code=409, detail="unique field already exists")
 
-    def delete_comment_by_author(
-        self, id: int, current_user: User, request: Request
-    ) -> None:
+    def delete_comment_by_author(self, id: int, current_user: User) -> None:
         comment = self.session.get(Comment, id)
         if not comment:
             raise HTTPException(
@@ -175,9 +169,7 @@ class CommentService:
         )
         self.session.commit()
 
-    def delete_comment_by_executive(
-        self, id: int, current_user: User, request: Request
-    ) -> None:
+    def delete_comment_by_executive(self, id: int, current_user: User) -> None:
         comment = self.session.get(Comment, id)
         if not comment:
             raise HTTPException(
