@@ -222,7 +222,7 @@ class ArticleService:
         self._update_article(article, body, current_user)
 
     def update_article_by_executive(
-        self, current_user: User, id: int, body: BodyUpdateArticle
+        self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.session.get(Article, id)
         if not article:
