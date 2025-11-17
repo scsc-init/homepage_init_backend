@@ -8,7 +8,7 @@ from src.model import Major
 major_router = APIRouter(tags=["major"])
 
 
-@major_router.post("/major/create", status_code=201)
+@major_router.post("/executive/major/create", status_code=201)
 async def create_major(
     body: BodyCreateMajor,
     major_service: MajorServiceDep,
@@ -31,7 +31,7 @@ async def get_major_by_id(
     return major_service.get_major_by_id(id)
 
 
-@major_router.post("/major/update/{id}", status_code=204)
+@major_router.post("/executive/major/update/{id}", status_code=204)
 async def update_major(
     id: int,
     body: BodyCreateMajor,
@@ -40,7 +40,7 @@ async def update_major(
     major_service.update_major(id, body)
 
 
-@major_router.post("/major/delete/{id}", status_code=204)
+@major_router.post("/executive/major/delete/{id}", status_code=204)
 async def delete_major(
     id: int,
     major_service: MajorServiceDep,

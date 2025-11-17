@@ -3,6 +3,7 @@ from typing import Final
 from .get_from_db import SCSCGlobalStatusDep, get_user_role_level
 from .helper import (
     DepositDTO,
+    UserDep,
     generate_user_hash,
     get_new_year_semester,
     get_user,

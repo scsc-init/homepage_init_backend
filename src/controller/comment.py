@@ -1,15 +1,15 @@
 from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.core import logger
 from src.db import SessionDep
-from src.model import Article, Board, Comment, CommentResponse
-from src.util import DELETED, get_user
+from src.model import Article, Board, Comment, CommentResponse, User
+from src.util import DELETED
 
 
 class BodyCreateComment(BaseModel):
@@ -29,7 +29,7 @@ class CommentService:
     ) -> None:
         self.session = session
 
-    def create_comment(self, request: Request, body: BodyCreateComment) -> Comment:
+    def create_comment(self, current_user: User, body: BodyCreateComment) -> Comment:
         article = self.session.get(Article, body.article_id)
         if not article:
             raise HTTPException(
@@ -41,7 +41,6 @@ class CommentService:
         if not board:
             raise HTTPException(503, detail="board does not exist")
 
-        current_user = get_user(request)
         if current_user.role < board.writing_permission_level:
             raise HTTPException(
                 status_code=403,
@@ -67,7 +66,7 @@ class CommentService:
         return comment
 
     def get_comments_by_article(
-        self, article_id: int, request: Request
+        self, article_id: int, current_user: User
     ) -> Sequence[CommentResponse]:
         article = self.session.get(Article, article_id)
         if not article:
@@ -78,7 +77,6 @@ class CommentService:
         if not board:
             raise HTTPException(503, detail="board does not exist")
 
-        current_user = get_user(request)
         if current_user.role < board.reading_permission_level:
             raise HTTPException(
                 status_code=403,
@@ -96,7 +94,7 @@ class CommentService:
             result.append(comment)
         return result
 
-    def get_comment_by_id(self, id: int, request: Request) -> CommentResponse:
+    def get_comment_by_id(self, id: int, current_user: User) -> CommentResponse:
         comment = self.session.get(Comment, id)
         if not comment:
             raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
@@ -107,7 +105,6 @@ class CommentService:
         if not board:
             raise HTTPException(503, detail="board does not exist")
 
-        current_user = get_user(request)
         if current_user.role < board.reading_permission_level:
             raise HTTPException(
                 status_code=403,
@@ -120,7 +117,7 @@ class CommentService:
         return comment
 
     def update_comment_by_author(
-        self, id: int, request: Request, body: BodyUpdateComment
+        self, id: int, current_user: User, body: BodyUpdateComment
     ) -> None:
         comment = self.session.get(Comment, id)
         if not comment:
@@ -131,7 +128,6 @@ class CommentService:
         if comment.is_deleted:
             raise HTTPException(status_code=410, detail="Comment has been deleted")
 
-        current_user = get_user(request)
         if current_user.id != comment.author_id:
             raise HTTPException(
                 status_code=403,
@@ -149,7 +145,7 @@ class CommentService:
             self.session.rollback()
             raise HTTPException(status_code=409, detail="unique field already exists")
 
-    def delete_comment_by_author(self, id: int, request: Request) -> None:
+    def delete_comment_by_author(self, id: int, current_user: User) -> None:
         comment = self.session.get(Comment, id)
         if not comment:
             raise HTTPException(
@@ -159,7 +155,6 @@ class CommentService:
         if comment.is_deleted:
             raise HTTPException(status_code=410, detail="Already deleted")
 
-        current_user = get_user(request)
         if current_user.id != comment.author_id:
             raise HTTPException(
                 status_code=403,
@@ -173,7 +168,7 @@ class CommentService:
         )
         self.session.commit()
 
-    def delete_comment_by_executive(self, id: int, request: Request) -> None:
+    def delete_comment_by_executive(self, id: int, current_user: User) -> None:
         comment = self.session.get(Comment, id)
         if not comment:
             raise HTTPException(
@@ -186,7 +181,6 @@ class CommentService:
         comment.is_deleted = True
         comment.deleted_at = datetime.now(timezone.utc)
 
-        current_user = get_user(request)
         logger.info(
             f"info_type=comment_deleted ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; remover_id={current_user.id}"
         )
