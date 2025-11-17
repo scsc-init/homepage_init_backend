@@ -216,8 +216,8 @@ class PigService:
     async def create_pig(
         self,
         scsc_global_status: SCSCGlobalStatus,
-        body: BodyCreatePIG,
         current_user: User,
+        body: BodyCreatePIG,
         request: Request,
     ):
         return await create_pig_ctrl(
@@ -240,8 +240,8 @@ class PigService:
     async def update_pig(
         self,
         id: int,
-        body: BodyUpdatePIG,
         current_user: User,
+        body: BodyUpdatePIG,
         is_executive: bool,
         request: Request,
     ):
@@ -251,8 +251,8 @@ class PigService:
         self,
         id: int,
         current_user: User,
+        is_executive: bool,
         request: Request,
-        is_executive: bool = False,
     ):
         pig = self.get_by_id(id)
         if not is_executive and pig.owner != current_user.id:
@@ -279,8 +279,8 @@ class PigService:
     def handover_pig(
         self,
         id: int,
-        body: BodyHandoverPIG,
         current_user: User,
+        body: BodyHandoverPIG,
         is_executive: bool,
         request: Request,
     ):

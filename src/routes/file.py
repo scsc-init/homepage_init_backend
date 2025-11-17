@@ -10,14 +10,12 @@ file_router = APIRouter(tags=["file"])
 
 @file_router.post("/file/docs/upload", status_code=201)
 async def upload_file(
-    request: Request,
+    current_user: UserDep,
     file: UploadFile,
     file_service: FileServiceDep,
-    current_user: UserDep,
+    request: Request,
 ) -> FileMetadata:
-    return await file_service.upload_file(
-        current_user=current_user, request=request, file=file
-    )
+    return await file_service.upload_file(current_user, file, request)
 
 
 @file_router.get("/file/docs/download/{id}")
@@ -27,14 +25,12 @@ async def get_docs_by_id(id: str, file_service: FileServiceDep) -> FileResponse:
 
 @file_router.post("/file/image/upload", status_code=201)
 async def upload_image(
-    request: Request,
+    current_user: UserDep,
     file: UploadFile,
     file_service: FileServiceDep,
-    current_user: UserDep,
+    request: Request,
 ) -> FileMetadata:
-    return await file_service.upload_image(
-        current_user=current_user, request=request, file=file
-    )
+    return await file_service.upload_image(current_user, file, request)
 
 
 @file_router.get("/file/image/download/{id}")

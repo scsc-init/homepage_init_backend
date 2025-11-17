@@ -71,7 +71,7 @@ class ArticleService:
         self.session = session
 
     async def create_article(
-        self, body: BodyCreateArticle, current_user: User, request: Request
+        self, current_user: User, body: BodyCreateArticle, request: Request
     ) -> ArticleResponse:
         ret = create_article_ctrl(
             self.session, body, current_user.id, current_user.role
@@ -206,7 +206,7 @@ class ArticleService:
             )
 
     def update_article_by_author(
-        self, id: int, body: BodyUpdateArticle, current_user: User, request: Request
+        self, id: int, current_user: User, body: BodyUpdateArticle, request: Request
     ) -> None:
         article = self.session.get(Article, id)
         if not article:
@@ -224,7 +224,7 @@ class ArticleService:
         self._update_article(article, body, current_user)
 
     def update_article_by_executive(
-        self, id: int, body: BodyUpdateArticle, current_user: User, request: Request
+        self, id: int, current_user: User, body: BodyUpdateArticle, request: Request
     ) -> None:
         article = self.session.get(Article, id)
         if not article:

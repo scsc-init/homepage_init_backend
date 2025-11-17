@@ -33,7 +33,7 @@ class BoardService:
         self.session = session
 
     def create_board(
-        self, body: BodyCreateBoard, current_user: User, request: Request
+        self, current_user: User, body: BodyCreateBoard, request: Request
     ) -> Board:
         board = Board(
             name=body.name,
@@ -72,7 +72,7 @@ class BoardService:
         return boards.all()
 
     def update_board(
-        self, id: int, body: BodyUpdateBoard, current_user: User, request: Request
+        self, id: int, current_user: User, body: BodyUpdateBoard, request: Request
     ) -> None:
         board = self.session.get(Board, id)
         if not board:

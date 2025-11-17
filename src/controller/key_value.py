@@ -55,7 +55,7 @@ class KvService:
         return {"key": entry.key, "value": entry.value}
 
     def update_kv_value(
-        self, key: str, body: KvUpdateBody, current_user: User, request: Request
+        self, key: str, current_user: User, body: KvUpdateBody, request: Request
     ) -> dict[str, Optional[str]]:
 
         updated_entry = update_kv_value(

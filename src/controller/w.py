@@ -22,7 +22,7 @@ class WService:
         self.session = session
 
     async def upload_file(
-        self, file: UploadFile, current_user: User, request: Request
+        self, current_user: User, file: UploadFile, request: Request
     ) -> WHTMLMetadata:
         content, basename, _, _ = await validate_and_read_file(
             file, valid_mime_type="text/html", valid_ext=frozenset({"html"})
@@ -73,7 +73,7 @@ class WService:
         ).all()
 
     async def update_w_by_name(
-        self, name: str, file: UploadFile, current_user: User, request: Request
+        self, name: str, current_user: User, file: UploadFile, request: Request
     ) -> WHTMLMetadata:
         w_meta = self.session.get(WHTMLMetadata, name)
         if not w_meta:

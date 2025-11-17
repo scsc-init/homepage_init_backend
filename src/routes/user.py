@@ -35,15 +35,15 @@ async def create_user(
 
 @user_router.post("/user/enroll", status_code=204)
 async def enroll_user(
-    request: Request,
     current_user: UserDep,
     user_service: UserServiceDep,
+    request: Request,
 ) -> None:
     await user_service.enroll_user(current_user.id, request=request)
 
 
 @user_router.get("/user/profile")
-async def get_my_profile(request: Request, current_user: UserDep) -> User:
+async def get_my_profile(current_user: UserDep, request: Request) -> User:
     return current_user
 
 
@@ -88,29 +88,29 @@ async def get_role_names(lang: Optional[str] = None):
 
 @user_router.post("/user/update", status_code=204)
 async def update_my_profile(
-    request: Request,
+    current_user: UserDep,
     body: BodyUpdateMyProfile,
     user_service: UserServiceDep,
-    current_user: UserDep,
+    request: Request,
 ) -> None:
     await user_service.update_my_profile(current_user, body, request=request)
 
 
 @user_router.post("/user/update-pfp-file", status_code=204)
 async def update_my_pfp_file(
-    request: Request,
+    current_user: UserDep,
     file: UploadFile,
     user_service: UserServiceDep,
-    current_user: UserDep,
+    request: Request,
 ) -> None:
     await user_service.update_my_pfp_file(current_user, file, request=request)
 
 
 @user_router.post("/user/delete", status_code=204)
 async def delete_my_profile(
-    request: Request,
-    user_service: UserServiceDep,
     current_user: UserDep,
+    user_service: UserServiceDep,
+    request: Request,
 ) -> None:
     await user_service.delete_my_profile(current_user, request=request)
 
@@ -126,28 +126,28 @@ async def login(
 @user_router.post("/executive/user/{id}", status_code=204)
 async def update_user(
     id: str,
-    request: Request,
+    current_user: UserDep,
     body: BodyUpdateUser,
     user_service: UserServiceDep,
-    current_user: UserDep,
+    request: Request,
 ) -> None:
     await user_service.update_user(current_user, id, body, request=request)
 
 
 @user_router.post("/user/oldboy/register", status_code=201)
 async def create_oldboy_applicant(
-    request: Request,
-    oldboy_service: OldboyServiceDep,
     current_user: UserDep,
+    oldboy_service: OldboyServiceDep,
+    request: Request,
 ):
     return await oldboy_service.register_applicant(current_user, request=request)
 
 
 @user_router.get("/user/oldboy/applicant")
 async def get_oldboy_applicant_self(
-    request: Request,
-    oldboy_service: OldboyServiceDep,
     current_user: UserDep,
+    oldboy_service: OldboyServiceDep,
+    request: Request,
 ):
     return oldboy_service.get_applicant_self(current_user.id, request=request)
 
@@ -169,9 +169,9 @@ async def process_oldboy_applicant(
 
 @user_router.post("/user/oldboy/unregister", status_code=204)
 async def delete_oldboy_applicant_self(
-    request: Request,
-    oldboy_service: OldboyServiceDep,
     current_user: UserDep,
+    oldboy_service: OldboyServiceDep,
+    request: Request,
 ):
     await oldboy_service.delete_applicant_self(current_user.id, request=request)
 
@@ -186,9 +186,9 @@ async def delete_oldboy_applicant_executive(
 
 @user_router.post("/user/oldboy/reactivate", status_code=204)
 async def reactivate_oldboy(
-    request: Request,
-    oldboy_service: OldboyServiceDep,
     current_user: UserDep,
+    oldboy_service: OldboyServiceDep,
+    request: Request,
 ):
     await oldboy_service.reactivate(current_user, request=request)
 
@@ -202,10 +202,10 @@ async def get_standby_list(
 
 @user_router.post("/executive/user/standby/process/manual", status_code=204)
 async def process_standby_list_manually(
-    request: Request,
+    current_user: UserDep,
     body: ProcessStandbyListManuallyBody,
     standby_service: StandbyServiceDep,
-    current_user: UserDep,
+    request: Request,
 ):
     await standby_service.process_standby_list_manually(
         current_user, body, request=request

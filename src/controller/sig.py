@@ -216,8 +216,8 @@ class SigService:
     async def create_sig(
         self,
         scsc_global_status: SCSCGlobalStatus,
-        body: BodyCreateSIG,
         current_user: User,
+        body: BodyCreateSIG,
         request: Request,
     ):
         return await create_sig_ctrl(
@@ -240,8 +240,8 @@ class SigService:
     async def update_sig(
         self,
         id: int,
-        body: BodyUpdateSIG,
         current_user: User,
+        body: BodyUpdateSIG,
         is_executive: bool,
         request: Request,
     ):
@@ -251,8 +251,8 @@ class SigService:
         self,
         id: int,
         current_user: User,
+        is_executive: bool,
         request: Request,
-        is_executive: bool = False,
     ):
         sig = self.get_by_id(id)
         if not is_executive and sig.owner != current_user.id:
@@ -279,8 +279,8 @@ class SigService:
     def handover_sig(
         self,
         id: int,
-        body: BodyHandoverSIG,
         current_user: User,
+        body: BodyHandoverSIG,
         is_executive: bool,
         request: Request,
     ):

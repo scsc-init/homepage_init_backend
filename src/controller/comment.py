@@ -30,7 +30,7 @@ class CommentService:
         self.session = session
 
     def create_comment(
-        self, body: BodyCreateComment, current_user: User, request: Request
+        self, current_user: User, body: BodyCreateComment, request: Request
     ) -> Comment:
         article = self.session.get(Article, body.article_id)
         if not article:
@@ -122,7 +122,7 @@ class CommentService:
         return comment
 
     def update_comment_by_author(
-        self, id: int, body: BodyUpdateComment, current_user: User, request: Request
+        self, id: int, current_user: User, body: BodyUpdateComment, request: Request
     ) -> None:
         comment = self.session.get(Comment, id)
         if not comment:

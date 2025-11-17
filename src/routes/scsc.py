@@ -23,9 +23,9 @@ async def get_scsc_global_statuses(
 
 @scsc_router.post("/executive/scsc/global/status", status_code=204)
 async def update_scsc_global_status(
-    request: Request,
+    current_user: UserDep,
     body: BodyUpdateSCSCGlobalStatus,
     scsc_service: SCSCServiceDep,
-    current_user: UserDep,
+    request: Request,
 ):
     await scsc_service.update_global_status(current_user.id, body.status, request)

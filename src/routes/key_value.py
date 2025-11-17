@@ -19,9 +19,9 @@ async def get_kv_value(
 @kv_router.post("/{key}/update")
 async def update_kv_value(
     key: str,
-    request: Request,
+    current_user: UserDep,
     body: KvUpdateBody,
     kv_service: KvServiceDep,
-    current_user: UserDep,
+    request: Request,
 ) -> dict[str, Optional[str]]:
-    return kv_service.update_kv_value(key, body, current_user, request)
+    return kv_service.update_kv_value(key, current_user, body, request)

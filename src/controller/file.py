@@ -19,7 +19,7 @@ class FileService:
         self.session = session
 
     async def upload_file(
-        self, current_user: User, request: Request, file: UploadFile = File(...)
+        self, current_user: User, file: UploadFile = File(...), request: Request
     ) -> FileMetadata:
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_ext=frozenset({"pdf", "docx", "pptx"})
@@ -60,7 +60,7 @@ class FileService:
         return FileResponse(path.join(get_settings().file_dir, f"{file_meta.id}.{ext}"))
 
     async def upload_image(
-        self, current_user: User, request: Request, file: UploadFile = File(...)
+        self, current_user: User, file: UploadFile = File(...), request: Request
     ) -> FileMetadata:
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_mime_type="image/", valid_ext=frozenset({"jpg", "jpeg", "png"})
