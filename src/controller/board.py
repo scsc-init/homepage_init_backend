@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -32,7 +32,9 @@ class BoardService:
     ) -> None:
         self.session = session
 
-    def create_board(self, body: BodyCreateBoard, current_user: User) -> Board:
+    def create_board(
+        self, body: BodyCreateBoard, current_user: User, request: Request
+    ) -> Board:
         board = Board(
             name=body.name,
             description=body.description,
@@ -69,7 +71,9 @@ class BoardService:
         boards = self.session.exec(select(Board))
         return boards.all()
 
-    def update_board(self, id: int, body: BodyUpdateBoard, current_user: User) -> None:
+    def update_board(
+        self, id: int, body: BodyUpdateBoard, current_user: User, request: Request
+    ) -> None:
         board = self.session.get(Board, id)
         if not board:
             raise HTTPException(
@@ -98,7 +102,7 @@ class BoardService:
             f"info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
         )
 
-    def delete_board(self, id: int, current_user: User) -> None:
+    def delete_board(self, id: int, current_user: User, request: Request) -> None:
         board = self.session.get(Board, id)
         if not board:
             raise HTTPException(

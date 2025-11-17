@@ -1,6 +1,6 @@
 from typing import Annotated, Optional, Sequence
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -218,6 +218,7 @@ class SigService:
         scsc_global_status: SCSCGlobalStatus,
         body: BodyCreateSIG,
         current_user: User,
+        request: Request,
     ):
         return await create_sig_ctrl(
             self.session,
@@ -237,11 +238,22 @@ class SigService:
         return self.session.exec(select(SIG)).all()
 
     async def update_sig(
-        self, id: int, body: BodyUpdateSIG, current_user: User, is_executive: bool
+        self,
+        id: int,
+        body: BodyUpdateSIG,
+        current_user: User,
+        is_executive: bool,
+        request: Request,
     ):
         await update_sig_ctrl(self.session, id, body, current_user.id, is_executive)
 
-    async def delete_sig(self, id: int, current_user: User, is_executive: bool = False):
+    async def delete_sig(
+        self,
+        id: int,
+        current_user: User,
+        request: Request,
+        is_executive: bool = False,
+    ):
         sig = self.get_by_id(id)
         if not is_executive and sig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
@@ -265,7 +277,12 @@ class SigService:
         )
 
     def handover_sig(
-        self, id: int, body: BodyHandoverSIG, current_user: User, is_executive: bool
+        self,
+        id: int,
+        body: BodyHandoverSIG,
+        current_user: User,
+        is_executive: bool,
+        request: Request,
     ):
         sig = self.get_by_id(id)
         if not is_executive and current_user.id != sig.owner:
@@ -285,7 +302,7 @@ class SigService:
             res.append(member_dict)
         return res
 
-    async def join_sig(self, id: int, current_user: User):
+    async def join_sig(self, id: int, current_user: User, request: Request):
         sig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
@@ -315,7 +332,11 @@ class SigService:
         )
 
     async def executive_join_sig(
-        self, id: int, current_user: User, body: BodyExecutiveJoinSIG
+        self,
+        id: int,
+        current_user: User,
+        body: BodyExecutiveJoinSIG,
+        request: Request,
     ):
         sig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)
@@ -340,7 +361,7 @@ class SigService:
         )
         return
 
-    async def leave_sig(self, id: int, current_user: User):
+    async def leave_sig(self, id: int, current_user: User, request: Request):
         sig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
@@ -379,7 +400,11 @@ class SigService:
         )
 
     async def executive_leave_sig(
-        self, id: int, current_user: User, body: BodyExecutiveLeaveSIG
+        self,
+        id: int,
+        current_user: User,
+        body: BodyExecutiveLeaveSIG,
+        request: Request,
     ):
         sig = self.get_by_id(id)
         user = self.session.get(User, body.user_id)

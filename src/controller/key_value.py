@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 
 from src.core import logger
@@ -55,7 +55,7 @@ class KvService:
         return {"key": entry.key, "value": entry.value}
 
     def update_kv_value(
-        self, key: str, body: KvUpdateBody, current_user: User
+        self, key: str, body: KvUpdateBody, current_user: User, request: Request
     ) -> dict[str, Optional[str]]:
 
         updated_entry = update_kv_value(

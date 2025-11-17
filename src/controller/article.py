@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from os import path
 from typing import Annotated
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -71,7 +71,7 @@ class ArticleService:
         self.session = session
 
     async def create_article(
-        self, body: BodyCreateArticle, current_user: User
+        self, body: BodyCreateArticle, current_user: User, request: Request
     ) -> ArticleResponse:
         ret = create_article_ctrl(
             self.session, body, current_user.id, current_user.role
@@ -101,7 +101,7 @@ class ArticleService:
         return ret
 
     def get_article_list_by_board(
-        self, board_id: int, current_user: User
+        self, board_id: int, current_user: User, request: Request
     ) -> list[ArticleResponse]:
         board = self.session.get(Board, board_id)
         if not board:
@@ -138,7 +138,9 @@ class ArticleService:
 
         return result
 
-    def get_article_by_id(self, id: int, current_user: User) -> ArticleResponse:
+    def get_article_by_id(
+        self, id: int, current_user: User, request: Request
+    ) -> ArticleResponse:
         article = self.session.get(Article, id)
         if not article:
             raise HTTPException(404, detail="Article not found")
@@ -206,7 +208,7 @@ class ArticleService:
             )
 
     def update_article_by_author(
-        self, id: int, body: BodyUpdateArticle, current_user: User
+        self, id: int, body: BodyUpdateArticle, current_user: User, request: Request
     ) -> None:
         article = self.session.get(Article, id)
         if not article:
@@ -224,7 +226,7 @@ class ArticleService:
         self._update_article(article, body, current_user)
 
     def update_article_by_executive(
-        self, id: int, body: BodyUpdateArticle, current_user: User
+        self, id: int, body: BodyUpdateArticle, current_user: User, request: Request
     ) -> None:
         article = self.session.get(Article, id)
         if not article:
@@ -236,7 +238,9 @@ class ArticleService:
             raise HTTPException(status_code=410, detail="Article has been deleted")
         self._update_article(article, body, current_user)
 
-    def delete_article_by_author(self, id: int, current_user: User) -> None:
+    def delete_article_by_author(
+        self, id: int, current_user: User, request: Request
+    ) -> None:
         article = self.session.get(Article, id)
         if not article:
             raise HTTPException(
@@ -263,7 +267,9 @@ class ArticleService:
         )
         self.session.commit()
 
-    def delete_article_by_executive(self, id: int, current_user: User) -> None:
+    def delete_article_by_executive(
+        self, id: int, current_user: User, request: Request
+    ) -> None:
         article = self.session.get(Article, id)
         if not article:
             raise HTTPException(

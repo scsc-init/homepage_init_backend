@@ -10,7 +10,6 @@ from fastapi import Depends, HTTPException, Request
 from pydantic import BaseModel, field_validator
 
 from src.core import get_settings
-from src.db import SessionDep
 from src.model import User
 
 map_semester_name = {
@@ -55,42 +54,10 @@ def split_filename(filename: str) -> tuple[str, str]:
     return base_name, extension.lower()
 
 
-def get_user(request: Request, session: SessionDep) -> User:
-    settings = get_settings()
-
-    if not settings.user_check:  # for development
-        user = session.get(
-            User,
-            "12350b93cae7322f29d409e12a998a598c703780c5f00c99ddf372c38817e4f4",
-        )
-        if user:
-            return user
-        raise HTTPException(status_code=401, detail="User not found")
-
-    encoded_jwt = request.headers.get("x-jwt")
-    if encoded_jwt is None:
-        raise HTTPException(status_code=401, detail="No x-jwt included")
-
-    try:
-        decoded_jwt = jwt.decode(
-            encoded_jwt,
-            settings.jwt_secret,
-            algorithms=["HS256"],
-            options={"require": ["user_id", "exp"], "verify_exp": True},
-        )
-    except jwt.exceptions.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Expired x-jwt")
-    except jwt.exceptions.InvalidSignatureError:
-        raise HTTPException(status_code=401, detail="Invalid x-jwt")
-    except jwt.exceptions.MissingRequiredClaimError:
-        raise HTTPException(status_code=401, detail="Missing required claim in x-jwt")
-    except jwt.exceptions.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token in x-jwt")
-
-    user = session.get(User, decoded_jwt["user_id"])
+def get_user(request: Request) -> User:
+    user = request.state.user
     if user:
         return user
-
     raise HTTPException(status_code=401, detail="User not found")
 
 
