@@ -60,7 +60,7 @@ class UserResponse(BaseModel):
     name: str
     major_id: int
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
 class StandbyReqTbl(SQLModel, table=True):
