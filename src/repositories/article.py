@@ -1,10 +1,17 @@
-from src.db import SessionDep, TransactionDep
+from typing import Annotated
+
+from fastapi import Depends
+from sqlalchemy import select
+
 from src.model import Article
 
 from .dao import DAO
 
 
 class ArticleRepository(DAO[Article, int]):
-    def __init__(self, session: SessionDep, transaction: TransactionDep):
-        self.session = session
-        self.transaction = transaction
+    def get_articles_by_board_id(self, board_id: int):
+        stmt = select(Article).where(Article.board_id == board_id)
+        return self.session.scalars(stmt).all()
+
+
+ArticleRepositoryDep = Annotated[ArticleRepository, Depends()]

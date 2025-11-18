@@ -1,15 +1,17 @@
 from datetime import datetime, timezone
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db import Base, intpk
+from src.db import Base
 
 
 class Board(Base):
     __tablename__ = "board"
-    id: Mapped[intpk]
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
     name: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(String)
     writing_permission_level: Mapped[int] = mapped_column(
@@ -31,7 +33,9 @@ class Board(Base):
 class Article(Base):
     __tablename__ = "article"
 
-    id: Mapped[intpk]
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
 
     title: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -83,3 +87,5 @@ class ArticleResponse(BaseModel):
     updated_at: datetime
     deleted_at: datetime | None = None
     content: str
+
+    model_config = ConfigDict(from_attributes=True)

@@ -1,2 +1,2 @@
-from .base import Base, intpk
+from .base import Base
 from .engine import SessionDep, TransactionDep

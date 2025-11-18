@@ -24,21 +24,17 @@ class DAO(Generic[ModelT, IdT], ABC):
         stmt = select(self.model)
         return self.session.scalars(stmt).all()
 
-    def list_by(self, **filters: Any) -> Sequence[ModelT]:
-        stmt = select(self.model).where(**filters)
-        return self.session.scalars(stmt).all()
-
     def create(self, obj: ModelT) -> ModelT:
         with self.transaction:
             self.session.add(obj)
         return obj
 
-    def delete(self, obj: ModelT) -> None:
+    def delete_by_id(self, id: IdT) -> None:
+        obj = self.get_by_id(id)
         with self.transaction:
             self.session.delete(obj)
 
-    def update(self, obj: ModelT, **kwargs) -> ModelT:
+    def update(self, obj: ModelT) -> ModelT:
         with self.transaction:
-            for key, value in kwargs.items():
-                setattr(obj, key, value)
+            self.session.merge(obj)
         return obj
