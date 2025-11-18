@@ -17,7 +17,6 @@ from .rabbitmq import (
     send_discord_bot_request,
     send_discord_bot_request_no_reply,
 )
-from .singleton import SingletonMeta
 from .validator import (
     create_uuid,
     is_valid_img_url,

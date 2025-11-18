@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlmodel import literal, select
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.db import SessionLocal
+from src.db import DBSessionFactory
 from src.model import CheckUserStatusRule
 from src.util import get_user
 
@@ -14,12 +14,12 @@ logger = logging.getLogger("app")
 
 class CheckUserStatusMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        with SessionLocal() as session:
-            query = select(CheckUserStatusRule).where(
+        with DBSessionFactory().make_session() as session:
+            stmt = select(CheckUserStatusRule).where(
                 CheckUserStatusRule.method == request.method,
                 literal(request.url.path).like(CheckUserStatusRule.path),
             )
-            blacklist_rules = session.exec(query).all()
+            blacklist_rules = session.scalars(stmt).all()
 
         if blacklist_rules:
             try:

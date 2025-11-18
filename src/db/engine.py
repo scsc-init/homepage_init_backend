@@ -6,7 +6,8 @@ from sqlalchemy import event, orm
 from sqlalchemy.orm.session import Session
 
 from src.core import get_settings
-from src.util import SingletonMeta
+
+from .singleton import SingletonMeta
 
 
 class DBSessionFactory(metaclass=SingletonMeta):

@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException
 from sqlmodel import select
 
-from src.db import SessionDep, SessionLocal
+from src.db import DBSessionFactory, SessionDep
 from src.model import SCSCGlobalStatus, UserRole
 
 
@@ -25,8 +25,8 @@ def get_user_role_level(role_name: str) -> int:
     """
     session = None
     try:
-        session = SessionLocal()  # Get a new session
-        user_role = session.exec(
+        session = DBSessionFactory().make_session()
+        user_role = session.scalars(
             select(UserRole).where(UserRole.name == role_name)
         ).first()
         if not user_role:
