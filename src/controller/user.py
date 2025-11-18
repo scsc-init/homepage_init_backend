@@ -84,13 +84,13 @@ class ProcessStandbyListResponse(BaseModel):
     cnt_failed_records: int
     results: list[ProcessDepositResult]
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
 class ProcessDepositResponse(BaseModel):
     result: ProcessDepositResult
 
-    model_config = {"from_attributes": True}
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
 async def create_user_ctrl(session: SessionDep, body: BodyCreateUser) -> User:
@@ -175,18 +175,18 @@ async def process_deposit_ctrl(
         if deposit.deposit_name[-2:].isdigit():
             query_standbyreq = query_standbyreq.where(
                 StandbyReqTbl.deposit_name == deposit.deposit_name
-            )
+            )  # search on deposit_name, which is "name+last 2 phone number" form
         else:
             query_standbyreq = query_standbyreq.where(
                 StandbyReqTbl.user_name == deposit.deposit_name
-            )
+            )  # search on user_name, which is "name" form
         matching_standbyreqs = session.exec(query_standbyreq).all()
         matching_users = [
             UserResponse.model_validate(session.get(User, u.standby_user_id))
             for u in matching_standbyreqs
         ]
 
-        if len(matching_standbyreqs) > 1:
+        if len(matching_standbyreqs) > 1:  # multiple standby request found
             logger.error(
                 f"err_type=deposit ; err_code=409 ; msg={len(matching_standbyreqs)}users match the following deposit record ; deposit={deposit} ; users={matching_users}"
             )
@@ -249,6 +249,7 @@ async def process_deposit_ctrl(
                 )
             matching_standbyreqs = [enroll_user_ctrl(session, user.id)]
 
+        # len(matching_standbyreqs) == 1:
         if deposit.amount < get_settings().enrollment_fee:
             logger.error(
                 f"err_type=deposit ; err_code=402 ; msg=deposit amount is less than the required {get_settings().enrollment_fee} won ; deposit={deposit} ; users={matching_users}"
