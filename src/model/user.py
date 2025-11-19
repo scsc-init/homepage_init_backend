@@ -33,7 +33,7 @@ class User(SQLModel, table=True):
     student_id: str = Field(nullable=False, unique=True)
 
     role: int = Field(foreign_key="user_role.level", nullable=False)
-    status: UserStatus = Field(default=UserStatus.pending, nullable=False)
+    status: UserStatus = Field(default=UserStatus.standby, nullable=False)
 
     discord_id: Optional[int] = Field(default=None, nullable=True, unique=True)
     discord_name: Optional[str] = Field(default=None, nullable=True, unique=True)

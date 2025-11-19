@@ -132,10 +132,13 @@ def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(404, detail="user not found")
-    if user.status != UserStatus.pending:
-        raise HTTPException(400, detail="Only user with pending status can enroll")
-    user.status = UserStatus.standby
-    session.add(user)
+    if user.status not in (UserStatus.pending, UserStatus.standby):
+        raise HTTPException(
+            400, detail="Only user with pending or standby status can enroll"
+        )
+    if user.status == UserStatus.pending:
+        user.status = UserStatus.standby
+        session.add(user)
     stby_req_tbl = StandbyReqTbl(
         standby_user_id=user.id,
         user_name=user.name,
@@ -223,7 +226,6 @@ async def process_deposit_ctrl(
                         users=matching_users,
                     )
 
-                # else
                 logger.error(
                     f"err_type=deposit ; err_code=404 ; msg=no users match the following deposit record ; deposit={deposit} ; users={matching_users}"
                 )
@@ -235,13 +237,13 @@ async def process_deposit_ctrl(
                 )
 
             user = matching_users_error[0]
-            if user.status != UserStatus.pending:
+            if user.status not in (UserStatus.pending, UserStatus.standby):
                 logger.error(
-                    f"err_type=deposit ; err_code=412 ; msg=user is not in pending status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                    f"err_type=deposit ; err_code=412 ; msg=user is not in pending or standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
                 )
                 return ProcessDepositResult(
                     result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 상태가 아닙니다",
+                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 또는 standby 상태가 아닙니다",
                     record=deposit,
                     users=matching_users,
                 )

@@ -92,7 +92,7 @@ async def create_sig_ctrl(
         session.commit()
     except IntegrityError:
         session.rollback()
-        raise HTTPException(409, detail="피그장 자동 가입 중 중복 오류가 발생했습니다")
+        raise HTTPException(409, detail="시그장 자동 가입 중 중복 오류가 발생했습니다")
     session.refresh(sig)
     if user_discord_id:
         await send_discord_bot_request_no_reply(
