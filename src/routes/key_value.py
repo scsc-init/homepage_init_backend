@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import APIRouter
 
 from src.controller import KvServiceDep, KvUpdateBody
-from src.util import UserDep
+from src.dependencies import UserDep
 
 kv_router = APIRouter(prefix="/kv", tags=["kv"])
 

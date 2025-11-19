@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import Any, Generic, Optional, Sequence, Type, TypeVar
 
 from sqlalchemy import select
@@ -10,12 +10,15 @@ IdT = TypeVar("IdT")
 
 
 class DAO(Generic[ModelT, IdT], ABC):
-    def __init__(
-        self, session: SessionDep, transaction: TransactionDep, model: Type[ModelT]
-    ):
+    def __init__(self, session: SessionDep, transaction: TransactionDep):
         self.session = session
         self.transaction = transaction
-        self.model = model
+
+    @property
+    @abstractmethod
+    def model(self) -> type[ModelT]:
+        """Return the SQLAlchemy ORM model class managed by this DAO."""
+        raise NotImplementedError
 
     def get_by_id(self, id: IdT) -> Optional[ModelT]:
         return self.session.get(self.model, id)

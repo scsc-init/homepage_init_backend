@@ -86,6 +86,6 @@ class ArticleResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None = None
-    content: str
+    content: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

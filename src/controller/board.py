@@ -7,8 +7,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
 from src.core import logger
-from src.db import SessionDep
 from src.model import Board, User
+from src.repositories import BoardRepositoryDep
 
 
 class BodyCreateBoard(BaseModel):
@@ -28,9 +28,9 @@ class BodyUpdateBoard(BaseModel):
 class BoardService:
     def __init__(
         self,
-        session: SessionDep,
+        board_repository: BoardRepositoryDep,
     ) -> None:
-        self.session = session
+        self.board_repository = board_repository
 
     def create_board(self, current_user: User, body: BodyCreateBoard) -> Board:
         board = Board(
@@ -58,7 +58,7 @@ class BoardService:
         self,
         id: int,
     ) -> Board:
-        board = self.session.get(Board, id)
+        board = self.board_repository.get_by_id(id)
         if not board:
             raise HTTPException(404, detail="Board not found")
         return board

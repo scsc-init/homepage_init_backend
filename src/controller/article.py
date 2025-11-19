@@ -33,30 +33,27 @@ class ArticleService:
         self.article_repository = article_repository
         self.board_repository = board_repository
 
-    async def create_article(
-        self, current_user: User, body: BodyCreateArticle
+    def create_article_ctrl(
+        self, body: BodyCreateArticle, user_id: str, user_role: int
     ) -> ArticleResponse:
         board = self.board_repository.get_by_id(body.board_id)
         if not board:
             raise HTTPException(
                 status_code=404, detail=f"Board {body.board_id} does not exist"
             )
-        if current_user.role < board.writing_permission_level:
+        if user_role < board.writing_permission_level:
             raise HTTPException(
                 status_code=403,
                 detail="You are not allowed to write this article",
             )
 
-        article = Article(
-            title=body.title, author_id=current_user.id, board_id=body.board_id
-        )
+        article = Article(title=body.title, author_id=user_id, board_id=body.board_id)
         try:
             article = self.article_repository.create(article)
         except IntegrityError as exc:
             raise HTTPException(
                 status_code=409, detail="unique field already exists"
             ) from exc
-
         try:
             file_path = path.join(get_settings().article_dir, f"{article.id}.md")
             with open(file_path, "w", encoding="utf-8") as fp:
@@ -67,11 +64,18 @@ class ArticleService:
                 exc_info=True,
             )
         logger.info(
-            f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={current_user.id} ; board_id={body.board_id}"
+            f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
-
         article_response = ArticleResponse.model_validate(article).model_copy(
             update={"content": body.content}
+        )
+        return article_response
+
+    async def create_article(
+        self, current_user: User, body: BodyCreateArticle
+    ) -> ArticleResponse:
+        ret = self.create_article_ctrl(
+            body=body, user_id=current_user.id, user_role=current_user.role
         )
 
         try:
@@ -97,7 +101,7 @@ class ArticleService:
                 exc_info=True,
             )
 
-        return article_response
+        return ret
 
     def get_article_list_by_board(
         self, board_id: int, current_user: User

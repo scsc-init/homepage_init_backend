@@ -8,7 +8,8 @@ from src.controller import (
     BodyUpdateSIG,
     SigServiceDep,
 )
-from src.util import SCSCGlobalStatusDep, UserDep
+from src.dependencies import UserDep
+from src.util import SCSCGlobalStatusDep
 
 sig_router = APIRouter(tags=["sig"])
 

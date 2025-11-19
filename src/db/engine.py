@@ -48,8 +48,11 @@ def get_session() -> Iterator[Session]:
     session = DBSessionFactory().make_session()
     try:
         yield session
-    finally:
         session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
         session.close()
 
 
