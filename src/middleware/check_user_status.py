@@ -27,8 +27,6 @@ class CheckUserStatusMiddleware(BaseHTTPMiddleware):
             except HTTPException as e:
                 return JSONResponse({"detail": e.detail}, e.status_code)
             for rule in blacklist_rules:
-                if rule.user_status == UserStatus.standby:
-                    continue
                 if rule.user_status == current_user.status:
                     logger.info(
                         "info_type=CheckUserStatusMiddleware ; user_id=%s ; status=%s ; method=%s ; path=%s",
