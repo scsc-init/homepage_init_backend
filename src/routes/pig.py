@@ -8,8 +8,7 @@ from src.controller import (
     BodyUpdatePIG,
     PigServiceDep,
 )
-from src.dependencies import UserDep
-from src.util import SCSCGlobalStatusDep
+from src.dependencies import SCSCGlobalStatusDep, UserDep
 
 pig_router = APIRouter(tags=["pig"])
 

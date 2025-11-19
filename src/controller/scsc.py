@@ -8,6 +8,7 @@ from sqlmodel import select
 
 from src.core import logger
 from src.db import SessionDep
+from src.dependencies import SCSCGlobalStatusDep
 from src.model import (
     PIG,
     SIG,
@@ -19,7 +20,6 @@ from src.model import (
     UserStatus,
 )
 from src.util import (
-    SCSCGlobalStatusDep,
     change_discord_role,
     get_new_year_semester,
     get_user_role_level,

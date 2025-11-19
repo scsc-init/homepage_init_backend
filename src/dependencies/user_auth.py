@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 
 import jwt
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request
 
 from src.core import get_settings
 from src.db import SessionDep
@@ -56,8 +56,6 @@ def get_user(request: Request) -> User:
     """Retrieves the User object set by the authentication dependency, raises exception if no user found."""
     user = request.state.user
     if user is None:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=401, detail="Not authenticated")
     return user
 
