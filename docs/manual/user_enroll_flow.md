@@ -12,6 +12,8 @@
 3. 다음 학기에 회비를 미납부한 경우 휴회원 처리
 4. OB, 관리자 역할은 관리자가 관리자 페이지에서 부여
 
+[![Enroll Flow](https://img.shields.io/badge/Miro-Open%20Board-blue)](https://miro.com/app/live-embed/uXjVJol2UsA=/?focusWidget=3458764644104209191&embedMode=view_only_without_ui&embedId=36461811477)
+
 
 ## 2. 용어 및 상태 정의
 
