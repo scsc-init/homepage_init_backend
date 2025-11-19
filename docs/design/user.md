@@ -34,6 +34,8 @@
 - 임원의 회원 졸업생 전환 신청 승인 시
     * 권한: member -> oldboy
     * 졸업생 전환 신청은 가입 후 156주(3년)이 지난 정회원이 할 수 있다
+- 졸업생이 정회원 전환 시
+    * (oldboy, *) -> (member, pending)
 - SCSC 전역 상태가 inactive -> recruiting 변경 시(정규학기 시작 시)
     * (pending, newcomer) -> (banned, newcomer)
     * (pending, member) & 가입 후 104주(2년) 경과 -> (banned, newcomer)
