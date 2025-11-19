@@ -24,7 +24,7 @@
 - `pending` – 과거 플로우에서 사용하던 중간 상태  
 - `banned` – 차단된 사용자
 
-### 2.2 UserRole (요약)
+### 2.2 UserRole
 
 - `newcomer` (기본 가입자)
 - `member`
@@ -36,7 +36,7 @@
 - `role = newcomer`
 - `status = standby`
 
-## 3. 회원가입 플로우 (사용자 시점)
+## 3. 회원가입 플로우
 
 ### 3.1 Google 로그인
 Google OAuth로 로그인하여 session 확보.
@@ -54,7 +54,7 @@ Google OAuth로 로그인하여 session 확보.
 
 ### 3.4 /api/user/create
 프론트에서 제출 → 백엔드가 신규 사용자 생성:
-- status = standby(고정)
+- status = standby
 - role = newcomer
 
 ### 3.5 /api/auth/login
@@ -82,12 +82,13 @@ CSV 업로드 시:
 StandbyReqTbl 또는 user 기반으로 active로 승급.
 
 ## 6. 접근 제어
+standby 또는 active 유저는 SIG/PIG 가입, 게시판 이용이 가능해짐
 
-CheckUserStatusMiddleware:
-- standby는 차단 대상에서 제외  
-- banned 등은 rule 기반 차단
+## 7. 기존 회원 처리
+임원진이 OB로 전환한 사용자는 `oldboy` 역할을 부여받고, `active` 상태로 유지됨.
+그 외의 기존 유저는 모두 `pending`으로 전환, 입금 확인 후에 `active` 상태로 전환됨.
 
-## 7. 전체 흐름 요약
+## 8. 전체 흐름 요약
 
 1. Google 로그인  
 2. 백엔드 가입 여부 확인  
