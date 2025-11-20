@@ -14,7 +14,7 @@ from src.util import (
     send_discord_bot_request_no_reply,
 )
 
-from .article import BodyCreateArticle, create_article_ctrl
+from .article import BodyCreateArticle
 from .scsc import ctrl_status_available
 
 

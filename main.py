@@ -1,9 +1,8 @@
 """/main.py"""
 
-# Dependency
 import logging.config
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Mount Static Files
@@ -11,12 +10,11 @@ from fastapi.staticfiles import StaticFiles
 
 # Middleware
 from src.core import get_settings
+
+# Dependencies
+from src.dependencies import api_secret, assert_permission, check_user_status, user_auth
 from src.middleware import (
-    APISecretMiddleware,
-    AssertPermissionMiddleware,
-    CheckUserStatusMiddleware,
     HTTPLoggerMiddleware,
-    UserAuthMiddleware,
 )
 
 # Route
@@ -27,7 +25,14 @@ from src.util import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
 
-app = FastAPI()
+app = FastAPI(
+    dependencies=[
+        Depends(user_auth),
+        Depends(api_secret),
+        Depends(assert_permission),
+        Depends(check_user_status),
+    ]
+)
 
 # CORS must be first
 if get_settings().cors_all_accept:
@@ -42,11 +47,7 @@ if get_settings().cors_all_accept:
 # Custom middleware follows
 # NOTE: Starlette executes middlewares in reverse order of addition.
 # Request flow (outer -> inner): UserAuth -> APISecret -> HTTPLogger -> AssertPermission -> CheckUserStatus
-app.add_middleware(CheckUserStatusMiddleware)
-app.add_middleware(AssertPermissionMiddleware)
 app.add_middleware(HTTPLoggerMiddleware)
-app.add_middleware(APISecretMiddleware)
-app.add_middleware(UserAuthMiddleware)
 
 app.include_router(root_router)
 

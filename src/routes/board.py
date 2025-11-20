@@ -3,8 +3,8 @@ from typing import Sequence
 from fastapi import APIRouter
 
 from src.controller import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
+from src.dependencies import UserDep
 from src.model import Board
-from src.util import UserDep
 
 board_router = APIRouter(tags=["board"])
 

@@ -1,7 +1,11 @@
 from datetime import datetime, timezone
 from enum import Enum
 
-from sqlmodel import CheckConstraint, Field, SQLModel
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.db import Base
 
 
 class SCSCStatus(str, Enum):
@@ -10,7 +14,7 @@ class SCSCStatus(str, Enum):
     inactive = "inactive"
 
 
-class SCSCGlobalStatus(SQLModel, table=True):
+class SCSCGlobalStatus(Base):
     __tablename__ = "scsc_global_status"  # type: ignore
     __table_args__ = (
         CheckConstraint("id = 1", name="ck_id_valid"),
@@ -18,10 +22,12 @@ class SCSCGlobalStatus(SQLModel, table=True):
         CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
     )
 
-    id: int = Field(primary_key=True)
-    status: SCSCStatus = Field(nullable=False)
-    year: int = Field(nullable=False)
-    semester: int = Field(nullable=False)
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    status: Mapped[SCSCStatus] = mapped_column(String, nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    semester: Mapped[int] = mapped_column(Integer, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )

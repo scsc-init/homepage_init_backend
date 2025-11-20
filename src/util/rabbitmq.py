@@ -9,15 +9,14 @@ from src.core import get_settings
 from src.db import SessionDep
 from src.model import UserRole
 
-"""
-Sends request to bot server through rabbitmq, returns reply from bot server.
-Raises TimeoutError if bot fails to respond in time.
-"""
-
 
 async def send_discord_bot_request(
     action_code: int, body: dict | None = None, timeout=5
 ):
+    """
+    Sends request to bot server through rabbitmq, returns reply from bot server.
+    Raises TimeoutError if bot fails to respond in time.
+    """
     correlation_id = str(uuid.uuid4())
     body = body or {}
 
@@ -64,14 +63,12 @@ async def send_discord_bot_request(
     return result
 
 
-"""
-Sends request to bot server through rabbitmq.
-Handles requests that do not expect a response from the bot server.
-No return value.
-"""
-
-
 async def send_discord_bot_request_no_reply(action_code: int, body: dict | None = None):
+    """
+    Sends request to bot server through rabbitmq.
+    Handles requests that do not expect a response from the bot server.
+    No return value.
+    """
     connection = await aio_pika.connect_robust(
         f"amqp://guest:guest@{get_settings().rabbitmq_host}/"
     )
@@ -87,15 +84,13 @@ async def send_discord_bot_request_no_reply(action_code: int, body: dict | None 
     await connection.close()
 
 
-"""
-Change role of user be removing all possible roles and adding new one.
-"""
-
-
 async def change_discord_role(
     session: SessionDep, discord_id: int, to_role_name: str
 ) -> None:
-    for role in session.exec(select(UserRole)):
+    """
+    Change role of user be removing all possible roles and adding new one.
+    """
+    for role in session.scalars(select(UserRole)).all():
         await send_discord_bot_request_no_reply(
             action_code=2002, body={"user_id": discord_id, "role_name": role.name}
         )

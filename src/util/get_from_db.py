@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException
 from sqlmodel import select
 
-from src.db import SessionDep, SessionLocal
+from src.db import DBSessionFactory, SessionDep
 from src.model import SCSCGlobalStatus, UserRole
 
 
@@ -25,8 +25,8 @@ def get_user_role_level(role_name: str) -> int:
     """
     session = None
     try:
-        session = SessionLocal()  # Get a new session
-        user_role = session.exec(
+        session = DBSessionFactory().make_session()
+        user_role = session.scalars(
             select(UserRole).where(UserRole.name == role_name)
         ).first()
         if not user_role:
@@ -36,13 +36,3 @@ def get_user_role_level(role_name: str) -> int:
     finally:
         if session:
             session.close()
-
-
-def _get_scsc_global_status(session: SessionDep) -> SCSCGlobalStatus:
-    status = session.get(SCSCGlobalStatus, 1)
-    if status is None:
-        raise HTTPException(503, detail="scsc global status does not exist")
-    return status
-
-
-SCSCGlobalStatusDep = Annotated[SCSCGlobalStatus, Depends(_get_scsc_global_status)]

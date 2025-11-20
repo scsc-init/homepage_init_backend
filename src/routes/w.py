@@ -4,8 +4,8 @@ from fastapi import APIRouter, UploadFile
 from fastapi.responses import FileResponse
 
 from src.controller import WServiceDep
+from src.dependencies import UserDep
 from src.model import WHTMLMetadata
-from src.util import UserDep
 
 w_router = APIRouter(tags=["w"])
 

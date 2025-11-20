@@ -46,7 +46,6 @@ class CommentService:
                 status_code=403,
                 detail="You are not allowed to write this comment",
             )
-
         comment = Comment(
             content=body.content,
             author_id=current_user.id,

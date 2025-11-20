@@ -5,26 +5,19 @@ import uuid
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.util import get_user, request_id_var
+from src.util import request_id_var
 
 http_logger = logging.getLogger("http_access")
 
 
 class HTTPLoggerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        try:
-            user = get_user(request)
-        except:
-            user = None
-        user_id = user.id if user else "anon"
         request_id = str(uuid.uuid4())
         request_id_var.set(request_id)
 
         start_time = time.time()
 
-        http_logger.info(
-            f"Request: {request.method} {request.url.path} User: {user_id}"
-        )
+        http_logger.info(f"Request: {request.method} {request.url.path}")
 
         response = await call_next(request)
 

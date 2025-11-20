@@ -1,7 +1,9 @@
 from enum import Enum
-from typing import Optional
 
-from sqlmodel import Field, SQLModel, UniqueConstraint
+from sqlalchemy import Integer, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.db import Base
 
 from .user import UserStatus
 
@@ -11,13 +13,15 @@ class HTTPMethod(str, Enum):
     POST = "POST"
 
 
-class CheckUserStatusRule(SQLModel, table=True):
-    __tablename__ = "check_user_status_rule"  # type: ignore
+class CheckUserStatusRule(Base):
+    __tablename__ = "check_user_status_rule"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_status: UserStatus = Field(nullable=False)
-    method: HTTPMethod = Field(nullable=False)
-    path: str = Field(nullable=False)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    user_status: Mapped[UserStatus] = mapped_column(String, nullable=False)
+    method: Mapped[HTTPMethod] = mapped_column(String, nullable=False)
+    path: Mapped[str] = mapped_column(String, nullable=False)
 
     __table_args__ = (
         UniqueConstraint(

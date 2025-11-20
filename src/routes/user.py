@@ -16,10 +16,10 @@ from src.controller import (
     UserService,
     UserServiceDep,
 )
+from src.dependencies import UserDep
 from src.model import User, UserResponse
 from src.util import (
     DepositDTO,
-    UserDep,
 )
 
 user_router = APIRouter(tags=["user"])
