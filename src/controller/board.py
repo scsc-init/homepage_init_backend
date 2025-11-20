@@ -4,7 +4,6 @@ from typing import Annotated, Optional, Sequence
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select
 
 from src.core import logger
 from src.model import Board, User
@@ -39,16 +38,14 @@ class BoardService:
             writing_permission_level=body.writing_permission_level,
             reading_permission_level=body.reading_permission_level,
         )
-        self.session.add(board)
         try:
-            self.session.commit()
+            board = self.board_repository.create(board)
         except IntegrityError:
-            self.session.rollback()
             logger.warning(
                 f"err_type=board_create err_code=409 ; msg=unique field already exists ; executor={current_user.id}"
             )
             raise HTTPException(status_code=409, detail="unique field already exists")
-        self.session.refresh(board)
+
         logger.info(
             f"info_type=board_create ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
         )
@@ -66,11 +63,10 @@ class BoardService:
     def get_board_list(
         self,
     ) -> Sequence[Board]:
-        boards = self.session.exec(select(Board))
-        return boards.all()
+        return self.board_repository.list_all()
 
     def update_board(self, id: int, current_user: User, body: BodyUpdateBoard) -> None:
-        board = self.session.get(Board, id)
+        board = self.board_repository.get_by_id(id)
         if not board:
             raise HTTPException(
                 status_code=404,
@@ -86,37 +82,38 @@ class BoardService:
         if body.reading_permission_level is not None:
             board.reading_permission_level = body.reading_permission_level
         board.updated_at = datetime.now(timezone.utc)
+
         try:
-            self.session.commit()
+            board = self.board_repository.update(board)
         except IntegrityError:
-            self.session.rollback()
             logger.warning(
                 f"err_type=board_update err_code=409 ; msg=unique field already exists ; board_id={id} ; executor={current_user.id}"
             )
-            raise HTTPException(409, detail="unique field already exists")
+            raise HTTPException(status_code=409, detail="unique field already exists")
+
         logger.info(
             f"info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
         )
 
     def delete_board(self, id: int, current_user: User) -> None:
-        board = self.session.get(Board, id)
+        board = self.board_repository.get_by_id(id)
         if not board:
             raise HTTPException(
                 status_code=404,
                 detail="Board not found",
             )
+
         # TODO: Who can, What can?
-        self.session.delete(board)
         try:
-            self.session.commit()
+            self.board_repository.delete(board)
         except IntegrityError:
-            self.session.rollback()
             logger.warning(
                 f"err_type=board_delete err_code=409 ; msg=Cannot delete board because of foreign key restriction ; board_id={id} ; executor={current_user.id}"
             )
             raise HTTPException(
                 409, detail="Cannot delete board because of foreign key restriction"
             )
+
         logger.info(
             f"info_type=board_delete ; board_id={id} ; executor={current_user.id}"
         )

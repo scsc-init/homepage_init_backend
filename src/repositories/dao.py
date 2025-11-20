@@ -32,8 +32,7 @@ class DAO(Generic[ModelT, IdT], ABC):
             self.session.add(obj)
         return obj
 
-    def delete_by_id(self, id: IdT) -> None:
-        obj = self.get_by_id(id)
+    def delete(self, obj: ModelT) -> None:
         with self.transaction:
             self.session.delete(obj)
 
