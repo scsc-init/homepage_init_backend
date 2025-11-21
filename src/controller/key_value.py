@@ -2,6 +2,7 @@
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
+from sqlmodel import select
 
 from src.core import logger
 from src.db import SessionDep
@@ -53,6 +54,12 @@ class KvService:
         if not entry:
             raise HTTPException(status_code=404, detail=f"Key '{key}' not found")
         return {"key": entry.key, "value": entry.value}
+
+    def get_all_kv_values(self, user_role: int) -> dict[str, Optional[str]]:
+        entries = self.session.exec(
+            select(KeyValue).where(KeyValue.writing_permission_level <= user_role)
+        ).all()
+        return {entry.key: entry.value for entry in entries}
 
     def update_kv_value(
         self, key: str, current_user: User, body: KvUpdateBody
