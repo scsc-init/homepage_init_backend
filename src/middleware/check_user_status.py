@@ -6,7 +6,7 @@ from sqlmodel import literal, select
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.db import SessionLocal
-from src.model import CheckUserStatusRule, UserStatus
+from src.model import CheckUserStatusRule
 from src.util import get_user
 
 logger = logging.getLogger("app")
