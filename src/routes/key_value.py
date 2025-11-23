@@ -16,7 +16,8 @@ async def get_kv_value(
     return kv_service.get_kv_value(key)
 
 
-@kv_router.get("/s")
+# This works as "api/kv" + "s" (="api/kvs")
+@kv_router.get("s")
 async def get_all_kv_values(
     request: Request,
     kv_service: KvServiceDep,
