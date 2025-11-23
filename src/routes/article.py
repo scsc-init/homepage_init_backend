@@ -44,7 +44,7 @@ async def update_article_by_author(
     current_user: UserDep,
     body: BodyUpdateArticle,
 ) -> None:
-    article_service.update_article_by_author(id, current_user, body)
+    await article_service.update_article_by_author(id, current_user, body)
 
 
 @article_executive_router.post("/update/{id}", status_code=204)
@@ -54,7 +54,7 @@ async def update_article_by_executive(
     current_user: UserDep,
     body: BodyUpdateArticle,
 ) -> None:
-    article_service.update_article_by_executive(id, current_user, body)
+    await article_service.update_article_by_executive(id, current_user, body)
 
 
 @article_general_router.post("/delete/{id}", status_code=204)

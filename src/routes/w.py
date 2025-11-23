@@ -47,4 +47,4 @@ async def delete_w_by_name(
     current_user: UserDep,
     w_service: WServiceDep,
 ) -> None:
-    w_service.delete_w_by_name(name, current_user)
+    await w_service.delete_w_by_name(name, current_user)

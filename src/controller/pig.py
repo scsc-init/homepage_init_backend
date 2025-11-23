@@ -59,7 +59,7 @@ async def create_pig_ctrl(
             f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다",
         )
 
-    pig_article = create_article_ctrl(
+    pig_article = await create_article_ctrl(
         session,
         BodyCreateArticle(title=body.title, content=body.content, board_id=1),
         user_id,
@@ -125,7 +125,7 @@ async def update_pig_ctrl(
     if body.description:
         pig.description = body.description
     if body.content:
-        pig_article = create_article_ctrl(
+        pig_article = await create_article_ctrl(
             session,
             BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
             user_id,

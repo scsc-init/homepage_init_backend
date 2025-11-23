@@ -1,10 +1,11 @@
 import asyncio
 import hmac
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional, Sequence
 
+import aiofiles
 import jwt
+from aiofiles import os as aiofiles_os
 from fastapi import Depends, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -494,8 +495,8 @@ class UserService:
 
         filename = f"{current_user.id}.{ext}"
         path = f"static/image/pfps/{filename}"
-        with open(path, "wb") as fp:
-            fp.write(content)
+        async with aiofiles.open(path, "wb") as fp:
+            await fp.write(content)
         current_user.profile_picture = path
         current_user.profile_picture_is_url = False
         self.session.add(current_user)
@@ -504,7 +505,7 @@ class UserService:
         except IntegrityError as err:
             self.session.rollback()
             try:
-                os.remove(path)
+                await aiofiles_os.remove(path)
             except OSError:
                 logger.warning(
                     "warn_type=pfp_upload_cleanup_failed ; %s", path, exc_info=True
