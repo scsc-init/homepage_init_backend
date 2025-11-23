@@ -38,5 +38,6 @@ trap cleanup EXIT
 
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "B7__baseline.sql")
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V8__update_kv_footer-message.sql")
+(cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "9.sql")
 
 echo "Database initialization and inserts completed successfully."

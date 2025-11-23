@@ -34,7 +34,7 @@ CREATE TABLE user (
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
     role INTEGER NOT NULL,
-    status TEXT DEFAULT 'standby' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
+    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
     discord_id INTEGER UNIQUE DEFAULT NULL,
     discord_name TEXT UNIQUE DEFAULT NULL,
     profile_picture TEXT,
