@@ -1,11 +1,16 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy import select
 
-from src.model import UserRole
+from src.model import User, UserRole
 
 from .dao import DAO
+
+
+class UserRepository(DAO[User, str]):
+    @property
+    def model(self) -> type[User]:
+        return User
 
 
 class UserRoleRepository(DAO[UserRole, int]):
@@ -14,4 +19,5 @@ class UserRoleRepository(DAO[UserRole, int]):
         return UserRole
 
 
+UserRepositoryDep = Annotated[UserRepository, Depends()]
 UserRoleRepositoryDep = Annotated[UserRoleRepository, Depends()]

@@ -1,15 +1,11 @@
 from datetime import datetime, timezone
 from enum import Enum as enum
 
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy import (
-    Boolean,
     CheckConstraint,
     DateTime,
     Enum,
-    ForeignKey,
     Integer,
-    String,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 

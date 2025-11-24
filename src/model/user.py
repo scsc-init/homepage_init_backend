@@ -1,15 +1,15 @@
 from datetime import datetime, timezone
-from enum import Enum
+from enum import Enum as enum
 from typing import Optional
 
 from pydantic import BaseModel
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db import Base
 
 
-class UserStatus(str, Enum):
+class UserStatus(str, enum):
     active = "active"
     pending = "pending"
     standby = "standby"
@@ -40,7 +40,7 @@ class User(Base):
     )
     major_id: Mapped[int] = mapped_column(ForeignKey("major.id"), nullable=False)
     status: Mapped[UserStatus] = mapped_column(
-        String, default=UserStatus.pending, nullable=False
+        Enum(UserStatus), default=UserStatus.pending, nullable=False
     )
 
     discord_id: Mapped[Optional[int]] = mapped_column(
@@ -66,15 +66,6 @@ class User(Base):
         default_factory=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
-
-
-class UserResponse(BaseModel):
-    id: str
-    email: str
-    name: str
-    major_id: int
-
-    model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
 class StandbyReqTbl(Base):

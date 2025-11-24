@@ -4,40 +4,8 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 
 from src.core import logger
-from src.db import SessionDep
 from src.model import KeyValue, User
-
-
-def _ensure_allowed_key(session: SessionDep, key: str) -> KeyValue:
-    kv_entry = session.get(KeyValue, key)
-    if kv_entry is None:
-        raise HTTPException(status_code=404, detail="unknown kv key")
-    return kv_entry
-
-
-def get_kv_value(session: SessionDep, key: str) -> KeyValue:
-    return _ensure_allowed_key(session, key)
-
-
-def update_kv_value(
-    session: SessionDep,
-    *,
-    key: str,
-    value: Optional[str],
-    actor_role: int,
-) -> KeyValue:
-    kv_entry = _ensure_allowed_key(session, key)
-
-    required_role = kv_entry.writing_permission_level
-    if actor_role < required_role:
-        raise HTTPException(status_code=403, detail="insufficient permission")
-
-    kv_entry.value = value
-
-    session.add(kv_entry)
-    session.commit()
-    session.refresh(kv_entry)
-    return kv_entry
+from src.repositories import KeyValueRepositoryDep
 
 
 class KvUpdateBody(BaseModel):
@@ -45,25 +13,28 @@ class KvUpdateBody(BaseModel):
 
 
 class KvService:
-    def __init__(self, session: SessionDep):
-        self.session = session
+    def __init__(self, kv_repo: KeyValueRepositoryDep):
+        self.kv_repo = kv_repo
 
-    def get_kv_value(self, key: str) -> dict[str, Optional[str]]:
-        entry = get_kv_value(self.session, key)
-        if not entry:
-            raise HTTPException(status_code=404, detail=f"Key '{key}' not found")
-        return {"key": entry.key, "value": entry.value}
+    def get_kv_value(self, key: str) -> KeyValue:
+        entry = self.kv_repo.get_by_id(key)
+        if entry is None:
+            raise HTTPException(status_code=404, detail="unknown kv key")
+        return entry
 
     def update_kv_value(
         self, key: str, current_user: User, body: KvUpdateBody
-    ) -> dict[str, Optional[str]]:
+    ) -> KeyValue:
+        kv_entry = self.kv_repo.get_by_id(key)
+        if kv_entry is None:
+            raise HTTPException(status_code=404, detail="unknown kv key")
 
-        updated_entry = update_kv_value(
-            self.session,
-            key=key,
-            value=body.value,
-            actor_role=current_user.role,
-        )
+        required_role = kv_entry.writing_permission_level
+        if current_user.role < required_role:
+            raise HTTPException(status_code=403, detail="insufficient permission")
+
+        kv_entry.value = body.value
+        updated_entry = self.kv_repo.update(kv_entry)
 
         logger.info(
             "info_type=kv_updated ; key=%s ; value=%s ; updater_id=%s",
@@ -72,7 +43,7 @@ class KvService:
             current_user.id,
         )
 
-        return {"key": updated_entry.key, "value": updated_entry.value}
+        return updated_entry
 
 
 KvServiceDep = Annotated[KvService, Depends()]

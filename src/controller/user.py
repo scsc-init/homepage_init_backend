@@ -13,7 +13,8 @@ from sqlmodel import select
 
 from src.core import get_settings, logger
 from src.db import SessionDep
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserResponse, UserStatus
+from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
+from src.schemas import UserResponse
 from src.util import (
     DepositDTO,
     change_discord_role,

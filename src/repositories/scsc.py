@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy import select
 
 from src.model import SCSCGlobalStatus
 

@@ -17,7 +17,8 @@ from src.controller import (
     UserServiceDep,
 )
 from src.dependencies import UserDep
-from src.model import User, UserResponse
+from src.model import User
+from src.schemas import UserResponse
 from src.util import (
     DepositDTO,
 )

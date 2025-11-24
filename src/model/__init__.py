@@ -11,7 +11,6 @@ from .user import (
     OldboyApplicant,
     StandbyReqTbl,
     User,
-    UserResponse,
     UserRole,
     UserStatus,
 )

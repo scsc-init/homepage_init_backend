@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from src.controller import BodyCreateMajor, MajorServiceDep
 from src.model import Major
+from src.schemas import MajorResponse
 
 major_router = APIRouter(tags=["major"])
 
@@ -12,23 +13,26 @@ major_router = APIRouter(tags=["major"])
 async def create_major(
     body: BodyCreateMajor,
     major_service: MajorServiceDep,
-) -> Major:
-    return major_service.create_major(body)
+) -> MajorResponse:
+    major = major_service.create_major(body)
+    return MajorResponse.model_validate(major)
 
 
 @major_router.get("/majors")
 async def get_all_majors(
     major_service: MajorServiceDep,
-) -> Sequence[Major]:
-    return major_service.get_all_majors()
+) -> Sequence[MajorResponse]:
+    major_list = major_service.get_all_majors()
+    return MajorResponse.model_validate_list(major_list)
 
 
 @major_router.get("/major/{id}")
 async def get_major_by_id(
     id: int,
     major_service: MajorServiceDep,
-) -> Major:
-    return major_service.get_major_by_id(id)
+) -> MajorResponse:
+    major = major_service.get_major_by_id(id)
+    return MajorResponse.model_validate(major)
 
 
 @major_router.post("/executive/major/update/{id}", status_code=204)

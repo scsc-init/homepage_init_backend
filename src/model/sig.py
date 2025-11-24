@@ -1,55 +1,67 @@
 from datetime import datetime, timezone
 
-from sqlmodel import CheckConstraint, Field, SQLModel, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.db import Base
 
 from .scsc_global_status import SCSCStatus
 
 
-class SIG(SQLModel, table=True):
-    __tablename__ = "sig"  # type: ignore
+class SIG(Base):
+    __tablename__ = "sig"
     __table_args__ = (
         UniqueConstraint("title", "year", "semester", name="uq_title_year_semester"),
         CheckConstraint("year >= 2025", name="ck_year_min"),
         CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
     )
 
-    id: int = Field(
-        default=None, primary_key=True
-    )  # default=None because of autoincrement
-
-    title: str = Field(nullable=False)
-    description: str = Field(nullable=False)
-    content_id: int = Field(foreign_key="article.id", nullable=False, unique=True)
-
-    status: SCSCStatus = Field(nullable=False)
-
-    year: int = Field(nullable=False)
-    semester: int = Field(nullable=False)
-
-    should_extend: bool = Field(default=False, nullable=False)
-    is_rolling_admission: bool = Field(default=False, nullable=False)
-
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
     )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=False)
+    content_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("article.id"), nullable=False, unique=True
+    )
+    status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    semester: Mapped[int] = mapped_column(Integer, nullable=False)
+    owner: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
+    should_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_rolling_admission: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    owner: str = Field(foreign_key="user.id", nullable=False)
 
-
-class SIGMember(SQLModel, table=True):
-    __tablename__ = "sig_member"  # type: ignore
+class SIGMember(Base):
+    __tablename__ = "sig_member"
     __table_args__ = (UniqueConstraint("ig_id", "user_id", name="uq_ig_user"),)
 
-    id: int = Field(
-        default=None, primary_key=True
-    )  # default=None because of autoincrement
-
-    ig_id: int = Field(foreign_key="sig.id", nullable=False)
-    user_id: str = Field(foreign_key="user.id", nullable=False)
-
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    ig_id: Mapped[int] = mapped_column(Integer, ForeignKey("sig.id"), nullable=False)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
     )
