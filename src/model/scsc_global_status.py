@@ -1,21 +1,29 @@
 from datetime import datetime, timezone
-from enum import Enum
+from enum import Enum as enum
 
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db import Base
 
 
-class SCSCStatus(str, Enum):
+class SCSCStatus(str, enum):
     recruiting = "recruiting"
     active = "active"
     inactive = "inactive"
 
 
 class SCSCGlobalStatus(Base):
-    __tablename__ = "scsc_global_status"  # type: ignore
+    __tablename__ = "scsc_global_status"
     __table_args__ = (
         CheckConstraint("id = 1", name="ck_id_valid"),
         CheckConstraint("year >= 2025", name="ck_year_min"),
@@ -23,7 +31,7 @@ class SCSCGlobalStatus(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    status: Mapped[SCSCStatus] = mapped_column(String, nullable=False)
+    status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
