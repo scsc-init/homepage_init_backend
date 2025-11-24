@@ -1,8 +1,8 @@
 # 회원 구조 문서
 
 > 최초작성일: 2025-11-19  
-> 최신개정일: 2025-11-19  
-> 최신개정자: 이한경  
+> 최신개정일: 2025-11-24  
+> 최신개정자: [강명석](mailto:tomskang@naver.com)  
 > 작성자: 이한경  
 
 # 회원의 상태(`status`)
@@ -44,3 +44,15 @@
     * (active, newcomer) -> (pending, newcomer)
     * (active, member) -> (pending, member)
     * 모든 졸업생 전환 신청 승인
+ 
+# 회원의 상태 및 권한 변경 개편안
+
+#### 최초 회원 가입 시
+- (standby, newcomer)   
+#### 입금 확인 된 모든 standby 유저
+- (standby, *) -> (active, *)
+#### SCSC 전역 상태 active -> inactive (계절학기 종료 시)
+- (active, *<president) -> (standby, *) (president 는 그냥 놔둠)
+#### SCSC 전역 상태 inactive -> recruiting
+- (standby, *) -> (pending, *)
+- (pending, *) & (104주 경과) -> (banned, *)
