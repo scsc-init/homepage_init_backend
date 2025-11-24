@@ -8,4 +8,9 @@ from .major import MajorRepositoryDep
 from .pig import PigMemberRepositoryDep, PigRepositoryDep
 from .scsc import SCSCGlobalStatusRepositoryDep
 from .sig import SigMemberRepositoryDep, SigRepositoryDep
-from .user import UserRepositoryDep, UserRoleRepositoryDep
+from .user import (
+    OldboyApplicantRepositoryDep,
+    StandbyReqTblRepositoryDep,
+    UserRepositoryDep,
+    UserRoleRepositoryDep,
+)

@@ -3,7 +3,7 @@ from typing import Annotated, Optional, Sequence
 from fastapi import Depends
 from sqlalchemy import select
 
-from src.model import PIG, PIGMember
+from src.model import PIG, PIGMember, SCSCStatus
 
 from .dao import DAO
 
@@ -12,6 +12,19 @@ class PigRepository(DAO[PIG, int]):
     @property
     def model(self) -> type[PIG]:
         return PIG
+
+    def get_by_year_semester_not_inactive(
+        self, year: int, semester: int
+    ) -> Sequence[PIG]:
+        stmt = select(PIG).where(
+            PIG.year == year,
+            PIG.semester == semester,
+            PIG.status != SCSCStatus.inactive,
+        )
+        return self.session.scalars(stmt).all()
+
+    def get_by_status(self, status: SCSCStatus) -> Sequence[PIG]:
+        return self.session.scalars(select(PIG).where(PIG.status == status)).all()
 
 
 class PigMemberRepository(DAO[PIGMember, int]):

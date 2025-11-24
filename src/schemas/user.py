@@ -22,3 +22,11 @@ class UserResponse(BaseResponse):
     last_login: datetime
     created_at: datetime
     updated_at: datetime
+
+
+class StandbyReqTblRepository(DAO[StandbyReqTbl, str]):
+    standby_user_id: str
+    user_name: str
+    deposit_name: str
+    is_checked: bool
+    deposit_time: Optional[datetime] = None
