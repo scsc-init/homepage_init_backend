@@ -87,7 +87,6 @@ class StandbyReqTbl(Base):
     deposit_name: Mapped[str] = mapped_column(nullable=False)
     deposit_time: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
-        onupdate=lambda: datetime.now(timezone.utc),
         default=None,
         nullable=True,
     )

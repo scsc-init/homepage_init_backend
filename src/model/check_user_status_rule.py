@@ -1,6 +1,6 @@
-from enum import Enum
+from enum import Enum as enum
 
-from sqlalchemy import Integer, String, UniqueConstraint
+from sqlalchemy import Enum, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db import Base
@@ -8,7 +8,7 @@ from src.db import Base
 from .user import UserStatus
 
 
-class HTTPMethod(str, Enum):
+class HTTPMethod(str, enum):
     GET = "GET"
     POST = "POST"
 
@@ -19,8 +19,8 @@ class CheckUserStatusRule(Base):
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True, init=False
     )
-    user_status: Mapped[UserStatus] = mapped_column(String, nullable=False)
-    method: Mapped[HTTPMethod] = mapped_column(String, nullable=False)
+    user_status: Mapped[UserStatus] = mapped_column(Enum(UserStatus), nullable=False)
+    method: Mapped[HTTPMethod] = mapped_column(Enum(HTTPMethod), nullable=False)
     path: Mapped[str] = mapped_column(String, nullable=False)
 
     __table_args__ = (

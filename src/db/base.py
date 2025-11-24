@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass
 
 
-class Base(MappedAsDataclass, DeclarativeBase):
+class Base(DeclarativeBase, MappedAsDataclass):
     """subclasses will be converted to dataclasses"""

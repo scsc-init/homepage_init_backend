@@ -88,7 +88,7 @@ async def change_discord_role(
     session: SessionDep, discord_id: int, to_role_name: str
 ) -> None:
     """
-    Change role of user be removing all possible roles and adding new one.
+    Change role of user by removing all possible roles and adding new one.
     """
     for role in session.scalars(select(UserRole)).all():
         await send_discord_bot_request_no_reply(

@@ -7,8 +7,9 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.core import get_settings, logger
-from src.model import Article, ArticleResponse, User
+from src.model import Article, User
 from src.repositories import ArticleRepositoryDep, BoardRepositoryDep
+from src.schemas import ArticleResponse
 from src.util import DELETED, send_discord_bot_request_no_reply
 
 

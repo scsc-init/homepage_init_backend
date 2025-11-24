@@ -19,7 +19,6 @@ async def user_auth(request: Request, session: SessionDep):
         if user:
             request.state.user = user
         else:
-            print("no test user found")
             request.state.user = None
         return
 
@@ -63,9 +62,9 @@ def get_user(request: Request) -> User:
 UserDep = Annotated[User, Depends(get_user)]
 
 
-def get_user_safe(request: Request) -> Optional[User]:
+def get_user_optional(request: Request) -> Optional[User]:
     """Retrieves the User object set by the authentication dependency, or None."""
     return getattr(request.state, "user", None)
 
 
-UserSafeDep = Annotated[Optional[User], Depends(get_user_safe)]
+UserSafeDep = Annotated[Optional[User], Depends(get_user_optional)]

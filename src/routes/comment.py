@@ -4,7 +4,8 @@ from fastapi import APIRouter
 
 from src.controller import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from src.dependencies import UserDep
-from src.model import Comment, CommentResponse
+from src.model import Comment
+from src.schemas import CommentResponse
 
 comment_router = APIRouter(tags=["comment"])
 comment_general_router = APIRouter(
@@ -18,8 +19,9 @@ async def create_comment(
     current_user: UserDep,
     body: BodyCreateComment,
     comment_service: CommentServiceDep,
-) -> Comment:
-    return comment_service.create_comment(current_user, body)
+) -> CommentResponse:
+    comment = comment_service.create_comment(current_user, body)
+    return CommentResponse.model_validate(comment)
 
 
 # This works as "api/comment" + "s/{article_id}" (="api/comments/{article_id}")

@@ -1,8 +1,9 @@
 import threading
+from typing import ClassVar
 
 
 class SingletonMeta(type):
-    _instances = {}
+    _instances: ClassVar[dict] = {}
 
     _lock: threading.RLock = threading.RLock()
 
