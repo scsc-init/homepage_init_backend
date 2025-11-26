@@ -6,20 +6,17 @@ from typing import Annotated, Sequence
 from fastapi import Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select
 
 from src.core import get_settings, logger
-from src.db import SessionDep
 from src.model import User, WHTMLMetadata
+from src.repositories import WRepositoryDep
+from src.schemas import WHTMLMetadataWithCreatorResponse
 from src.util import validate_and_read_file
 
 
 class WService:
-    def __init__(
-        self,
-        session: SessionDep,
-    ) -> None:
-        self.session = session
+    def __init__(self, w_repo: WRepositoryDep) -> None:
+        self.w_repo = w_repo
 
     async def upload_file(self, current_user: User, file: UploadFile) -> WHTMLMetadata:
         content, basename, _, _ = await validate_and_read_file(
@@ -31,19 +28,19 @@ class WService:
                 detail="filename should consist of alphabets, numbers, underscores, and hyphens",
             )
 
-        with open(path.join(get_settings().w_html_dir, f"{basename}.html"), "wb") as fp:
+        file_path = path.join(get_settings().w_html_dir, f"{basename}.html")
+        with open(file_path, "wb") as fp:
             fp.write(content)
 
         w_meta = WHTMLMetadata(
             name=basename, size=len(content), creator=current_user.id
         )
-        self.session.add(w_meta)
+
         try:
-            self.session.commit()
+            w_meta = self.w_repo.create(w_meta)
         except IntegrityError as err:
-            self.session.rollback()
             try:
-                os.remove(path.join(get_settings().w_html_dir, f"{basename}.html"))
+                os.remove(file_path)
             except OSError:
                 logger.warning(
                     "warn_type=w_html_create_cleanup_failed ; %s",
@@ -51,39 +48,43 @@ class WService:
                     exc_info=True,
                 )
             raise HTTPException(409, detail="unique field exists") from err
-        self.session.refresh(w_meta)
+
         logger.info(
             f"info_type=w_html_created ; {basename=} ; file_size={len(content)} ; executer_id={current_user.id}"
         )
         return w_meta
 
     def get_w_by_name(self, name: str) -> FileResponse:
-        w_meta = self.session.get(WHTMLMetadata, name)
+        w_meta = self.w_repo.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
         return FileResponse(
-            path.join(get_settings().w_html_dir, f"{name}.html"), media_type="text/html"
+            path.join(get_settings().w_html_dir, f"{name}.html"),
+            media_type="text/html",
         )
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:
-        return self.session.exec(
-            select(WHTMLMetadata, User.name).where(WHTMLMetadata.creator == User.id)
-        ).all()
+        results = self.w_repo.get_all_with_creator_name()
+        response_list: Sequence[tuple[WHTMLMetadata, str]] = []
+        for row in results:
+            response_list.append(row._tuple())
+        return response_list
 
     async def update_w_by_name(
         self, name: str, current_user: User, file: UploadFile
     ) -> WHTMLMetadata:
-        w_meta = self.session.get(WHTMLMetadata, name)
+        w_meta = self.w_repo.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
+
         content, _, _, _ = await validate_and_read_file(
             file, valid_mime_type="text/html", valid_ext=frozenset({"html"})
         )
 
         w_meta.size = len(content)
         w_meta.creator = current_user.id
-        self.session.commit()
-        self.session.refresh(w_meta)
+
+        w_meta = self.w_repo.update(w_meta)
 
         with open(path.join(get_settings().w_html_dir, f"{name}.html"), "wb") as fp:
             fp.write(content)
@@ -94,28 +95,28 @@ class WService:
         return w_meta
 
     def delete_w_by_name(self, name: str, current_user: User) -> None:
-        w_meta = self.session.get(WHTMLMetadata, name)
+        w_meta = self.w_repo.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
-        self.session.delete(w_meta)
+
         try:
-            self.session.commit()
+            self.w_repo.delete(w_meta)
         except Exception:
-            self.session.rollback()
             logger.error(
-                f"err_type=delete_w_by_name ; {name=} ; msg=failed to remove file"
+                f"err_type=delete_w_by_name ; {name=} ; msg=failed to remove file record from DB"
             )
             raise
+
         try:
             os.remove(path.join(get_settings().w_html_dir, f"{name}.html"))
         except OSError:
             logger.error(
                 f"err_type=delete_w_by_name ; {name=} ; executer_id={current_user.id} ; msg=failed to remove file from disk"
             )
+
         logger.info(
             f"info_type=w_html_deleted ; {name=} ; executer_id={current_user.id}"
         )
-        return
 
 
 WServiceDep = Annotated[WService, Depends()]

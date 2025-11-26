@@ -14,3 +14,4 @@ from .user import (
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
+from .w import WRepositoryDep

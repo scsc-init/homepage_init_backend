@@ -532,6 +532,8 @@ class UserService:
 
         result = self.session.get(User, sha256_hash(body.email.lower()))
         if result is None:
+            print(body.email)
+            print(result)
             raise HTTPException(404, detail="invalid email address")
         result.last_login = datetime.now(timezone.utc)
         self.session.add(result)

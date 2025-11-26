@@ -24,7 +24,7 @@ class UserResponse(BaseResponse):
     updated_at: datetime
 
 
-class StandbyReqTblRepository(DAO[StandbyReqTbl, str]):
+class StandbyReqTblResponse(BaseResponse):
     standby_user_id: str
     user_name: str
     deposit_name: str

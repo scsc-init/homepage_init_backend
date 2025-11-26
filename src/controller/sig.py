@@ -99,10 +99,11 @@ class SigService:
         sig_member = SIGMember(ig_id=sig.id, user_id=current_user.id)
         try:
             self.sig_member_repository.create(sig_member)
-        except IntegrityError:
+        except IntegrityError as exc:
+            logger.info(exc.orig)
             raise HTTPException(
-                409, detail="피그장 자동 가입 중 중복 오류가 발생했습니다"
-            )
+                409, detail="시그/피그장 자동 가입 중 중복 오류가 발생했습니다"
+            ) from exc
 
         if current_user.discord_id:
             await send_discord_bot_request_no_reply(

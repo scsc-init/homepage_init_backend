@@ -6,6 +6,7 @@ from fastapi.responses import FileResponse
 from src.controller import WServiceDep
 from src.dependencies import UserDep
 from src.model import WHTMLMetadata
+from src.schemas import WHTMLMetadataResponse, WHTMLMetadataWithCreatorResponse
 
 w_router = APIRouter(tags=["w"])
 
@@ -15,8 +16,9 @@ async def upload_file(
     current_user: UserDep,
     file: UploadFile,
     w_service: WServiceDep,
-) -> WHTMLMetadata:
-    return await w_service.upload_file(current_user, file)
+) -> WHTMLMetadataResponse:
+    w_meta = await w_service.upload_file(current_user, file)
+    return WHTMLMetadataResponse.model_validate(w_meta)
 
 
 @w_router.get("/w/{name}")
@@ -37,8 +39,9 @@ async def update_w_by_name(
     current_user: UserDep,
     file: UploadFile,
     w_service: WServiceDep,
-) -> WHTMLMetadata:
-    return await w_service.update_w_by_name(name, current_user, file)
+) -> WHTMLMetadataResponse:
+    w_meta = await w_service.update_w_by_name(name, current_user, file)
+    return WHTMLMetadataResponse.model_validate(w_meta)
 
 
 @w_router.post("/executive/w/{name}/delete", status_code=204)
