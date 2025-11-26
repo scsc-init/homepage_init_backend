@@ -16,7 +16,7 @@ CREATE TABLE user (
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
     role INTEGER NOT NULL,
-    status TEXT DEFAULT 'pending' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
+    status TEXT DEFAULT 'standby' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
     discord_id INTEGER UNIQUE DEFAULT NULL,
     discord_name TEXT UNIQUE DEFAULT NULL,
     profile_picture TEXT,
@@ -139,7 +139,7 @@ CREATE TABLE standby_req_tbl (
   "phone": "01012345678",
   "student_id": "202312345",
   "role": 200,
-  "status": "pending",
+  "status": "standby",
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
@@ -163,7 +163,7 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `POST`
 * **URL**: `/api/user/enroll`
-* **설명**: `pending` 상태의 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록하고 상태를 `standby`로 변경합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
+* **설명**: `pending` 또는 `standby` 상태의 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록하고 상태를 `standby`로 변경합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
 * **Status Codes**:
   * `204 No Content`: 사용자가 성공적으로 `standby_req_tbl` 대기열에 등록되었습니다.
   * `400 Bad Request`: 현재 로그인된 사용자의 상태가 `pending`이 아닌 경우

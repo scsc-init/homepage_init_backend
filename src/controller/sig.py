@@ -71,7 +71,7 @@ class SigService:
                 f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다",
             )
 
-        sig_article = self.article_service.create_article_ctrl(
+        sig_article = await self.article_service.create_article_ctrl(
             BodyCreateArticle(title=body.title, content=body.content, board_id=1),
             current_user.id,
             get_user_role_level("president"),
@@ -153,7 +153,7 @@ class SigService:
             sig.description = body.description
 
         if body.content:
-            sig_article = self.article_service.create_article_ctrl(
+            sig_article = await self.article_service.create_article_ctrl(
                 BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
                 current_user.id,
                 get_user_role_level("president"),

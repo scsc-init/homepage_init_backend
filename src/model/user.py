@@ -40,7 +40,7 @@ class User(Base):
     )
     major_id: Mapped[int] = mapped_column(ForeignKey("major.id"), nullable=False)
     status: Mapped[UserStatus] = mapped_column(
-        Enum(UserStatus), default=UserStatus.pending, nullable=False
+        Enum(UserStatus), default=UserStatus.standby, nullable=False
     )
 
     discord_id: Mapped[Optional[int]] = mapped_column(

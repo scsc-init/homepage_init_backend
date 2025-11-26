@@ -1,10 +1,11 @@
 import asyncio
 import hmac
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional, Sequence
 
+import aiofiles
 import jwt
+from aiofiles import os as aiofiles_os
 from fastapi import Depends, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -133,10 +134,13 @@ def enroll_user_ctrl(session: SessionDep, user_id: str) -> StandbyReqTbl:
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(404, detail="user not found")
-    if user.status != UserStatus.pending:
-        raise HTTPException(400, detail="Only user with pending status can enroll")
-    user.status = UserStatus.standby
-    session.add(user)
+    if user.status not in (UserStatus.pending, UserStatus.standby):
+        raise HTTPException(
+            400, detail="Only user with pending or standby status can enroll"
+        )
+    if user.status == UserStatus.pending:
+        user.status = UserStatus.standby
+        session.add(user)
     stby_req_tbl = StandbyReqTbl(
         standby_user_id=user.id,
         user_name=user.name,
@@ -224,7 +228,6 @@ async def process_deposit_ctrl(
                         users=matching_users,
                     )
 
-                # else
                 logger.error(
                     f"err_type=deposit ; err_code=404 ; msg=no users match the following deposit record ; deposit={deposit} ; users={matching_users}"
                 )
@@ -236,13 +239,13 @@ async def process_deposit_ctrl(
                 )
 
             user = matching_users_error[0]
-            if user.status != UserStatus.pending:
+            if user.status not in (UserStatus.pending, UserStatus.standby):
                 logger.error(
-                    f"err_type=deposit ; err_code=412 ; msg=user is not in pending status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                    f"err_type=deposit ; err_code=412 ; msg=user is not in pending or standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
                 )
                 return ProcessDepositResult(
                     result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 상태가 아닙니다",
+                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 또는 standby 상태가 아닙니다",
                     record=deposit,
                     users=matching_users,
                 )
@@ -495,8 +498,8 @@ class UserService:
 
         filename = f"{current_user.id}.{ext}"
         path = f"static/image/pfps/{filename}"
-        with open(path, "wb") as fp:
-            fp.write(content)
+        async with aiofiles.open(path, "wb") as fp:
+            await fp.write(content)
         current_user.profile_picture = path
         current_user.profile_picture_is_url = False
         self.session.add(current_user)
@@ -505,7 +508,7 @@ class UserService:
         except IntegrityError as err:
             self.session.rollback()
             try:
-                os.remove(path)
+                await aiofiles_os.remove(path)
             except OSError:
                 logger.warning(
                     "warn_type=pfp_upload_cleanup_failed ; %s", path, exc_info=True

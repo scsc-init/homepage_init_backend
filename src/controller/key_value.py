@@ -2,6 +2,7 @@
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
+from sqlmodel import select
 
 from src.core import logger
 from src.model import KeyValue, User
@@ -21,6 +22,12 @@ class KvService:
         if entry is None:
             raise HTTPException(status_code=404, detail="unknown kv key")
         return entry
+
+    def get_all_kv_values(self, user_role: int) -> dict[str, Optional[str]]:
+        entries = self.session.exec(
+            select(KeyValue).where(KeyValue.writing_permission_level <= user_role)
+        ).all()
+        return {entry.key: entry.value for entry in entries}
 
     def update_kv_value(
         self, key: str, current_user: User, body: KvUpdateBody

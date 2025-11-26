@@ -2,6 +2,8 @@
 #    uv pip compile pyproject.toml -o requirements.txt --no-deps
 aio-pika==9.5.5
     # via homepage-init-backend (pyproject.toml)
+aiofiles==23.2.1
+    # via homepage-init-backend (pyproject.toml)
 aiohappyeyeballs==2.6.1
     # via homepage-init-backend (pyproject.toml)
 aiohttp==3.12.14

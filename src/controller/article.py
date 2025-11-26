@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from os import path
 from typing import Annotated
 
+import aiofiles
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
@@ -34,7 +35,7 @@ class ArticleService:
         self.article_repository = article_repository
         self.board_repository = board_repository
 
-    def create_article_ctrl(
+    async def create_article_ctrl(
         self, body: BodyCreateArticle, user_id: str, user_role: int
     ) -> ArticleResponse:
         board = self.board_repository.get_by_id(body.board_id)
@@ -57,8 +58,8 @@ class ArticleService:
             ) from exc
         try:
             file_path = path.join(get_settings().article_dir, f"{article.id}.md")
-            with open(file_path, "w", encoding="utf-8") as fp:
-                fp.write(body.content)
+            async with aiofiles.open(file_path, "w", encoding="utf-8") as fp:
+                await fp.write(body.content)
         except Exception:
             logger.error(
                 f"err_type=create_article_ctrl ; failed to write file ; {article.id=}",
@@ -75,7 +76,7 @@ class ArticleService:
     async def create_article(
         self, current_user: User, body: BodyCreateArticle
     ) -> ArticleResponse:
-        ret = self.create_article_ctrl(
+        ret = await self.create_article_ctrl(
             body=body, user_id=current_user.id, user_role=current_user.role
         )
 
@@ -184,7 +185,7 @@ class ArticleService:
             update={"content": content}
         )
 
-    def _update_article(
+    async def _update_article(
         self, article: Article, body: BodyUpdateArticle, current_user: User
     ) -> None:
         board = self.board_repository.get_by_id(article.board_id)
@@ -209,15 +210,15 @@ class ArticleService:
         )
         try:
             file_path = path.join(get_settings().article_dir, f"{article.id}.md")
-            with open(file_path, "w", encoding="utf-8") as fp:
-                fp.write(body.content)
+            async with aiofiles.open(file_path, "w", encoding="utf-8") as fp:
+                await fp.write(body.content)
         except Exception:
             logger.error(
                 f"err_type=update_article_by_author ; failed to write file ; {article.id=}",
                 exc_info=True,
             )
 
-    def update_article_by_author(
+    async def update_article_by_author(
         self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.article_repository.get_by_id(id)
@@ -233,9 +234,9 @@ class ArticleService:
             )
         if article.is_deleted:
             raise HTTPException(status_code=410, detail="Article has been deleted")
-        self._update_article(article, body, current_user)
+        await self._update_article(article, body, current_user)
 
-    def update_article_by_executive(
+    async def update_article_by_executive(
         self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.article_repository.get_by_id(id)
@@ -246,7 +247,7 @@ class ArticleService:
             )
         if article.is_deleted:
             raise HTTPException(status_code=410, detail="Article has been deleted")
-        self._update_article(article, body, current_user)
+        await self._update_article(article, body, current_user)
 
     def delete_article_by_author(self, id: int, current_user: User) -> None:
         article = self.article_repository.get_by_id(id)
