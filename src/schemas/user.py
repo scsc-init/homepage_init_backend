@@ -30,3 +30,9 @@ class StandbyReqTblResponse(BaseResponse):
     deposit_name: str
     is_checked: bool
     deposit_time: Optional[datetime] = None
+
+
+class OldboyApplicantResponse(BaseResponse):
+    id: str
+    processed: bool
+    created_at: datetime

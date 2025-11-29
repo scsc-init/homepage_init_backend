@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import Sequence
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 
 from src.controller import KvServiceDep, KvUpdateBody
-from src.dependencies import UserDep
+from src.dependencies import NullableUserDep, UserDep
 from src.schemas import KvResponse
 
 kv_router = APIRouter(prefix="/kv", tags=["kv"])
@@ -21,12 +21,12 @@ async def get_kv_value(
 # This works as "api/kv" + "s" (="api/kvs")
 @kv_router.get("s")
 async def get_all_kv_values(
-    request: Request,
+    current_user: NullableUserDep,
     kv_service: KvServiceDep,
-) -> dict[str, Optional[str]]:
-    current_user = request.state.user
+) -> Sequence[KvResponse]:
     role = current_user.role if current_user else 0
-    return kv_service.get_all_kv_values(role)
+    kvs = kv_service.get_all_kv_values(role)
+    return KvResponse.model_validate_list(kvs)
 
 
 @kv_router.post("/{key}/update")

@@ -5,7 +5,6 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from src.core import get_settings, logger
-from src.db import SessionDep
 from src.util import send_discord_bot_request, send_discord_bot_request_no_reply
 
 
@@ -17,9 +16,7 @@ class BodySendMessageToID(BaseModel):
 class BotService:
     def __init__(
         self,
-        session: SessionDep,
-    ) -> None:
-        self.session = session
+    ) -> None: ...
 
     async def get_discord_invite(self):
         try:

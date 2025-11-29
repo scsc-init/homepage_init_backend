@@ -5,10 +5,10 @@ from sqlalchemy import Row, select
 
 from src.model import User, WHTMLMetadata
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class WRepository(DAO[WHTMLMetadata, str]):
+class WRepository(CRUDRepository[WHTMLMetadata, str]):
     @property
     def model(self) -> type[WHTMLMetadata]:
         return WHTMLMetadata

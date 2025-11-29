@@ -69,7 +69,7 @@ class WService:
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:
         results = self.w_repo.get_all_with_creator_name()
-        response_list: Sequence[tuple[WHTMLMetadata, str]] = []
+        response_list: list[tuple[WHTMLMetadata, str]] = []
         for row in results:
             response_list.append(row._tuple())
         return response_list

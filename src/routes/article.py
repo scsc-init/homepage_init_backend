@@ -15,7 +15,9 @@ async def create_article(
     current_user: UserDep,
     body: BodyCreateArticle,
 ) -> ArticleResponse:
-    return await article_service.create_article(current_user, body)
+    return await article_service.create_article(
+        body, current_user.id, current_user.role
+    )
 
 
 # This works as "api/article" + "s/{board_id}" (="api/articles/{board_id}")

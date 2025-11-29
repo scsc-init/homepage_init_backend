@@ -80,7 +80,7 @@ class FileService:
             image = self.file_metadata_repository.create(image)
         except Exception:
             try:
-                os.remove(path.join(get_settings().file_dir, f"{uuid}.{ext}"))
+                os.remove(path.join(get_settings().image_dir, f"{uuid}.{ext}"))
             except OSError:
                 logger.warning(
                     "warn_type=image_upload_cleanup_failed ; %s",

@@ -8,5 +8,5 @@ class FileMetadataResponse(BaseResponse):
     original_filename: str
     size: int
     mime_type: str
-    owner: str
+    owner: str | None = None
     created_at: datetime

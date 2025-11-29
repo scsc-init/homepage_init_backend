@@ -11,7 +11,6 @@ from .helper import (
 )
 from .logger_config import LOGGING_CONFIG, request_id_var
 from .rabbitmq import (
-    change_discord_role,
     send_discord_bot_request,
     send_discord_bot_request_no_reply,
 )

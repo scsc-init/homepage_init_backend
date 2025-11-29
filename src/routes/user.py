@@ -17,7 +17,6 @@ from src.controller import (
     UserServiceDep,
 )
 from src.dependencies import UserDep
-from src.model import User
 from src.schemas import UserResponse
 from src.util import (
     DepositDTO,
@@ -30,7 +29,7 @@ user_router = APIRouter(tags=["user"])
 async def create_user(
     body: BodyCreateUser,
     user_service: UserServiceDep,
-) -> User:
+) -> UserResponse:
     return await user_service.create_user(body)
 
 
@@ -43,8 +42,8 @@ async def enroll_user(
 
 
 @user_router.get("/user/profile")
-async def get_my_profile(current_user: UserDep) -> User:
-    return current_user
+async def get_my_profile(current_user: UserDep) -> UserResponse:
+    return UserResponse.model_validate(current_user)
 
 
 @user_router.get("/user/{id}", response_model=UserResponse)
@@ -67,7 +66,7 @@ async def get_users(
     discord_id: Optional[str] = None,
     discord_name: Optional[str] = None,
     major_id: Optional[int] = None,
-) -> Sequence[User]:
+) -> Sequence[UserResponse]:
     return user_service.get_users(
         email,
         name,

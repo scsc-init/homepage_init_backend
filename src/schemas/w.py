@@ -6,7 +6,7 @@ from .base import BaseResponse
 class WHTMLMetadataResponse(BaseResponse):
     name: str
     size: int
-    creator: str
+    creator: str | None = None
     created_at: datetime
     updated_at: datetime
 

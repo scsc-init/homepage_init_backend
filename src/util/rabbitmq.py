@@ -6,8 +6,8 @@ import aio_pika
 from sqlmodel import select
 
 from src.core import get_settings
-from src.db import SessionDep
 from src.model import UserRole
+from src.repositories import UserRoleRepositoryDep
 
 
 async def send_discord_bot_request(
@@ -82,18 +82,3 @@ async def send_discord_bot_request_no_reply(action_code: int, body: dict | None 
         message, routing_key=get_settings().discord_receive_queue
     )
     await connection.close()
-
-
-async def change_discord_role(
-    session: SessionDep, discord_id: int, to_role_name: str
-) -> None:
-    """
-    Change role of user by removing all possible roles and adding new one.
-    """
-    for role in session.scalars(select(UserRole)).all():
-        await send_discord_bot_request_no_reply(
-            action_code=2002, body={"user_id": discord_id, "role_name": role.name}
-        )
-    await send_discord_bot_request_no_reply(
-        action_code=2001, body={"user_id": discord_id, "role_name": to_role_name}
-    )

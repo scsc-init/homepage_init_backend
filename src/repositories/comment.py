@@ -5,10 +5,10 @@ from sqlalchemy import select
 
 from src.model import Comment
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class CommentRepository(DAO[Comment, int]):
+class CommentRepository(CRUDRepository[Comment, int]):
     @property
     def model(self) -> type[Comment]:
         return Comment

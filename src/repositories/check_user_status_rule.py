@@ -5,10 +5,10 @@ from sqlalchemy import literal, select
 
 from src.model import CheckUserStatusRule
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class CheckUserStatusRuleRepository(DAO[CheckUserStatusRule, int]):
+class CheckUserStatusRuleRepository(CRUDRepository[CheckUserStatusRule, int]):
     @property
     def model(self) -> type[CheckUserStatusRule]:
         return CheckUserStatusRule

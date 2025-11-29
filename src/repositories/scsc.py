@@ -4,10 +4,10 @@ from fastapi import Depends
 
 from src.model import SCSCGlobalStatus
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class SCSCGlobalStatusRepository(DAO[SCSCGlobalStatus, int]):
+class SCSCGlobalStatusRepository(CRUDRepository[SCSCGlobalStatus, int]):
     @property
     def model(self) -> type[SCSCGlobalStatus]:
         return SCSCGlobalStatus

@@ -62,9 +62,9 @@ def get_user(request: Request) -> User:
 UserDep = Annotated[User, Depends(get_user)]
 
 
-def get_user_optional(request: Request) -> Optional[User]:
+def get_nullable_user(request: Request) -> Optional[User]:
     """Retrieves the User object set by the authentication dependency, or None."""
     return getattr(request.state, "user", None)
 
 
-UserSafeDep = Annotated[Optional[User], Depends(get_user_optional)]
+NullableUserDep = Annotated[Optional[User], Depends(get_nullable_user)]

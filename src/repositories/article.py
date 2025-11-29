@@ -5,10 +5,10 @@ from sqlalchemy import select
 
 from src.model import Article
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class ArticleRepository(DAO[Article, int]):
+class ArticleRepository(CRUDRepository[Article, int]):
     @property
     def model(self) -> type[Article]:
         return Article

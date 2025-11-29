@@ -3,7 +3,6 @@ from typing import Sequence
 from fastapi import APIRouter
 
 from src.controller import BodyCreateMajor, MajorServiceDep
-from src.model import Major
 from src.schemas import MajorResponse
 
 major_router = APIRouter(tags=["major"])

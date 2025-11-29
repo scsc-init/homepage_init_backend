@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Optional, Sequence, Type, TypeVar
+from typing import Generic, Optional, Sequence, TypeVar
 
 from sqlalchemy import select
 
@@ -9,7 +9,7 @@ ModelT = TypeVar("ModelT")
 IdT = TypeVar("IdT")
 
 
-class DAO(Generic[ModelT, IdT], ABC):
+class CRUDRepository(Generic[ModelT, IdT], ABC):
     def __init__(self, session: SessionDep, transaction: TransactionDep):
         self.session = session
         self.transaction = transaction

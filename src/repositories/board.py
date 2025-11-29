@@ -4,10 +4,10 @@ from fastapi import Depends
 
 from src.model import Board
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class BoardRepository(DAO[Board, int]):
+class BoardRepository(CRUDRepository[Board, int]):
     @property
     def model(self) -> type[Board]:
         return Board

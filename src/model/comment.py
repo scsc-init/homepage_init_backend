@@ -30,6 +30,5 @@ class Comment(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True),
         default=None,
-        onupdate=lambda: datetime.now(timezone.utc),
         nullable=True,
     )

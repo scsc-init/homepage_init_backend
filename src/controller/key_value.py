@@ -1,8 +1,7 @@
-﻿from typing import Annotated, Optional
+﻿from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
-from sqlmodel import select
 
 from src.core import logger
 from src.model import KeyValue, User
@@ -14,25 +13,22 @@ class KvUpdateBody(BaseModel):
 
 
 class KvService:
-    def __init__(self, kv_repo: KeyValueRepositoryDep):
-        self.kv_repo = kv_repo
+    def __init__(self, kv_repository: KeyValueRepositoryDep):
+        self.kv_repository = kv_repository
 
     def get_kv_value(self, key: str) -> KeyValue:
-        entry = self.kv_repo.get_by_id(key)
+        entry = self.kv_repository.get_by_id(key)
         if entry is None:
             raise HTTPException(status_code=404, detail="unknown kv key")
         return entry
 
-    def get_all_kv_values(self, user_role: int) -> dict[str, Optional[str]]:
-        entries = self.session.exec(
-            select(KeyValue).where(KeyValue.writing_permission_level <= user_role)
-        ).all()
-        return {entry.key: entry.value for entry in entries}
+    def get_all_kv_values(self, user_role: int) -> Sequence[KeyValue]:
+        return self.kv_repository.get_kv_values_by_role(user_role)
 
     def update_kv_value(
         self, key: str, current_user: User, body: KvUpdateBody
     ) -> KeyValue:
-        kv_entry = self.kv_repo.get_by_id(key)
+        kv_entry = self.kv_repository.get_by_id(key)
         if kv_entry is None:
             raise HTTPException(status_code=404, detail="unknown kv key")
 
@@ -41,7 +37,7 @@ class KvService:
             raise HTTPException(status_code=403, detail="insufficient permission")
 
         kv_entry.value = body.value
-        updated_entry = self.kv_repo.update(kv_entry)
+        updated_entry = self.kv_repository.update(kv_entry)
 
         logger.info(
             "info_type=kv_updated ; key=%s ; value=%s ; updater_id=%s",

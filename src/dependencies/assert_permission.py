@@ -2,10 +2,10 @@ from fastapi import HTTPException, Request
 
 from src.util import get_user_role_level
 
-from .user_auth import UserSafeDep
+from .user_auth import NullableUserDep
 
 
-async def assert_permission(request: Request, current_user: UserSafeDep):
+async def assert_permission(request: Request, current_user: NullableUserDep):
     if not request.url.path.startswith("/api") or request.method not in (
         "GET",
         "POST",

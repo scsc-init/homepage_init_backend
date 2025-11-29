@@ -2,10 +2,10 @@ from fastapi import HTTPException, Request
 
 from src.core import get_settings
 
-from .user_auth import UserSafeDep
+from .user_auth import NullableUserDep
 
 
-async def api_secret(request: Request, current_user: UserSafeDep):
+async def api_secret(request: Request, current_user: NullableUserDep):
     if not request.url.path.startswith("/api") or request.method not in (
         "GET",
         "POST",

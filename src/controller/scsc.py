@@ -4,7 +4,6 @@ from typing import Annotated, Type
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
-from sqlmodel import select
 
 from src.core import logger
 from src.db import SessionDep
@@ -12,11 +11,8 @@ from src.dependencies import SCSCGlobalStatusDep
 from src.model import (
     PIG,
     SIG,
-    OldboyApplicant,
     SCSCGlobalStatus,
     SCSCStatus,
-    StandbyReqTbl,
-    User,
     UserStatus,
 )
 from src.repositories import (
@@ -27,7 +23,6 @@ from src.repositories import (
     UserRepositoryDep,
 )
 from src.util import (
-    change_discord_role,
     get_new_year_semester,
     get_user_role_level,
     map_semester_name,
@@ -35,7 +30,7 @@ from src.util import (
     send_discord_bot_request_no_reply,
 )
 
-from .user import process_oldboy_applicant_ctrl
+from .user import OldboyServiceDep, UserServiceDep
 
 _valid_scsc_global_status_update = (
     (SCSCStatus.inactive, SCSCStatus.recruiting),
@@ -68,6 +63,8 @@ class SCSCService:
         self,
         session: SessionDep,
         scsc_global_status: SCSCGlobalStatusDep,
+        user_service: UserServiceDep,
+        oldboy_service: OldboyServiceDep,
         sig_repository: SigRepositoryDep,
         pig_repository: PigRepositoryDep,
         user_repository: UserRepositoryDep,
@@ -76,6 +73,8 @@ class SCSCService:
     ):
         self.session = session
         self.scsc_global_status = scsc_global_status
+        self.user_service = user_service
+        self.oldboy_service = oldboy_service
         self.sig_repo = sig_repository
         self.pig_repo = pig_repository
         self.user_repo = user_repository
@@ -160,8 +159,8 @@ class SCSCService:
                     user.role = get_user_role_level("dormant")
                     self.session.add(user)
                     if user.discord_id:
-                        await change_discord_role(
-                            self.session, user.discord_id, "dormant"
+                        await self.user_service.change_discord_role(
+                            user.discord_id, "dormant"
                         )
 
         # start of recruiting
@@ -260,7 +259,7 @@ class SCSCService:
 
             unprocessed_applicants = self.oldboy_repo.get_unprocessed()
             for applicant in unprocessed_applicants:
-                await process_oldboy_applicant_ctrl(self.session, applicant.id)
+                await self.oldboy_service.process_applicant(applicant.id)
 
         old_status = scsc_global_status.status
         scsc_global_status.status = new_status

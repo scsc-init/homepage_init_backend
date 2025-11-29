@@ -4,7 +4,6 @@ from fastapi import APIRouter
 
 from src.controller import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from src.dependencies import UserDep
-from src.model import Comment
 from src.schemas import CommentResponse
 
 comment_router = APIRouter(tags=["comment"])

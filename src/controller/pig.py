@@ -71,7 +71,7 @@ class PigService:
                 f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다",
             )
 
-        pig_article = await self.article_service.create_article_ctrl(
+        pig_article = await self.article_service.create_article(
             BodyCreateArticle(title=body.title, content=body.content, board_id=1),
             current_user.id,
             get_user_role_level("president"),
@@ -153,7 +153,7 @@ class PigService:
             pig.description = body.description
 
         if body.content:
-            pig_article = await self.article_service.create_article_ctrl(
+            pig_article = await self.article_service.create_article(
                 BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
                 current_user.id,
                 get_user_role_level("president"),
@@ -269,7 +269,7 @@ class PigService:
         self.get_by_id(id)
 
         members = self.pig_member_repository.get_members_by_pig_id(id)
-        res: Sequence[PigMemberResponse] = []
+        res: list[PigMemberResponse] = []
         for member in members:
             user = self.user_repository.get_by_id(member.user_id)
 

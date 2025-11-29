@@ -4,10 +4,10 @@ from fastapi import Depends
 
 from src.model import Major
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class MajorRepository(DAO[Major, int]):
+class MajorRepository(CRUDRepository[Major, int]):
     @property
     def model(self) -> type[Major]:
         return Major

@@ -35,7 +35,7 @@ class ArticleService:
         self.article_repository = article_repository
         self.board_repository = board_repository
 
-    async def create_article_ctrl(
+    async def create_article(
         self, body: BodyCreateArticle, user_id: str, user_role: int
     ) -> ArticleResponse:
         board = self.board_repository.get_by_id(body.board_id)
@@ -71,14 +71,6 @@ class ArticleService:
         article_response = ArticleResponse.model_validate(article).model_copy(
             update={"content": body.content}
         )
-        return article_response
-
-    async def create_article(
-        self, current_user: User, body: BodyCreateArticle
-    ) -> ArticleResponse:
-        ret = await self.create_article_ctrl(
-            body=body, user_id=current_user.id, user_role=current_user.role
-        )
 
         try:
             if body.board_id == 5:  # notice
@@ -103,7 +95,7 @@ class ArticleService:
                 exc_info=True,
             )
 
-        return ret
+        return article_response
 
     def get_article_list_by_board(
         self, board_id: int, current_user: User

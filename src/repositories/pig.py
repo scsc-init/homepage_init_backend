@@ -5,10 +5,10 @@ from sqlalchemy import select
 
 from src.model import PIG, PIGMember, SCSCStatus
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class PigRepository(DAO[PIG, int]):
+class PigRepository(CRUDRepository[PIG, int]):
     @property
     def model(self) -> type[PIG]:
         return PIG
@@ -27,7 +27,7 @@ class PigRepository(DAO[PIG, int]):
         return self.session.scalars(select(PIG).where(PIG.status == status)).all()
 
 
-class PigMemberRepository(DAO[PIGMember, int]):
+class PigMemberRepository(CRUDRepository[PIGMember, int]):
     @property
     def model(self) -> type[PIGMember]:
         return PIGMember

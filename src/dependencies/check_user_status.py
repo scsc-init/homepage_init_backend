@@ -4,14 +4,14 @@ from fastapi import HTTPException, Request
 
 from src.repositories import CheckUserStatusRuleRepositoryDep
 
-from .user_auth import UserSafeDep
+from .user_auth import NullableUserDep
 
 logger = logging.getLogger("app")
 
 
 async def check_user_status(
     request: Request,
-    current_user: UserSafeDep,
+    current_user: NullableUserDep,
     check_user_status_rule_repository: CheckUserStatusRuleRepositoryDep,
 ):
     blacklist_rules = check_user_status_rule_repository.get_blacklist_rules_by_request(

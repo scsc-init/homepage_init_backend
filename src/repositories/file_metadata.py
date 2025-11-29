@@ -4,10 +4,10 @@ from fastapi import Depends
 
 from src.model import FileMetadata
 
-from .dao import DAO
+from .dao import CRUDRepository
 
 
-class FileMetadataRepository(DAO[FileMetadata, str]):
+class FileMetadataRepository(CRUDRepository[FileMetadata, str]):
     @property
     def model(self) -> type[FileMetadata]:
         return FileMetadata
