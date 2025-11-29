@@ -1,9 +1,9 @@
 from fastapi import APIRouter, UploadFile
 from fastapi.responses import FileResponse
 
-from src.controller import FileServiceDep
 from src.dependencies import UserDep
 from src.schemas import FileMetadataResponse
+from src.services import FileServiceDep
 
 file_router = APIRouter(tags=["file"])
 

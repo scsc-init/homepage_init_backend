@@ -2,9 +2,9 @@ from typing import Sequence
 
 from fastapi import APIRouter
 
-from src.controller import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from src.dependencies import UserDep
 from src.schemas import CommentResponse
+from src.services import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 
 comment_router = APIRouter(tags=["comment"])
 comment_general_router = APIRouter(

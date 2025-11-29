@@ -2,9 +2,9 @@ from typing import Sequence
 
 from fastapi import APIRouter
 
-from src.controller import KvServiceDep, KvUpdateBody
 from src.dependencies import NullableUserDep, UserDep
 from src.schemas import KvResponse
+from src.services import KvServiceDep, KvUpdateBody
 
 kv_router = APIRouter(prefix="/kv", tags=["kv"])
 

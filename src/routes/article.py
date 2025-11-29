@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from src.controller import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
 from src.dependencies import UserDep
 from src.schemas import ArticleResponse
+from src.services import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
 
 article_router = APIRouter(tags=["article"])
 article_general_router = APIRouter(prefix="/article")

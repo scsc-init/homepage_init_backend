@@ -2,7 +2,9 @@ from typing import Sequence
 
 from fastapi import APIRouter
 
-from src.controller import (
+from src.dependencies import SCSCGlobalStatusDep, UserDep
+from src.schemas import SigMemberResponse, SigResponse
+from src.services import (
     BodyCreateSIG,
     BodyExecutiveJoinSIG,
     BodyExecutiveLeaveSIG,
@@ -10,8 +12,6 @@ from src.controller import (
     BodyUpdateSIG,
     SigServiceDep,
 )
-from src.dependencies import SCSCGlobalStatusDep, UserDep
-from src.schemas import SigMemberResponse, SigResponse
 
 sig_router = APIRouter(tags=["sig"])
 

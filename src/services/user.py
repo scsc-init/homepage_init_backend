@@ -102,13 +102,13 @@ class ProcessDepositResponse(BaseModel):
 class UserService:
     def __init__(
         self,
-        user_repo: UserRepositoryDep,
+        user_repository: UserRepositoryDep,
         user_role_repository: UserRoleRepositoryDep,
-        standby_repo: StandbyReqTblRepositoryDep,
+        standby_repository: StandbyReqTblRepositoryDep,
     ) -> None:
-        self.user_repo = user_repo
+        self.user_repository = user_repository
         self.user_role_repository = user_role_repository
-        self.standby_repo = standby_repo
+        self.standby_repository = standby_repository
 
     async def create_user(self, body: BodyCreateUser) -> UserResponse:
         if not is_valid_phone(body.phone):
@@ -137,7 +137,7 @@ class UserService:
         )
 
         try:
-            user = self.user_repo.create(user)
+            user = self.user_repository.create(user)
         except IntegrityError:
             raise HTTPException(status_code=409, detail="unique field already exists")
 
@@ -145,7 +145,7 @@ class UserService:
         return UserResponse.model_validate(user)
 
     async def enroll_user(self, user_id: str) -> None:
-        user = self.user_repo.get_by_id(user_id)
+        user = self.user_repository.get_by_id(user_id)
         if not user:
             raise HTTPException(404, detail="user not found")
 
@@ -156,7 +156,7 @@ class UserService:
 
         if user.status == UserStatus.pending:
             user.status = UserStatus.standby
-            self.user_repo.update(user)
+            self.user_repository.update(user)
 
         stby_req_tbl = StandbyReqTbl(
             standby_user_id=user.id,
@@ -164,12 +164,12 @@ class UserService:
             deposit_name=f"{user.name}{user.phone[-2:]}",
             is_checked=False,
         )
-        self.standby_repo.create(stby_req_tbl)
+        self.standby_repository.create(stby_req_tbl)
 
         logger.info(f"info_type=user_enrolled ; user_id={user_id}")
 
     def get_user_by_id(self, id: str) -> UserResponse:
-        user = self.user_repo.get_by_id(id)
+        user = self.user_repository.get_by_id(id)
         if not user:
             raise HTTPException(404, detail="user not found")
         return UserResponse.model_validate(user)
@@ -227,7 +227,7 @@ class UserService:
             else:
                 filters["discord_name"] = discord_name
 
-        users = self.user_repo.get_by_filters(filters)
+        users = self.user_repository.get_by_filters(filters)
         return [UserResponse.model_validate(u) for u in users]
 
     @staticmethod
@@ -282,7 +282,7 @@ class UserService:
             current_user.profile_picture_is_url = body.profile_picture_is_url
 
         try:
-            self.user_repo.update(current_user)
+            self.user_repository.update(current_user)
         except IntegrityError:
             raise HTTPException(409, detail="unique field already exists")
 
@@ -301,7 +301,7 @@ class UserService:
         current_user.profile_picture_is_url = False
 
         try:
-            self.user_repo.update(current_user)
+            self.user_repository.update(current_user)
         except IntegrityError as err:
             try:
                 await aiofiles_os.remove(file_path)
@@ -318,7 +318,7 @@ class UserService:
                 detail="임원진 이상의 권한은 휴회원으로 전환할 수 없습니다.",
             )
         current_user.role = get_user_role_level("dormant")
-        self.user_repo.update(current_user)
+        self.user_repository.update(current_user)
 
         if current_user.discord_id:
             await self.change_discord_role(current_user.discord_id, "dormant")
@@ -329,13 +329,13 @@ class UserService:
             raise HTTPException(401, detail="invalid hash token")
 
         user_id = sha256_hash(body.email.lower())
-        user = self.user_repo.get_by_id(user_id)
+        user = self.user_repository.get_by_id(user_id)
 
         if user is None:
             raise HTTPException(404, detail="invalid email address")
 
         user.last_login = datetime.now(timezone.utc)
-        self.user_repo.update(user)
+        self.user_repository.update(user)
 
         payload = {
             "user_id": user.id,
@@ -348,7 +348,7 @@ class UserService:
     async def update_user(
         self, current_user: User, id: str, body: BodyUpdateUser
     ) -> None:
-        user = self.user_repo.get_by_id(id)
+        user = self.user_repository.get_by_id(id)
         if user is None:
             raise HTTPException(404, detail="no user exists")
 
@@ -390,7 +390,7 @@ class UserService:
             user.discord_name = body.discord_name
 
         try:
-            self.user_repo.update(user)
+            self.user_repository.update(user)
         except IntegrityError:
             raise HTTPException(409, detail="unique field already exists")
 
@@ -421,14 +421,14 @@ class OldboyService:
     def __init__(
         self,
         user_service: UserServiceDep,
-        oldboy_repo: OldboyApplicantRepositoryDep,
-        user_repo: UserRepositoryDep,
-        user_role_repo: UserRoleRepositoryDep,
+        oldboy_repository: OldboyApplicantRepositoryDep,
+        user_repository: UserRepositoryDep,
+        user_role_repository: UserRoleRepositoryDep,
     ):
         self.user_service = user_service
-        self.oldboy_repo = oldboy_repo
-        self.user_repo = user_repo
-        self.user_role_repo = user_role_repo
+        self.oldboy_repository = oldboy_repository
+        self.user_repository = user_repository
+        self.user_role_repository = user_role_repository
 
     async def register_applicant(self, current_user: User) -> OldboyApplicant:
         user_created_at_aware = current_user.created_at
@@ -446,27 +446,27 @@ class OldboyService:
         oldboy_applicant = OldboyApplicant(id=current_user.id)
 
         try:
-            oldboy_applicant = self.oldboy_repo.create(oldboy_applicant)
+            oldboy_applicant = self.oldboy_repository.create(oldboy_applicant)
         except IntegrityError:
             raise HTTPException(409, detail="oldboy_applicant already exists")
 
         return oldboy_applicant
 
     def get_applicant_self(self, user_id: str) -> OldboyApplicant:
-        applicant = self.oldboy_repo.get_by_id(user_id)
+        applicant = self.oldboy_repository.get_by_id(user_id)
         if applicant is None:
             raise HTTPException(404, detail="applicant not found for user")
         return applicant
 
     def get_all_applicants(self) -> Sequence[OldboyApplicant]:
-        return self.oldboy_repo.list_all()
+        return self.oldboy_repository.list_all()
 
     async def process_applicant(self, id: str) -> None:
-        oldboy_applicant = self.oldboy_repo.get_by_id(id)
+        oldboy_applicant = self.oldboy_repository.get_by_id(id)
         if not oldboy_applicant:
             raise HTTPException(404, detail="oldboy_applicant not found")
 
-        user = self.user_repo.get_by_id(id)
+        user = self.user_repository.get_by_id(id)
         if not user:
             raise HTTPException(503, detail="user does not exist")
 
@@ -476,32 +476,32 @@ class OldboyService:
         oldboy_applicant.processed = True
         user.role = get_user_role_level("oldboy")
 
-        self.oldboy_repo.update(oldboy_applicant)
-        self.user_repo.update(user)
+        self.oldboy_repository.update(oldboy_applicant)
+        self.user_repository.update(user)
 
         if user.discord_id:
             await self.user_service.change_discord_role(user.discord_id, "oldboy")
 
     async def delete_applicant_self(self, user_id: str) -> None:
-        oldboy_applicant = self.oldboy_repo.get_by_id(user_id)
+        oldboy_applicant = self.oldboy_repository.get_by_id(user_id)
         if not oldboy_applicant:
             raise HTTPException(404, detail="oldboy_applicant not found")
 
         if oldboy_applicant.processed:
             raise HTTPException(409, detail="oldboy_applicant already processed")
 
-        self.oldboy_repo.delete(oldboy_applicant)
+        self.oldboy_repository.delete(oldboy_applicant)
 
     async def delete_applicant_executive(self, id: str) -> None:
-        user = self.user_repo.get_by_id(id)
+        user = self.user_repository.get_by_id(id)
         if not user:
             raise HTTPException(404, detail="user does not exist")
 
-        oldboy_applicant = self.oldboy_repo.get_by_id(user.id)
+        oldboy_applicant = self.oldboy_repository.get_by_id(user.id)
         if not oldboy_applicant:
             raise HTTPException(404, detail="oldboy_applicant not found")
 
-        self.oldboy_repo.delete(oldboy_applicant)
+        self.oldboy_repository.delete(oldboy_applicant)
 
     async def reactivate(self, current_user: User) -> None:
         if current_user.role != get_user_role_level("oldboy"):
@@ -509,11 +509,11 @@ class OldboyService:
 
         current_user.role = get_user_role_level("member")
         current_user.status = UserStatus.pending
-        self.user_repo.update(current_user)
+        self.user_repository.update(current_user)
 
-        oldboy_applicant = self.oldboy_repo.get_by_id(current_user.id)
+        oldboy_applicant = self.oldboy_repository.get_by_id(current_user.id)
         if oldboy_applicant:
-            self.oldboy_repo.delete(oldboy_applicant)
+            self.oldboy_repository.delete(oldboy_applicant)
 
         if current_user.discord_id:
             await self.user_service.change_discord_role(

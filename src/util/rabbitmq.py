@@ -3,11 +3,8 @@ import json
 import uuid
 
 import aio_pika
-from sqlmodel import select
 
 from src.core import get_settings
-from src.model import UserRole
-from src.repositories import UserRoleRepositoryDep
 
 
 async def send_discord_bot_request(

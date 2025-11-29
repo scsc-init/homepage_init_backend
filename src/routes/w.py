@@ -3,10 +3,10 @@ from typing import Sequence
 from fastapi import APIRouter, UploadFile
 from fastapi.responses import FileResponse
 
-from src.controller import WServiceDep
 from src.dependencies import UserDep
 from src.model import WHTMLMetadata
 from src.schemas import WHTMLMetadataResponse, WHTMLMetadataWithCreatorResponse
+from src.services import WServiceDep
 
 w_router = APIRouter(tags=["w"])
 

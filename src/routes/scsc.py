@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from src.controller import BodyUpdateSCSCGlobalStatus, SCSCServiceDep
 from src.dependencies import UserDep
 from src.schemas import SCSCGlobalStatusResponse
+from src.services import BodyUpdateSCSCGlobalStatus, SCSCServiceDep
 
 scsc_router = APIRouter(tags=["scsc"])
 

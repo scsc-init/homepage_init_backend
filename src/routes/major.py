@@ -2,8 +2,8 @@ from typing import Sequence
 
 from fastapi import APIRouter
 
-from src.controller import BodyCreateMajor, MajorServiceDep
 from src.schemas import MajorResponse
+from src.services import BodyCreateMajor, MajorServiceDep
 
 major_router = APIRouter(tags=["major"])
 

@@ -5,9 +5,9 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.core import logger
-from src.model import PIG, PIGMember, SCSCGlobalStatus, SCSCStatus, User
-from src.repositories import PigMemberRepositoryDep, PigRepositoryDep, UserRepositoryDep
-from src.schemas import PigMemberResponse, UserResponse
+from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, User
+from src.repositories import SigMemberRepositoryDep, SigRepositoryDep, UserRepositoryDep
+from src.schemas import SigMemberResponse, UserResponse
 from src.util import (
     get_user_role_level,
     map_semester_name,
@@ -18,14 +18,14 @@ from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
 
 
-class BodyCreatePIG(BaseModel):
+class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
     is_rolling_admission: bool = False
 
 
-class BodyUpdatePIG(BaseModel):
+class BodyUpdateSIG(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     content: Optional[str] = None
@@ -34,53 +34,53 @@ class BodyUpdatePIG(BaseModel):
     is_rolling_admission: Optional[bool] = None
 
 
-class BodyHandoverPIG(BaseModel):
+class BodyHandoverSIG(BaseModel):
     new_owner: str
 
 
-class BodyExecutiveJoinPIG(BaseModel):
+class BodyExecutiveJoinSIG(BaseModel):
     user_id: str
 
 
-class BodyExecutiveLeavePIG(BaseModel):
+class BodyExecutiveLeaveSIG(BaseModel):
     user_id: str
 
 
-class PigService:
+class SigService:
     def __init__(
         self,
-        pig_repository: PigRepositoryDep,
-        pig_member_repository: PigMemberRepositoryDep,
         article_service: ArticleServiceDep,
+        sig_repository: SigRepositoryDep,
+        sig_member_repository: SigMemberRepositoryDep,
         user_repository: UserRepositoryDep,
     ) -> None:
-        self.pig_repository = pig_repository
-        self.pig_member_repository = pig_member_repository
         self.article_service = article_service
+        self.sig_repository = sig_repository
+        self.sig_member_repository = sig_member_repository
         self.user_repository = user_repository
 
-    async def create_pig(
+    async def create_sig(
         self,
         scsc_global_status: SCSCGlobalStatus,
         current_user: User,
-        body: BodyCreatePIG,
-    ) -> PIG:
+        body: BodyCreateSIG,
+    ) -> SIG:
         if scsc_global_status.status not in ctrl_status_available.create_sigpig:
             raise HTTPException(
                 400,
                 f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다",
             )
 
-        pig_article = await self.article_service.create_article(
+        sig_article = await self.article_service.create_article(
             BodyCreateArticle(title=body.title, content=body.content, board_id=1),
             current_user.id,
             get_user_role_level("president"),
         )
 
-        pig = PIG(
+        sig = SIG(
             title=body.title,
             description=body.description,
-            content_id=pig_article.id,
+            content_id=sig_article.id,
             year=scsc_global_status.year,
             semester=scsc_global_status.semester,
             owner=current_user.id,
@@ -89,16 +89,16 @@ class PigService:
         )
 
         try:
-            pig = self.pig_repository.create(pig)
+            sig = self.sig_repository.create(sig)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
-        if pig.id is None:
-            raise HTTPException(503, detail="pig primary key does not exist")
+        if sig.id is None:
+            raise HTTPException(503, detail="sig primary key does not exist")
 
-        pig_member = PIGMember(ig_id=pig.id, user_id=current_user.id)
+        sig_member = SIGMember(ig_id=sig.id, user_id=current_user.id)
         try:
-            self.pig_member_repository.create(pig_member)
+            self.sig_member_repository.create(sig_member)
         except IntegrityError as exc:
             logger.info(exc.orig)
             raise HTTPException(
@@ -109,118 +109,118 @@ class PigService:
             await send_discord_bot_request_no_reply(
                 action_code=4003,
                 body={
-                    "pig_name": pig.title,
+                    "sig_name": sig.title,
                     "user_id_list": [current_user.discord_id],
-                    "pig_description": pig.description,
+                    "sig_description": sig.description,
                 },
             )
 
         logger.info(
-            f"info_type=pig_created ; pig_id={pig.id} ; title={pig.title} ; owner_id={current_user.id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
+            f"info_type=sig_created ; sig_id={sig.id} ; title={sig.title} ; owner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
         )
-        return pig
+        return sig
 
-    def get_by_id(self, id: int) -> PIG:
-        pig = self.pig_repository.get_by_id(id)
-        if not pig:
+    def get_by_id(self, id: int) -> SIG:
+        sig = self.sig_repository.get_by_id(id)
+        if not sig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
-        return pig
+        return sig
 
-    def get_all(self) -> Sequence[PIG]:
-        return self.pig_repository.list_all()
+    def get_all(self) -> Sequence[SIG]:
+        return self.sig_repository.list_all()
 
-    async def update_pig(
+    async def update_sig(
         self,
         id: int,
         current_user: User,
-        body: BodyUpdatePIG,
+        body: BodyUpdateSIG,
         is_executive: bool,
     ) -> None:
-        pig = self.pig_repository.get_by_id(id)
-        if not pig:
+        sig = self.sig_repository.get_by_id(id)
+        if not sig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
 
-        if not is_executive and pig.owner != current_user.id:
+        if not is_executive and sig.owner != current_user.id:
             raise HTTPException(
                 status_code=403, detail="타인의 시그/피그를 변경할 수 없습니다"
             )
 
-        old_title = pig.title
+        old_title = sig.title
 
         if body.title:
-            pig.title = body.title
+            sig.title = body.title
         if body.description:
-            pig.description = body.description
+            sig.description = body.description
 
         if body.content:
-            pig_article = await self.article_service.create_article(
-                BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
+            sig_article = await self.article_service.create_article(
+                BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
                 current_user.id,
                 get_user_role_level("president"),
             )
-            pig.content_id = pig_article.id
+            sig.content_id = sig_article.id
 
         if body.status:
             if not is_executive:
                 raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
-            pig.status = body.status
+            sig.status = body.status
 
         if body.should_extend is not None:
-            pig.should_extend = body.should_extend
+            sig.should_extend = body.should_extend
         if body.is_rolling_admission is not None:
-            pig.is_rolling_admission = body.is_rolling_admission
+            sig.is_rolling_admission = body.is_rolling_admission
 
         try:
-            self.pig_repository.update(pig)
+            self.sig_repository.update(sig)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         bot_body = {}
-        bot_body["pig_name"] = old_title
+        bot_body["sig_name"] = old_title
         if body.title:
-            bot_body["new_pig_name"] = body.title
+            bot_body["new_sig_name"] = body.title
         if body.description:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
             await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
 
         logger.info(
-            f"info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={current_user.id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
+            f"info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
         )
 
-    async def delete_pig(
+    async def delete_sig(
         self,
         id: int,
         current_user: User,
         is_executive: bool,
     ) -> None:
-        pig = self.get_by_id(id)
+        sig = self.get_by_id(id)
 
-        if not is_executive and pig.owner != current_user.id:
+        if not is_executive and sig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
 
-        if pig.status == SCSCStatus.inactive:
+        if sig.status == SCSCStatus.inactive:
             raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
 
-        pig.status = SCSCStatus.inactive
-        self.pig_repository.update(pig)
+        sig.status = SCSCStatus.inactive
+        self.sig_repository.update(sig)
 
         await send_discord_bot_request_no_reply(
             action_code=4004,
             body={
-                "pig_name": pig.title,
-                "previous_semester": f"{pig.year}-{map_semester_name.get(pig.semester)}",
+                "sig_name": sig.title,
+                "previous_semester": f"{sig.year}-{map_semester_name.get(sig.semester)}",
             },
         )
 
         logger.info(
-            f"info_type=pig_deleted ; pig_id={pig.id} ; remover_id={current_user.id}"
+            f"info_type=sig_deleted ; sig_id={sig.id} ; remover_id={current_user.id}"
         )
 
-    def _handover_pig_ctrl(
-        self, pig: PIG, new_owner_id: str, executor_id: str, is_forced: bool
-    ) -> PIG:
-        if pig.owner == new_owner_id:
+    def _handover_sig_ctrl(
+        self, sig: SIG, new_owner_id: str, executor_id: str, is_forced: bool
+    ) -> SIG:
+        if sig.owner == new_owner_id:
             raise HTTPException(
                 status_code=400,
                 detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다",
@@ -233,43 +233,43 @@ class PigService:
                 detail="새로운 시그/피그장에 해당하는 사용자가 없습니다",
             )
 
-        member = self.pig_member_repository.get_by_pig_and_user_id(pig.id, new_owner_id)
+        member = self.sig_member_repository.get_by_sig_and_user_id(sig.id, new_owner_id)
         if member is None:
             raise HTTPException(
                 status_code=404,
                 detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다",
             )
 
-        old_owner = pig.owner
-        pig.owner = new_owner_id
-        self.pig_repository.update(pig)
+        old_owner = sig.owner
+        sig.owner = new_owner_id
+        self.sig_repository.update(sig)
 
         handover_type = "forced" if is_forced else "voluntary"
         logger.info(
-            f"info_type=pig_handover ; handover_type={handover_type} ; pig_id={pig.id} ; title={pig.title} ; "
+            f"info_type=sig_handover ; handover_type={handover_type} ; sig_id={sig.id} ; title={sig.title} ; "
             f"executor_id={executor_id} ; old_owner_id={old_owner} ; new_owner_id={new_owner_id} ; "
-            f"year={pig.year} ; semester={pig.semester}"
+            f"year={sig.year} ; semester={sig.semester}"
         )
 
-        return pig
+        return sig
 
-    def handover_pig(
+    def handover_sig(
         self,
         id: int,
         current_user: User,
-        body: BodyHandoverPIG,
+        body: BodyHandoverSIG,
         is_executive: bool,
     ):
-        pig = self.get_by_id(id)
-        if not is_executive and current_user.id != pig.owner:
+        sig = self.get_by_id(id)
+        if not is_executive and current_user.id != sig.owner:
             raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
-        self._handover_pig_ctrl(pig, body.new_owner, current_user.id, is_executive)
+        self._handover_sig_ctrl(sig, body.new_owner, current_user.id, is_executive)
 
-    def get_members(self, id: int) -> Sequence[PigMemberResponse]:
+    def get_members(self, id: int) -> Sequence[SigMemberResponse]:
         self.get_by_id(id)
 
-        members = self.pig_member_repository.get_members_by_pig_id(id)
-        res: list[PigMemberResponse] = []
+        members = self.sig_member_repository.get_members_by_sig_id(id)
+        res: list[SigMemberResponse] = []
         for member in members:
             user = self.user_repository.get_by_id(member.user_id)
 
@@ -277,7 +277,7 @@ class PigService:
             if user:
                 user_response = UserResponse.model_validate(user)
 
-            member_response = PigMemberResponse(
+            member_response = SigMemberResponse(
                 id=member.id,
                 ig_id=member.ig_id,
                 user_id=member.user_id,
@@ -288,125 +288,125 @@ class PigService:
 
         return res
 
-    async def join_pig(self, id: int, current_user: User) -> None:
-        pig = self.get_by_id(id)
+    async def join_sig(self, id: int, current_user: User) -> None:
+        sig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
+            if sig.is_rolling_admission
             else ctrl_status_available.join_sigpig
         )
-        if pig.status not in allowed:
+        if sig.status not in allowed:
             raise HTTPException(
                 400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
             )
 
-        pig_member = PIGMember(ig_id=id, user_id=current_user.id)
+        sig_member = SIGMember(ig_id=id, user_id=current_user.id)
         try:
-            self.pig_member_repository.create(pig_member)
+            self.sig_member_repository.create(sig_member)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if current_user.discord_id:
             await send_discord_bot_request_no_reply(
                 action_code=2001,
-                body={"user_id": current_user.discord_id, "role_name": pig.title},
+                body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
 
         logger.info(
-            f"info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}"
+            f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
         )
 
-    async def executive_join_pig(
+    async def executive_join_sig(
         self,
         id: int,
         current_user: User,
-        body: BodyExecutiveJoinPIG,
+        body: BodyExecutiveJoinSIG,
     ) -> None:
-        pig = self.get_by_id(id)
+        sig = self.get_by_id(id)
         user = self.user_repository.get_by_id(body.user_id)
         if not user:
             raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
 
-        pig_member = PIGMember(ig_id=id, user_id=body.user_id)
+        sig_member = SIGMember(ig_id=id, user_id=body.user_id)
         try:
-            self.pig_member_repository.create(pig_member)
+            self.sig_member_repository.create(sig_member)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if user.discord_id:
             await send_discord_bot_request_no_reply(
                 action_code=2001,
-                body={"user_id": user.discord_id, "role_name": pig.title},
+                body={"user_id": user.discord_id, "role_name": sig.title},
             )
 
         logger.info(
-            f"info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
+            f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
         )
 
-    async def leave_pig(self, id: int, current_user: User) -> None:
-        pig = self.get_by_id(id)
+    async def leave_sig(self, id: int, current_user: User) -> None:
+        sig = self.get_by_id(id)
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
+            if sig.is_rolling_admission
             else ctrl_status_available.join_sigpig
         )
-        if pig.status not in allowed:
+        if sig.status not in allowed:
             raise HTTPException(
                 400,
                 f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다",
             )
-        if pig.owner == current_user.id:
+        if sig.owner == current_user.id:
             raise HTTPException(
                 409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
             )
 
-        member = self.pig_member_repository.get_by_pig_and_user_id(id, current_user.id)
+        member = self.sig_member_repository.get_by_sig_and_user_id(id, current_user.id)
         if not member:
             raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
 
-        self.pig_member_repository.delete(member)
+        self.sig_member_repository.delete(member)
 
         if current_user.discord_id:
             await send_discord_bot_request_no_reply(
                 action_code=2002,
-                body={"user_id": current_user.discord_id, "role_name": pig.title},
+                body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
 
         logger.info(
-            f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}"
+            f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
         )
 
-    async def executive_leave_pig(
+    async def executive_leave_sig(
         self,
         id: int,
         current_user: User,
-        body: BodyExecutiveLeavePIG,
+        body: BodyExecutiveLeaveSIG,
     ) -> None:
-        pig = self.get_by_id(id)
+        sig = self.get_by_id(id)
         user = self.user_repository.get_by_id(body.user_id)
         if not user:
             raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
 
-        if pig.owner == user.id:
+        if sig.owner == user.id:
             raise HTTPException(
                 409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
             )
 
-        member = self.pig_member_repository.get_by_pig_and_user_id(id, body.user_id)
+        member = self.sig_member_repository.get_by_sig_and_user_id(id, body.user_id)
         if not member:
             raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
 
-        self.pig_member_repository.delete(member)
+        self.sig_member_repository.delete(member)
 
         if user.discord_id:
             await send_discord_bot_request_no_reply(
                 action_code=2002,
-                body={"user_id": user.discord_id, "role_name": pig.title},
+                body={"user_id": user.discord_id, "role_name": sig.title},
             )
 
         logger.info(
-            f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
+            f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
         )
 
 
-PigServiceDep = Annotated[PigService, Depends()]
+SigServiceDep = Annotated[SigService, Depends()]

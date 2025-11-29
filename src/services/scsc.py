@@ -75,11 +75,11 @@ class SCSCService:
         self.scsc_global_status = scsc_global_status
         self.user_service = user_service
         self.oldboy_service = oldboy_service
-        self.sig_repo = sig_repository
-        self.pig_repo = pig_repository
-        self.user_repo = user_repository
-        self.standby_repo = standby_repository
-        self.oldboy_repo = oldboy_repository
+        self.sig_repository = sig_repository
+        self.pig_repository = pig_repository
+        self.user_repository = user_repository
+        self.standby_repository = standby_repository
+        self.oldboy_repository = oldboy_repository
 
     def get_global_status(self) -> SCSCGlobalStatus:
         return self.scsc_global_status
@@ -94,7 +94,7 @@ class SCSCService:
             (4002, "sig_name") if model == SIG else (4004, "pig_name")
         )
 
-        repo = self.sig_repo if model == SIG else self.pig_repo
+        repo = self.sig_repository if model == SIG else self.pig_repository
         igs = repo.get_by_year_semester_not_inactive(
             scsc_global_status.year, scsc_global_status.semester
         )
@@ -138,14 +138,14 @@ class SCSCService:
 
         # end of inactive
         if scsc_global_status.status == SCSCStatus.inactive:
-            newcomers = self.user_repo.get_by_status_and_role(
+            newcomers = self.user_repository.get_by_status_and_role(
                 UserStatus.pending, get_user_role_level("newcomer")
             )
             for user in newcomers:
                 user.status = UserStatus.banned
                 self.session.add(user)
 
-            members = self.user_repo.get_by_status_and_role(
+            members = self.user_repository.get_by_status_and_role(
                 UserStatus.pending, get_user_role_level("member")
             )
             for user in members:
@@ -180,12 +180,12 @@ class SCSCService:
 
         # start of active
         if new_status == SCSCStatus.active:
-            recruiting_sigs = self.sig_repo.get_by_status(SCSCStatus.recruiting)
+            recruiting_sigs = self.sig_repository.get_by_status(SCSCStatus.recruiting)
             for sig in recruiting_sigs:
                 sig.status = SCSCStatus.active
                 self.session.add(sig)
 
-            recruiting_pigs = self.pig_repo.get_by_status(SCSCStatus.recruiting)
+            recruiting_pigs = self.pig_repository.get_by_status(SCSCStatus.recruiting)
             for pig in recruiting_pigs:
                 pig.status = SCSCStatus.active
                 self.session.add(pig)
@@ -239,25 +239,25 @@ class SCSCService:
 
         # start of inactive
         if new_status == SCSCStatus.inactive:
-            standbys = self.standby_repo.list_all()
+            standbys = self.standby_repository.list_all()
             for standby in standbys:
                 self.session.delete(standby)
 
-            active_newcomers = self.user_repo.get_by_status_and_role(
+            active_newcomers = self.user_repository.get_by_status_and_role(
                 UserStatus.active, get_user_role_level("newcomer")
             )
             for user in active_newcomers:
                 user.status = UserStatus.pending
                 self.session.add(user)
 
-            active_members = self.user_repo.get_by_status_and_role(
+            active_members = self.user_repository.get_by_status_and_role(
                 UserStatus.active, get_user_role_level("member")
             )
             for user in active_members:
                 user.status = UserStatus.pending
                 self.session.add(user)
 
-            unprocessed_applicants = self.oldboy_repo.get_unprocessed()
+            unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 await self.oldboy_service.process_applicant(applicant.id)
 

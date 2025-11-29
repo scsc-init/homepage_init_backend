@@ -16,8 +16,8 @@ from src.util import validate_and_read_file
 
 
 class WService:
-    def __init__(self, w_repo: WRepositoryDep) -> None:
-        self.w_repo = w_repo
+    def __init__(self, w_repository: WRepositoryDep) -> None:
+        self.w_repository = w_repository
 
     async def upload_file(self, current_user: User, file: UploadFile) -> WHTMLMetadata:
         content, basename, _, _ = await validate_and_read_file(
@@ -39,7 +39,7 @@ class WService:
         )
 
         try:
-            w_meta = self.w_repo.create(w_meta)
+            w_meta = self.w_repository.create(w_meta)
         except IntegrityError as err:
             try:
                 await aiofiles_os.remove(
@@ -59,7 +59,7 @@ class WService:
         return w_meta
 
     def get_w_by_name(self, name: str) -> FileResponse:
-        w_meta = self.w_repo.get_by_id(name)
+        w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
         return FileResponse(
@@ -68,7 +68,7 @@ class WService:
         )
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:
-        results = self.w_repo.get_all_with_creator_name()
+        results = self.w_repository.get_all_with_creator_name()
         response_list: list[tuple[WHTMLMetadata, str]] = []
         for row in results:
             response_list.append(row._tuple())
@@ -77,7 +77,7 @@ class WService:
     async def update_w_by_name(
         self, name: str, current_user: User, file: UploadFile
     ) -> WHTMLMetadata:
-        w_meta = self.w_repo.get_by_id(name)
+        w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
 
@@ -88,7 +88,7 @@ class WService:
         w_meta.size = len(content)
         w_meta.creator = current_user.id
 
-        w_meta = self.w_repo.update(w_meta)
+        w_meta = self.w_repository.update(w_meta)
 
         async with aiofiles.open(
             path.join(get_settings().w_html_dir, f"{name}.html"), "wb"
@@ -101,12 +101,12 @@ class WService:
         return w_meta
 
     async def delete_w_by_name(self, name: str, current_user: User) -> None:
-        w_meta = self.w_repo.get_by_id(name)
+        w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
 
         try:
-            self.w_repo.delete(w_meta)
+            self.w_repository.delete(w_meta)
         except Exception:
             logger.error(
                 f"err_type=delete_w_by_name ; {name=} ; msg=failed to remove file record from DB"

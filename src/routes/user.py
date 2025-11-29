@@ -2,7 +2,9 @@ from typing import Optional, Sequence
 
 from fastapi import APIRouter, UploadFile
 
-from src.controller import (
+from src.dependencies import UserDep
+from src.schemas import UserResponse
+from src.services import (
     BodyCreateUser,
     BodyLogin,
     BodyUpdateMyProfile,
@@ -16,8 +18,6 @@ from src.controller import (
     UserService,
     UserServiceDep,
 )
-from src.dependencies import UserDep
-from src.schemas import UserResponse
 from src.util import (
     DepositDTO,
 )

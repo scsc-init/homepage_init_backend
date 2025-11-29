@@ -2,7 +2,9 @@ from typing import Sequence
 
 from fastapi import APIRouter
 
-from src.controller import (
+from src.dependencies import SCSCGlobalStatusDep, UserDep
+from src.schemas import PigMemberResponse, PigResponse
+from src.services import (
     BodyCreatePIG,
     BodyExecutiveJoinPIG,
     BodyExecutiveLeavePIG,
@@ -10,8 +12,6 @@ from src.controller import (
     BodyUpdatePIG,
     PigServiceDep,
 )
-from src.dependencies import SCSCGlobalStatusDep, UserDep
-from src.schemas import PigMemberResponse, PigResponse
 
 pig_router = APIRouter(tags=["pig"])
 

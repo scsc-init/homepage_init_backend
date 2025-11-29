@@ -1,11 +1,10 @@
 from functools import lru_cache
-from typing import Annotated
 
-from fastapi import Depends, HTTPException
-from sqlmodel import select
+from fastapi import HTTPException
+from sqlalchemy import select
 
-from src.db import DBSessionFactory, SessionDep
-from src.model import SCSCGlobalStatus, UserRole
+from src.db import DBSessionFactory
+from src.model import UserRole
 
 
 @lru_cache
