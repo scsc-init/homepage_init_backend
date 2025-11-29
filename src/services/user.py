@@ -274,7 +274,8 @@ class UserService:
             current_user.major_id = body.major_id
 
         if body.profile_picture:
-            if not is_valid_img_url(body.profile_picture):
+            valid = await asyncio.to_thread(is_valid_img_url, body.profile_picture)
+            if not valid:
                 raise HTTPException(400, detail="invalid image url")
             current_user.profile_picture = body.profile_picture
 
@@ -527,34 +528,34 @@ OldboyServiceDep = Annotated[OldboyService, Depends()]
 class StandbyService:
     def __init__(
         self,
-        standby_repo: StandbyReqTblRepositoryDep,
-        user_repo: UserRepositoryDep,
+        standby_repository: StandbyReqTblRepositoryDep,
+        user_repository: UserRepositoryDep,
     ):
-        self.standby_repo = standby_repo
-        self.user_repo = user_repo
+        self.standby_repository = standby_repository
+        self.user_repository = user_repository
 
     def get_standby_list(self) -> Sequence[StandbyReqTbl]:
-        return self.standby_repo.list_all()
+        return self.standby_repository.list_all()
 
     async def process_standby_list_manually(
         self, current_user: User, body: ProcessStandbyListManuallyBody
     ) -> None:
-        user = self.user_repo.get_by_id(body.id)
+        user = self.user_repository.get_by_id(body.id)
         if not user:
             raise HTTPException(404, detail="user not found")
         if user.status == UserStatus.active:
             raise HTTPException(409, detail="the user is already active")
 
         user.status = UserStatus.active
-        self.user_repo.update(user)
+        self.user_repository.update(user)
 
-        standbyreq = self.standby_repo.get_by_user_id(body.id)
+        standbyreq = self.standby_repository.get_by_user_id(body.id)
 
         if standbyreq:
             standbyreq.is_checked = True
             standbyreq.deposit_name = f"Manually by {current_user.name}"
             standbyreq.deposit_time = datetime.now(timezone.utc)
-            self.standby_repo.update(standbyreq)
+            self.standby_repository.update(standbyreq)
         else:
             standbyreq = StandbyReqTbl(
                 standby_user_id=user.id,
@@ -563,7 +564,7 @@ class StandbyService:
                 deposit_time=datetime.now(timezone.utc),
                 is_checked=True,
             )
-            self.standby_repo.create(standbyreq)
+            self.standby_repository.create(standbyreq)
 
     async def process_standby_list(
         self, file: UploadFile
@@ -614,17 +615,21 @@ class StandbyService:
     ) -> ProcessDepositResult:
         try:
             if deposit.deposit_name[-2:].isdigit():
-                matching_standbyreqs = self.standby_repo.get_unchecked_by_deposit_name(
-                    deposit.deposit_name
+                matching_standbyreqs = (
+                    self.standby_repository.get_unchecked_by_deposit_name(
+                        deposit.deposit_name
+                    )
                 )  # search on deposit_name, which is "name+last 2 phone number" form
             else:
-                matching_standbyreqs = self.standby_repo.get_unchecked_by_user_name(
-                    deposit.deposit_name
+                matching_standbyreqs = (
+                    self.standby_repository.get_unchecked_by_user_name(
+                        deposit.deposit_name
+                    )
                 )  # search on user_name, which is "name" form
 
             matching_users = []
             for req in matching_standbyreqs:
-                u = self.user_repo.get_by_id(req.standby_user_id)
+                u = self.user_repository.get_by_id(req.standby_user_id)
                 if u:
                     matching_users.append(UserResponse.model_validate(u))
 
@@ -643,11 +648,13 @@ class StandbyService:
                 if deposit.deposit_name[-2:].isdigit():
                     name = deposit.deposit_name[:-2]
                     phone_tail = deposit.deposit_name[-2:]
-                    matching_users_error = self.user_repo.get_by_name_and_phone_tail(
-                        name, phone_tail
+                    matching_users_error = (
+                        self.user_repository.get_by_name_and_phone_tail(
+                            name, phone_tail
+                        )
                     )
                 else:
-                    matching_users_error = self.user_repo.get_by_name(
+                    matching_users_error = self.user_repository.get_by_name(
                         deposit.deposit_name
                     )
 
@@ -690,7 +697,7 @@ class StandbyService:
                     )
                 if user.status == UserStatus.pending:
                     user.status = UserStatus.standby
-                    self.user_repo.update(user)
+                    self.user_repository.update(user)
 
                 new_req = StandbyReqTbl(
                     standby_user_id=user.id,
@@ -698,7 +705,7 @@ class StandbyService:
                     deposit_name=f"{user.name}{user.phone[-2:]}",
                     is_checked=False,
                 )
-                self.standby_repo.create(new_req)
+                self.standby_repository.create(new_req)
                 matching_standbyreqs = [new_req]
 
             # len(matching_standbyreqs) == 1:
@@ -724,7 +731,7 @@ class StandbyService:
                 )
 
             stby_user = matching_standbyreqs[0]
-            user = self.user_repo.get_by_id(stby_user.standby_user_id)
+            user = self.user_repository.get_by_id(stby_user.standby_user_id)
             if not user:
                 logger.error(
                     f"err_type=deposit ; err_code=500 ; msg=unexpected error: user not found in user table ; deposit={deposit} ; users={matching_users}"
@@ -767,11 +774,11 @@ class StandbyService:
         self, user: User, stby_req: StandbyReqTbl, deposit: DepositDTO
     ) -> None:
         user.status = UserStatus.active
-        self.user_repo.update(user)
+        self.user_repository.update(user)
         stby_req.deposit_time = deposit.deposit_time
         stby_req.deposit_name = deposit.deposit_name
         stby_req.is_checked = True
-        self.standby_repo.update(stby_req)
+        self.standby_repository.update(stby_req)
 
 
 StandbyServiceDep = Annotated[StandbyService, Depends()]
