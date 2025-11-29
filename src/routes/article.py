@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from src.controller import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
-from src.model import ArticleResponse
-from src.util import UserDep
+from src.dependencies import UserDep
+from src.schemas import ArticleResponse
+from src.services import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
 
 article_router = APIRouter(tags=["article"])
 article_general_router = APIRouter(prefix="/article")
@@ -15,7 +15,9 @@ async def create_article(
     current_user: UserDep,
     body: BodyCreateArticle,
 ) -> ArticleResponse:
-    return await article_service.create_article(current_user, body)
+    return await article_service.create_article(
+        body, current_user.id, current_user.role
+    )
 
 
 # This works as "api/article" + "s/{board_id}" (="api/articles/{board_id}")

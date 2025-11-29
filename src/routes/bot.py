@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from src.controller import BodySendMessageToID, BotServiceDep
+from src.services import BodySendMessageToID, BotServiceDep
 
 bot_router = APIRouter(tags=["bot"])
 

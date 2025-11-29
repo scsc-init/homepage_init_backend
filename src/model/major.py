@@ -1,14 +1,17 @@
-from sqlmodel import Field, SQLModel, UniqueConstraint
+from sqlalchemy import Integer, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.db import Base
 
 
-class Major(SQLModel, table=True):
-    __tablename__ = "major"  # type: ignore
+class Major(Base):
+    __tablename__ = "major"
     __table_args__ = (
         UniqueConstraint("college", "major_name", name="uq_college_major"),
     )
 
-    id: int = Field(
-        default=None, primary_key=True
-    )  # default=None because of autoincrement
-    college: str = Field(nullable=False)
-    major_name: str = Field(nullable=False)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    college: Mapped[str] = mapped_column(nullable=False)
+    major_name: Mapped[str] = mapped_column(nullable=False)

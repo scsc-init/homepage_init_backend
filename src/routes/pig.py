@@ -1,6 +1,10 @@
+from typing import Sequence
+
 from fastapi import APIRouter
 
-from src.controller import (
+from src.dependencies import SCSCGlobalStatusDep, UserDep
+from src.schemas import PigMemberResponse, PigResponse
+from src.services import (
     BodyCreatePIG,
     BodyExecutiveJoinPIG,
     BodyExecutiveLeavePIG,
@@ -8,7 +12,6 @@ from src.controller import (
     BodyUpdatePIG,
     PigServiceDep,
 )
-from src.util import SCSCGlobalStatusDep, UserDep
 
 pig_router = APIRouter(tags=["pig"])
 
@@ -19,18 +22,21 @@ async def create_pig(
     current_user: UserDep,
     body: BodyCreatePIG,
     pig_service: PigServiceDep,
-):
-    return await pig_service.create_pig(scsc_global_status, current_user, body)
+) -> PigResponse:
+    pig = await pig_service.create_pig(scsc_global_status, current_user, body)
+    return PigResponse.model_validate(pig)
 
 
 @pig_router.get("/pig/{id}")
-async def get_pig_by_id(id: int, pig_service: PigServiceDep):
-    return pig_service.get_by_id(id)
+async def get_pig_by_id(id: int, pig_service: PigServiceDep) -> PigResponse:
+    pig = pig_service.get_by_id(id)
+    return PigResponse.model_validate(pig)
 
 
 @pig_router.get("/pigs")
-async def get_all_pigs(pig_service: PigServiceDep):
-    return pig_service.get_all()
+async def get_all_pigs(pig_service: PigServiceDep) -> Sequence[PigResponse]:
+    pig_list = pig_service.get_all()
+    return PigResponse.model_validate_list(pig_list)
 
 
 @pig_router.post("/pig/{id}/update", status_code=204)
@@ -92,7 +98,9 @@ async def executive_handover_pig(
 
 
 @pig_router.get("/pig/{id}/members")
-async def get_pig_members(id: int, pig_service: PigServiceDep) -> list:
+async def get_pig_members(
+    id: int, pig_service: PigServiceDep
+) -> Sequence[PigMemberResponse]:
     return pig_service.get_members(id)
 
 

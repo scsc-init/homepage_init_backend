@@ -1,6 +1,6 @@
-from .article import Article, ArticleResponse, Board
-from .check_user_status_rule import CheckUserStatusRule
-from .comment import Comment, CommentResponse
+from .article import Article, Board
+from .check_user_status_rule import CheckUserStatusRule, HTTPMethod
+from .comment import Comment
 from .file_metadata import FileMetadata
 from .key_value import KeyValue
 from .major import Major
@@ -11,7 +11,6 @@ from .user import (
     OldboyApplicant,
     StandbyReqTbl,
     User,
-    UserResponse,
     UserRole,
     UserStatus,
 )

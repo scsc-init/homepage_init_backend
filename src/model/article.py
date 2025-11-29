@@ -1,34 +1,77 @@
 from datetime import datetime, timezone
 
-from sqlmodel import Field, SQLModel
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.db import Base
 
 
-class Board(SQLModel, table=True):
-    __tablename__ = "board"  # type: ignore
-    id: int = Field(
-        default=None, primary_key=True
-    )  # default=None because of autoincrement
-    name: str = Field()
-    description: str = Field()
-    writing_permission_level: int = Field(foreign_key="user_role.level", default=0)
-    reading_permission_level: int = Field(foreign_key="user_role.level", default=0)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+class Board(Base):
+    __tablename__ = "board"
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    name: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+    writing_permission_level: Mapped[int] = mapped_column(
+        Integer, ForeignKey("user_role.level"), default=0
+    )
+    reading_permission_level: Mapped[int] = mapped_column(
+        Integer, ForeignKey("user_role.level"), default=0
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default_factory=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
 
-class Article(SQLModel, table=True):
-    __tablename__ = "article"  # type: ignore
-    id: int = Field(
-        default=None, primary_key=True
-    )  # default=None because of autoincrement
-    title: str = Field()
-    author_id: str = Field(foreign_key="user.id")
-    board_id: int = Field(foreign_key="board.id")
-    is_deleted: bool = Field(default=False, nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    deleted_at: datetime | None = Field(default=None, nullable=True)
+class Article(Base):
+    __tablename__ = "article"
 
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
 
-class ArticleResponse(Article):
-    content: str
+    title: Mapped[str] = mapped_column(String, nullable=False)
+
+    author_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("user.id"),
+        nullable=False,
+    )
+
+    board_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("board.id"),
+        nullable=False,
+    )
+
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )

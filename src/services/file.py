@@ -6,17 +6,17 @@ from fastapi import Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from src.core import get_settings, logger
-from src.db import SessionDep
 from src.model import FileMetadata, User
+from src.repositories import FileMetadataRepositoryDep
 from src.util import create_uuid, split_filename, validate_and_read_file
 
 
 class FileService:
     def __init__(
         self,
-        session: SessionDep,
+        file_metadata_repository: FileMetadataRepositoryDep,
     ) -> None:
-        self.session = session
+        self.file_metadata_repository = file_metadata_repository
 
     async def upload_file(
         self, current_user: User, file: UploadFile = File(...)
@@ -35,11 +35,10 @@ class FileService:
             mime_type=mime_type,
             owner=current_user.id,
         )
-        self.session.add(file_meta)
+
         try:
-            self.session.commit()
+            file_meta = self.file_metadata_repository.create(file_meta)
         except Exception:
-            self.session.rollback()
             try:
                 os.remove(path.join(get_settings().file_dir, f"{uuid}.{ext}"))
             except OSError:
@@ -49,11 +48,11 @@ class FileService:
                     exc_info=True,
                 )
             raise
-        self.session.refresh(file_meta)
+
         return file_meta
 
     def get_docs_by_id(self, id: str) -> FileResponse:
-        file_meta = self.session.get(FileMetadata, id)
+        file_meta = self.file_metadata_repository.get_by_id(id)
         if not file_meta:
             raise HTTPException(404, detail="file not found")
         _, ext = split_filename(file_meta.original_filename)
@@ -77,11 +76,9 @@ class FileService:
             mime_type=mime_type,
             owner=current_user.id,
         )
-        self.session.add(image)
         try:
-            self.session.commit()
+            image = self.file_metadata_repository.create(image)
         except Exception:
-            self.session.rollback()
             try:
                 os.remove(path.join(get_settings().image_dir, f"{uuid}.{ext}"))
             except OSError:
@@ -91,11 +88,11 @@ class FileService:
                     exc_info=True,
                 )
             raise
-        self.session.refresh(image)
+
         return image
 
     def get_image_by_id(self, id: str) -> FileResponse:
-        image = self.session.get(FileMetadata, id)
+        image = self.file_metadata_repository.get_by_id(id)
         if not image:
             raise HTTPException(404, detail="image not found")
         _, ext = split_filename(image.original_filename)

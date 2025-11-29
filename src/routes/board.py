@@ -2,9 +2,9 @@ from typing import Sequence
 
 from fastapi import APIRouter
 
-from src.controller import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
-from src.model import Board
-from src.util import UserDep
+from src.dependencies import UserDep
+from src.schemas import BoardResponse
+from src.services import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
 
 board_router = APIRouter(tags=["board"])
 
@@ -14,18 +14,21 @@ async def create_board(
     current_user: UserDep,
     body: BodyCreateBoard,
     board_service: BoardServiceDep,
-) -> Board:
-    return board_service.create_board(current_user, body)
+) -> BoardResponse:
+    board = board_service.create_board(current_user, body)
+    return BoardResponse.model_validate(board)
 
 
 @board_router.get("/board/{id}")
-async def get_board_by_id(id: int, board_service: BoardServiceDep) -> Board:
-    return board_service.get_board_by_id(id=id)
+async def get_board_by_id(id: int, board_service: BoardServiceDep) -> BoardResponse:
+    board = board_service.get_board_by_id(id=id)
+    return BoardResponse.model_validate(board)
 
 
 @board_router.get("/boards")
-async def get_board_list(board_service: BoardServiceDep) -> Sequence[Board]:
-    return board_service.get_board_list()
+async def get_board_list(board_service: BoardServiceDep) -> Sequence[BoardResponse]:
+    board_list = board_service.get_board_list()
+    return BoardResponse.model_validate_list(board_list)
 
 
 @board_router.post("/executive/board/update/{id}", status_code=204)

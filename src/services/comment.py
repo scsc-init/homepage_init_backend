@@ -4,11 +4,15 @@ from typing import Annotated, Optional, Sequence
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select
 
 from src.core import logger
-from src.db import SessionDep
-from src.model import Article, Board, Comment, CommentResponse, User
+from src.model import Comment, User
+from src.repositories import (
+    ArticleRepositoryDep,
+    BoardRepositoryDep,
+    CommentRepositoryDep,
+)
+from src.schemas import CommentResponse
 from src.util import DELETED
 
 
@@ -25,19 +29,23 @@ class BodyUpdateComment(BaseModel):
 class CommentService:
     def __init__(
         self,
-        session: SessionDep,
+        article_repository: ArticleRepositoryDep,
+        board_repository: BoardRepositoryDep,
+        comment_repository: CommentRepositoryDep,
     ) -> None:
-        self.session = session
+        self.article_repository = article_repository
+        self.board_repository = board_repository
+        self.comment_repository = comment_repository
 
     def create_comment(self, current_user: User, body: BodyCreateComment) -> Comment:
-        article = self.session.get(Article, body.article_id)
+        article = self.article_repository.get_by_id(body.article_id)
         if not article:
             raise HTTPException(
                 status_code=404, detail=f"Article {body.article_id} does not exist"
             )
         if article.is_deleted:
             raise HTTPException(status_code=410, detail="Article has been deleted")
-        board = self.session.get(Board, article.board_id)
+        board = self.board_repository.get_by_id(article.board_id)
         if not board:
             raise HTTPException(503, detail="board does not exist")
 
@@ -46,20 +54,18 @@ class CommentService:
                 status_code=403,
                 detail="You are not allowed to write this comment",
             )
-
         comment = Comment(
             content=body.content,
             author_id=current_user.id,
             article_id=article.id,
             parent_id=body.parent_id,
         )
-        self.session.add(comment)
         try:
-            self.session.commit()
-        except IntegrityError:
-            self.session.rollback()
-            raise HTTPException(status_code=409, detail="unique field already exists")
-        self.session.refresh(comment)
+            comment = self.comment_repository.create(comment)
+        except IntegrityError as exc:
+            raise HTTPException(
+                status_code=409, detail="unique field already exists"
+            ) from exc
 
         logger.info(
             f"info_type=comment_created ; content={body.content[:100]} ; author_id={current_user.id} ; article_id={article.id} ; parent_id={body.parent_id}"
@@ -69,12 +75,12 @@ class CommentService:
     def get_comments_by_article(
         self, article_id: int, current_user: User
     ) -> Sequence[CommentResponse]:
-        article = self.session.get(Article, article_id)
+        article = self.article_repository.get_by_id(article_id)
         if not article:
             raise HTTPException(
                 status_code=404, detail=f"Article {article_id} does not exist"
             )
-        board = self.session.get(Board, article.board_id)
+        board = self.board_repository.get_by_id(article.board_id)
         if not board:
             raise HTTPException(503, detail="board does not exist")
 
@@ -84,9 +90,7 @@ class CommentService:
                 detail="You are not allowed to read these comments",
             )
 
-        comments = self.session.exec(
-            select(Comment).where(Comment.article_id == article_id)
-        ).all()
+        comments = self.comment_repository.get_comments_by_article_id(article_id)
         result = []
         for comment in comments:
             comment = CommentResponse.model_validate(comment)
@@ -96,13 +100,13 @@ class CommentService:
         return result
 
     def get_comment_by_id(self, id: int, current_user: User) -> CommentResponse:
-        comment = self.session.get(Comment, id)
+        comment = self.comment_repository.get_by_id(id)
         if not comment:
             raise HTTPException(status_code=404, detail=f"Comment {id} does not exist")
-        article = self.session.get(Article, comment.article_id)
+        article = self.article_repository.get_by_id(comment.article_id)
         if not article:
             raise HTTPException(503, detail="article does not exist")
-        board = self.session.get(Board, article.board_id)
+        board = self.board_repository.get_by_id(article.board_id)
         if not board:
             raise HTTPException(503, detail="board does not exist")
 
@@ -119,8 +123,8 @@ class CommentService:
 
     def update_comment_by_author(
         self, id: int, current_user: User, body: BodyUpdateComment
-    ) -> None:
-        comment = self.session.get(Comment, id)
+    ) -> Comment:
+        comment = self.comment_repository.get_by_id(id)
         if not comment:
             raise HTTPException(
                 status_code=404,
@@ -137,17 +141,20 @@ class CommentService:
 
         comment.content = body.content
         comment.updated_at = datetime.now(timezone.utc)
+        try:
+            comment = self.comment_repository.update(comment)
+        except IntegrityError as exc:
+            raise HTTPException(
+                status_code=409, detail="unique field already exists"
+            ) from exc
         logger.info(
             f"info_type=comment_updated ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; content={body.content[:100]} ; revisioner_id={current_user.id}"
         )
-        try:
-            self.session.commit()
-        except IntegrityError:
-            self.session.rollback()
-            raise HTTPException(status_code=409, detail="unique field already exists")
+
+        return comment
 
     def delete_comment_by_author(self, id: int, current_user: User) -> None:
-        comment = self.session.get(Comment, id)
+        comment = self.comment_repository.get_by_id(id)
         if not comment:
             raise HTTPException(
                 status_code=404,
@@ -164,13 +171,19 @@ class CommentService:
 
         comment.is_deleted = True
         comment.deleted_at = datetime.now(timezone.utc)
+
+        try:
+            comment = self.comment_repository.update(comment)
+        except IntegrityError as exc:
+            raise HTTPException(
+                status_code=409, detail="unique field already exists"
+            ) from exc
         logger.info(
             f"info_type=comment_deleted ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; remover_id={current_user.id}"
         )
-        self.session.commit()
 
     def delete_comment_by_executive(self, id: int, current_user: User) -> None:
-        comment = self.session.get(Comment, id)
+        comment = self.comment_repository.get_by_id(id)
         if not comment:
             raise HTTPException(
                 status_code=404,
@@ -182,10 +195,15 @@ class CommentService:
         comment.is_deleted = True
         comment.deleted_at = datetime.now(timezone.utc)
 
+        try:
+            comment = self.comment_repository.update(comment)
+        except IntegrityError as exc:
+            raise HTTPException(
+                status_code=409, detail="unique field already exists"
+            ) from exc
         logger.info(
             f"info_type=comment_deleted ; comment_id={comment.id} ; article_id={comment.article_id} ; parent_id={comment.parent_id} ; remover_id={current_user.id}"
         )
-        self.session.commit()
 
 
 CommentServiceDep = Annotated[CommentService, Depends()]

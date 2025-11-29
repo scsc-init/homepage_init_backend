@@ -1,6 +1,10 @@
+from typing import Sequence
+
 from fastapi import APIRouter
 
-from src.controller import (
+from src.dependencies import SCSCGlobalStatusDep, UserDep
+from src.schemas import SigMemberResponse, SigResponse
+from src.services import (
     BodyCreateSIG,
     BodyExecutiveJoinSIG,
     BodyExecutiveLeaveSIG,
@@ -8,7 +12,6 @@ from src.controller import (
     BodyUpdateSIG,
     SigServiceDep,
 )
-from src.util import SCSCGlobalStatusDep, UserDep
 
 sig_router = APIRouter(tags=["sig"])
 
@@ -19,18 +22,21 @@ async def create_sig(
     current_user: UserDep,
     body: BodyCreateSIG,
     sig_service: SigServiceDep,
-):
-    return await sig_service.create_sig(scsc_global_status, current_user, body)
+) -> SigResponse:
+    sig = await sig_service.create_sig(scsc_global_status, current_user, body)
+    return SigResponse.model_validate(sig)
 
 
 @sig_router.get("/sig/{id}")
-async def get_sig_by_id(id: int, sig_service: SigServiceDep):
-    return sig_service.get_by_id(id)
+async def get_sig_by_id(id: int, sig_service: SigServiceDep) -> SigResponse:
+    sig = sig_service.get_by_id(id)
+    return SigResponse.model_validate(sig)
 
 
 @sig_router.get("/sigs")
-async def get_all_sigs(sig_service: SigServiceDep):
-    return sig_service.get_all()
+async def get_all_sigs(sig_service: SigServiceDep) -> Sequence[SigResponse]:
+    sig_list = sig_service.get_all()
+    return SigResponse.model_validate_list(sig_list)
 
 
 @sig_router.post("/sig/{id}/update", status_code=204)
@@ -92,7 +98,9 @@ async def executive_handover_sig(
 
 
 @sig_router.get("/sig/{id}/members")
-async def get_sig_members(id: int, sig_service: SigServiceDep) -> list:
+async def get_sig_members(
+    id: int, sig_service: SigServiceDep
+) -> Sequence[SigMemberResponse]:
     return sig_service.get_members(id)
 
 

@@ -1,20 +1,24 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.db import Base
 
 
-class FileMetadata(SQLModel, table=True):
-    __tablename__ = "file_metadata"  # type: ignore
+class FileMetadata(Base):
+    __tablename__ = "file_metadata"
 
-    id: str = Field(primary_key=True)
+    id: Mapped[str] = mapped_column(String, primary_key=True)
 
-    original_filename: str = Field(nullable=False)
-    size: int = Field(nullable=False)
-    mime_type: str = Field(nullable=False)
-
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    original_filename: Mapped[str] = mapped_column(String, nullable=False)
+    size: Mapped[int] = mapped_column(Integer, nullable=False)
+    mime_type: Mapped[str] = mapped_column(String, nullable=False)
+    owner: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("user.id"), nullable=True
     )
 
-    owner: Optional[str] = Field(nullable=True, foreign_key="user.id")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default_factory=lambda: datetime.now(timezone.utc)
+    )

@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
-from src.controller import BodyUpdateSCSCGlobalStatus, SCSCServiceDep
-from src.model import SCSCGlobalStatus
-from src.util import UserDep
+from src.dependencies import UserDep
+from src.schemas import SCSCGlobalStatusResponse
+from src.services import BodyUpdateSCSCGlobalStatus, SCSCServiceDep
 
 scsc_router = APIRouter(tags=["scsc"])
 
@@ -10,8 +10,9 @@ scsc_router = APIRouter(tags=["scsc"])
 @scsc_router.get("/scsc/global/status")
 async def get_scsc_global_status(
     scsc_service: SCSCServiceDep,
-) -> SCSCGlobalStatus:
-    return scsc_service.get_global_status()
+) -> SCSCGlobalStatusResponse:
+    scsc_global_status = scsc_service.get_global_status()
+    return SCSCGlobalStatusResponse.model_validate(scsc_global_status)
 
 
 @scsc_router.get("/scsc/global/statuses")
