@@ -116,9 +116,10 @@ class UserService:
         if not is_valid_student_id(body.student_id):
             raise HTTPException(422, detail="invalid student_id")
 
-        valid = await asyncio.to_thread(is_valid_img_url, body.profile_picture)
-        if body.profile_picture_is_url and not valid:
-            raise HTTPException(400, detail="invalid image url")
+        if body.profile_picture_is_url:
+            valid = await asyncio.to_thread(is_valid_img_url, body.profile_picture)
+            if not valid:
+                raise HTTPException(400, detail="invalid image url")
 
         expected = generate_user_hash(body.email)
         if not hmac.compare_digest(body.hashToken, expected):
@@ -274,9 +275,10 @@ class UserService:
             current_user.major_id = body.major_id
 
         if body.profile_picture:
-            valid = await asyncio.to_thread(is_valid_img_url, body.profile_picture)
-            if not valid:
-                raise HTTPException(400, detail="invalid image url")
+            if body.profile_picture_is_url:
+                valid = await asyncio.to_thread(is_valid_img_url, body.profile_picture)
+                if not valid:
+                    raise HTTPException(400, detail="invalid image url")
             current_user.profile_picture = body.profile_picture
 
         if body.profile_picture_is_url is not None:
