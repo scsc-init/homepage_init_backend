@@ -44,21 +44,18 @@ async def send_discord_bot_request(
             message, routing_key=get_settings().discord_receive_queue
         )
 
-        future = asyncio.get_event_loop().create_future()
-
-        async with reply_queue.iterator() as queue_iter:
-            async for msg in queue_iter:
-                async with msg.process():
-                    payload = json.loads(msg.body)
-                    if payload.get("correlation_id") == correlation_id:
-                        future.set_result(payload.get("result"))
-                        break
+        async def _consume_reply():
+            async with reply_queue.iterator() as queue_iter:
+                async for msg in queue_iter:
+                    async with msg.process():
+                        payload = json.loads(msg.body)
+                        if payload.get("correlation_id") == correlation_id:
+                            return payload.get("result")
 
         try:
-            result = await asyncio.wait_for(future, timeout=timeout)
-            return result
+            return await asyncio.wait_for(_consume_reply(), timeout=timeout)
         except asyncio.TimeoutError:
-            raise TimeoutError("Bot response timed out")
+            raise TimeoutError("Bot response timed out") from None
 
     finally:
         await connection.close()
