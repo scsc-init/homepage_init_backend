@@ -12,6 +12,7 @@
 * **Method**: `POST`
 * **URL**: `/api/file/docs/upload`
 * **설명**: 인증된 사용자가 파일을 업로드한다. 업로드된 파일 정보는 DB에 저장되며, 고유한 `id(UUID v4)`가 부여된다.
+* **가능한 MIME type**: jpg, jpeg, png, svg, gif, webp
 
 * **Request**:
   * **Content-Type**: `multipart/form-data`
