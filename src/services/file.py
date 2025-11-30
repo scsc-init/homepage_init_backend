@@ -62,7 +62,9 @@ class FileService:
         self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
         content, basename, ext, mime_type = await validate_and_read_file(
-            file, valid_mime_type="image/", valid_ext=frozenset({"jpg", "jpeg", "png"})
+            file,
+            valid_mime_type="image/",
+            valid_ext=frozenset({"jpg", "jpeg", "png", "svg", "gif", "webp"}),
         )
 
         uuid = create_uuid()
