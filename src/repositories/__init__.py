@@ -1,4 +1,5 @@
 from .article import ArticleRepositoryDep
+from .attachment import AttachmentRepositoryDep
 from .board import BoardRepositoryDep
 from .check_user_status_rule import CheckUserStatusRuleRepositoryDep
 from .comment import CommentRepositoryDep

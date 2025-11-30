@@ -1,4 +1,4 @@
-from .article import ArticleResponse
+from .article import ArticleResponse, ArticleWithAttachmentResponse
 from .board import BoardResponse
 from .comment import CommentResponse
 from .file_metadata import FileMetadataResponse

@@ -9,8 +9,12 @@ from sqlalchemy.exc import IntegrityError
 
 from src.core import get_settings, logger
 from src.model import Article, User
-from src.repositories import ArticleRepositoryDep, BoardRepositoryDep
-from src.schemas import ArticleResponse
+from src.repositories import (
+    ArticleRepositoryDep,
+    AttachmentRepositoryDep,
+    BoardRepositoryDep,
+)
+from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
 from src.util import DELETED, send_discord_bot_request_no_reply
 
 
@@ -18,26 +22,30 @@ class BodyCreateArticle(BaseModel):
     title: str
     content: str
     board_id: int
+    attachments: list[str] = []
 
 
 class BodyUpdateArticle(BaseModel):
     title: str
     content: str
     board_id: int
+    attachments: list[str] = []
 
 
 class ArticleService:
     def __init__(
         self,
         article_repository: ArticleRepositoryDep,
+        attachment_repository: AttachmentRepositoryDep,
         board_repository: BoardRepositoryDep,
     ) -> None:
         self.article_repository = article_repository
+        self.attachment_repository = attachment_repository
         self.board_repository = board_repository
 
     async def create_article(
         self, body: BodyCreateArticle, user_id: str, user_role: int
-    ) -> ArticleResponse:
+    ) -> ArticleWithAttachmentResponse:
         board = self.board_repository.get_by_id(body.board_id)
         if not board:
             raise HTTPException(
@@ -65,11 +73,18 @@ class ArticleService:
                 f"err_type=create_article_ctrl ; failed to write file ; {article.id=}",
                 exc_info=True,
             )
+        attach_inserted = self.attachment_repository.insert_or_ignore_list(
+            article.id, body.attachments
+        )
         logger.info(
             f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
-        article_response = ArticleResponse.model_validate(article).model_copy(
-            update={"content": body.content}
+        article_response = ArticleWithAttachmentResponse.model_validate(
+            {
+                **article.__dict__,
+                "content": body.content,
+                "attachments": attach_inserted,
+            }
         )
 
         try:
@@ -141,7 +156,9 @@ class ArticleService:
 
         return result
 
-    def get_article_by_id(self, id: int, current_user: User) -> ArticleResponse:
+    def get_article_by_id(
+        self, id: int, current_user: User
+    ) -> ArticleWithAttachmentResponse:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(404, detail="Article not found")
@@ -156,8 +173,8 @@ class ArticleService:
                 )
 
         if article.is_deleted:
-            return ArticleResponse.model_validate(article).model_copy(
-                update={"content": DELETED}
+            return ArticleWithAttachmentResponse.model_validate(
+                {**article.__dict__, "content": DELETED, "attachments": []}
             )
 
         try:
@@ -173,8 +190,13 @@ class ArticleService:
                 exc_info=True,
             )
             content = ""
-        return ArticleResponse.model_validate(article).model_copy(
-            update={"content": content}
+        attachments = self.attachment_repository.select_by_article_id(article.id)
+        return ArticleWithAttachmentResponse.model_validate(
+            {
+                **article.__dict__,
+                "content": content,
+                "attachments": [a.file_id for a in attachments],
+            }
         )
 
     async def _update_article(
@@ -209,6 +231,8 @@ class ArticleService:
                 f"err_type=update_article_by_author ; failed to write file ; {article.id=}",
                 exc_info=True,
             )
+        self.attachment_repository.delete_by_article_id(article.id)
+        self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
 
     async def update_article_by_author(
         self, id: int, current_user: User, body: BodyUpdateArticle
