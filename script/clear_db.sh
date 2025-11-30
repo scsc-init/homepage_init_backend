@@ -16,9 +16,6 @@ while [[ true ]]; do
     fi
 done
 
-rm -f ../db/*.db && 
-rm -f ../static/article/*.md && 
-rm -f ../static/image/pfps/* && 
-rm -f ../static/image/photos/* && 
-rm -f ../static/downloads/* &&
+rm ../db/*.db && 
+rm -r ../static/ &&
 echo "successfully removed database files"

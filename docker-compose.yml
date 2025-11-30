@@ -7,7 +7,6 @@ services:
       - .env
     volumes:
       - ./static/:/app/static/
-      - ./download/:/app/download/
       - ./logs/:/app/logs/
       - ./db/:/app/db/
     entrypoint: bash
