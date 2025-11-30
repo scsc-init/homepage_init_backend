@@ -193,11 +193,13 @@ ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
 - **URL**: `/api/article/create`
 - **설명**: 게시글 생성
 - **Request Body** (JSON):
+  - attachments: optional
 ```json
 {
   "title": "안녕하세요",
   "content": "## Hello?",
-  "board_id": 1
+  "board_id": 1,
+  "attachments": ["file_id"]
 }
 ```
 - **Response**:
@@ -209,7 +211,8 @@ ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
   "board_id": 1,
   "author_id": "",
   "created_at": "2025-04-01T12:00:00",
-  "updated_at": "2025-04-01T12:00:00"
+  "updated_at": "2025-04-01T12:00:00",
+  "attachments": ["file_id"]
 }
 ```
 - **Status Codes**:
@@ -260,7 +263,8 @@ ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
   "board_id": 1,
   "author_id": "",
   "created_at": "2025-04-01T12:00:00",
-  "updated_at": "2025-04-01T12:00:00"
+  "updated_at": "2025-04-01T12:00:00",
+  "attachments": ["file_id"]
 }
 ```
 - **Status Codes**:
@@ -275,23 +279,13 @@ ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
 - **URL**: `/api/article/update/:id`
 - **설명**: 게시글 수정
 - **Request Body** (JSON):
+  - attachments: optional
 ```json
 {
-  "title": "안녕하세요",
-  "content": "## Hello?",
-  "board_id": 1
-}
-```
-- **Response**:
-```json
-{
-  "id": 1,
   "title": "안녕하세요",
   "content": "## Hello?",
   "board_id": 1,
-  "author_id": "",
-  "created_at": "2025-04-01T12:00:00",
-  "updated_at": "2025-04-01T12:00:00"
+  "attachments": ["file_id"]
 }
 ```
 - **Status Codes**:
@@ -309,23 +303,13 @@ ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
 - **URL**: `/api/executive/article/update/:id`
 - **설명**: 게시글 수정
 - **Request Body** (JSON):
+  - attachments: optional
 ```json
 {
-  "title": "안녕하세요",
-  "content": "## Hello?",
-  "board_id": 1
-}
-```
-- **Response**:
-```json
-{
-  "id": 1,
   "title": "안녕하세요",
   "content": "## Hello?",
   "board_id": 1,
-  "author_id": "",
-  "created_at": "2025-04-01T12:00:00",
-  "updated_at": "2025-04-01T12:00:00"
+  "attachments": ["file_id"]
 }
 ```
 - **Status Codes**:
