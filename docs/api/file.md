@@ -12,8 +12,7 @@
 * **Method**: `POST`
 * **URL**: `/api/file/docs/upload`
 * **설명**: 인증된 사용자가 파일을 업로드한다. 업로드된 파일 정보는 DB에 저장되며, 고유한 `id(UUID v4)`가 부여된다.
-* **가능한 MIME type**: image/jpeg, image/png, image/svg+xml, image/gif, image/webp  
-  *(확장자: jpg, jpeg, png, svg, gif, webp)*
+
 
 * **Request**:
   * **Content-Type**: `multipart/form-data`
@@ -80,6 +79,8 @@ GET /api/file/download/4c85a8be-59c3-4e1a-bd2f-9f22a0f4d22e
 * **Method**: `POST`
 * **URL**: `/api/file/image/upload`
 * **설명**: 인증된 사용자가 이미지를 업로드한다. 업로드된 이미지 정보는 DB에 저장되며, 고유한 `id(UUID v4)`가 부여된다.
+* **가능한 MIME type**: image/jpeg, image/png, image/svg+xml, image/gif, image/webp  
+  *(확장자: jpg, jpeg, png, svg, gif, webp)*
 
 * **Request**:
   * **Content-Type**: `multipart/form-data`
