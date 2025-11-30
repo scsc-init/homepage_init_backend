@@ -78,8 +78,9 @@ GET /api/file/download/4c85a8be-59c3-4e1a-bd2f-9f22a0f4d22e
 * **Method**: `POST`
 * **URL**: `/api/file/image/upload`
 * **설명**: 인증된 사용자가 이미지를 업로드한다. 업로드된 이미지 정보는 DB에 저장되며, 고유한 `id(UUID v4)`가 부여된다.
-* **가능한 MIME type**: image/*  
-  *(확장자: jpg, jpeg, png, svg, gif, webp)*
+* **허용 파일 형식**: MIME Type과 확장자 모두 정해진 조건을 만족해야 한다. 
+  * MIME Type: image/*  
+  * 확장자: jpg, jpeg, png, svg, gif, webp
 
 * **Request**:
   * **Content-Type**: `multipart/form-data`
