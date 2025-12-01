@@ -74,6 +74,8 @@ pygments==2.19.1
     # via homepage-init-backend (pyproject.toml)
 pyjwt==2.10.1
     # via homepage-init-backend (pyproject.toml)
+pytest==9.0.1
+    # via homepage-init-backend (pyproject.toml)
 python-dotenv==1.1.0
     # via homepage-init-backend (pyproject.toml)
 python-multipart==0.0.20
