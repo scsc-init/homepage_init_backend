@@ -13,7 +13,7 @@ TEST_DB_PATH = Path(__file__).resolve().parent / "test.sqlite3"
 TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("SQLITE_FILENAME", str(TEST_DB_PATH))
 
-import src.model  # noqa: F401 - ensure SQLAlchemy models register metadata
+import src.model
 from main import app
 from src.core import get_settings
 from src.db import Base, DBSessionFactory
@@ -94,13 +94,16 @@ def create_major(db_session) -> Callable[..., Major]:
 
 
 @pytest.fixture
-def create_user(db_session, create_major) -> Callable[..., User]:
+def create_user(
+    db_session, create_major, make_jwt_token
+) -> Callable[..., tuple[User, Optional[str]]]:
     def _create_user(
         *,
         role_level: int = 300,
         status: UserStatus = UserStatus.active,
         major: Optional[Major] = None,
-    ) -> User:
+        issue_token: bool = True,
+    ) -> tuple[User, Optional[str]]:
         assigned_major = major or create_major()
         unique = uuid.uuid4().hex[:8]
         user = User(
@@ -116,7 +119,8 @@ def create_user(db_session, create_major) -> Callable[..., User]:
         db_session.add(user)
         db_session.commit()
         db_session.refresh(user)
-        return user
+        token = make_jwt_token(user.id) if issue_token else None
+        return user, token
 
     return _create_user
 
@@ -139,7 +143,7 @@ def create_status_rule(db_session) -> Callable[..., CheckUserStatusRule]:
 
 
 @pytest.fixture
-def issue_jwt_token():
+def make_jwt_token():
     settings = get_settings()
 
     def _issue(user_id: str, *, expires_in: int = 3600) -> str:

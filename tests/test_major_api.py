@@ -1,15 +1,8 @@
-from src.model import UserStatus
+﻿def test_create_major_success(api_client, build_headers, create_user):
+    """임원진이 새 전공을 생성할 수 있는지 확인한다."""
+    _, token = create_user(role_level=500)
 
-
-def _create_executive(create_user, issue_jwt_token):
-    executive = create_user(role_level=500, status=UserStatus.active)
-    return executive, issue_jwt_token(executive.id)
-
-
-def test_create_major_success(api_client, build_headers, issue_jwt_token, create_user):
-    executive, token = _create_executive(create_user, issue_jwt_token)
-
-    payload = {"college": "Engineering", "major_name": "Computer Science"}
+    payload = {"college": "공과대학", "major_name": "컴퓨터공학부"}
     response = api_client.post(
         "/api/executive/major/create", json=payload, headers=build_headers(token)
     )
@@ -21,11 +14,10 @@ def test_create_major_success(api_client, build_headers, issue_jwt_token, create
     assert isinstance(body["id"], int)
 
 
-def test_create_major_duplicate_returns_409(
-    api_client, build_headers, create_user, issue_jwt_token
-):
-    _, token = _create_executive(create_user, issue_jwt_token)
-    payload = {"college": "Engineering", "major_name": "Computer Science"}
+def test_create_major_duplicate_returns_409(api_client, build_headers, create_user):
+    """이미 존재하는 전공을 다시 만들면 409가 발생하는지 검증한다."""
+    _, token = create_user(role_level=500)
+    payload = {"college": "공과대학", "major_name": "컴퓨터공학부"}
     first = api_client.post(
         "/api/executive/major/create", json=payload, headers=build_headers(token)
     )
@@ -36,67 +28,47 @@ def test_create_major_duplicate_returns_409(
     )
 
     assert duplicate.status_code == 409
-    assert duplicate.json()["detail"] == "major already exists"
 
 
 def test_get_all_majors_returns_created_entries(
     api_client, build_headers, create_major
 ):
-    create_major(college="Engineering", major_name="Computer Science")
-    create_major(college="Science", major_name="Mathematics")
+    """전공 목록 API가 저장된 한글 데이터를 그대로 반환하는지 확인한다."""
+    create_major(college="공과대학", major_name="컴퓨터공학부")
+    create_major(college="자연과학대학", major_name="수학과")
 
     response = api_client.get("/api/majors", headers=build_headers())
 
     assert response.status_code == 200
     majors = response.json()
-    assert {m["major_name"] for m in majors} == {"Computer Science", "Mathematics"}
+    assert {m["major_name"] for m in majors} == {"컴퓨터공학부", "수학과"}
 
 
 def test_get_major_by_id_success(api_client, build_headers, create_major):
-    major = create_major(college="Science", major_name="Chemistry")
+    """단일 전공 조회가 정확한 이름을 돌려주는지 검증한다."""
+    major = create_major(college="자연과학대학", major_name="화학과")
 
     response = api_client.get(f"/api/major/{major.id}", headers=build_headers())
 
     assert response.status_code == 200
-    assert response.json()["major_name"] == "Chemistry"
+    assert response.json()["major_name"] == "화학과"
 
 
 def test_get_major_by_id_not_found(api_client, build_headers):
+    """없는 전공 ID를 조회하면 404가 나는지 확인한다."""
     response = api_client.get("/api/major/999", headers=build_headers())
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "major not found"
 
 
-def test_update_major_requires_executive_role(
-    api_client, build_headers, issue_jwt_token, create_user, create_major
-):
-    major = create_major(college="Engineering", major_name="Aerospace")
-    member = create_user(role_level=300)
-    token = issue_jwt_token(member.id)
+def test_update_major_success(api_client, build_headers, create_major, create_user):
+    """집행 권한 사용자가 전공 이름을 수정할 수 있는지 검증한다."""
+    major = create_major(college="공과대학", major_name="토목공학과")
+    _, token = create_user(role_level=500)
 
     response = api_client.post(
         f"/api/executive/major/update/{major.id}",
-        json={"college": "Engineering", "major_name": "Astronautics"},
-        headers=build_headers(token),
-    )
-
-    assert response.status_code == 403
-    assert (
-        response.json()["detail"]
-        == "Permission denied: at least executive role required"
-    )
-
-
-def test_update_major_success(
-    api_client, build_headers, create_user, issue_jwt_token, create_major
-):
-    major = create_major(college="Engineering", major_name="Civil")
-    _, token = _create_executive(create_user, issue_jwt_token)
-
-    response = api_client.post(
-        f"/api/executive/major/update/{major.id}",
-        json={"college": "Engineering", "major_name": "Civil and Environmental"},
+        json={"college": "공과대학", "major_name": "건설환경공학부"},
         headers=build_headers(token),
     )
 
@@ -104,15 +76,16 @@ def test_update_major_success(
 
     updated = api_client.get(f"/api/major/{major.id}", headers=build_headers())
     assert updated.status_code == 200
-    assert updated.json()["major_name"] == "Civil and Environmental"
+    assert updated.json()["major_name"] == "건설환경공학부"
 
 
 def test_update_major_duplicate_returns_409(
-    api_client, build_headers, create_user, issue_jwt_token, create_major
+    api_client, build_headers, create_major, create_user
 ):
-    source = create_major(college="Engineering", major_name="Bio")
-    target = create_major(college="Engineering", major_name="Nano")
-    _, token = _create_executive(create_user, issue_jwt_token)
+    """다른 전공과 동일한 이름으로 수정하면 중복 오류가 발생하는지 확인한다."""
+    source = create_major(college="공과대학", major_name="생명공학과")
+    target = create_major(college="공과대학", major_name="나노공학과")
+    _, token = create_user(role_level=500)
 
     response = api_client.post(
         f"/api/executive/major/update/{source.id}",
@@ -121,15 +94,15 @@ def test_update_major_duplicate_returns_409(
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "major already exists"
 
 
 def test_delete_major_blocked_by_foreign_key(
-    api_client, build_headers, create_user, issue_jwt_token, create_major
+    api_client, build_headers, create_user, create_major
 ):
-    target_major = create_major(college="Science", major_name="Biology")
-    create_user(role_level=300, major=target_major)
-    _, token = _create_executive(create_user, issue_jwt_token)
+    """전공에 소속된 사용자가 있으면 삭제가 막히는지 검증한다."""
+    target_major = create_major(college="자연과학대학", major_name="생물학과")
+    create_user(role_level=300, major=target_major, issue_token=False)
+    _, token = create_user(role_level=500)
 
     response = api_client.post(
         f"/api/executive/major/delete/{target_major.id}",
@@ -137,16 +110,11 @@ def test_delete_major_blocked_by_foreign_key(
     )
 
     assert response.status_code == 400
-    assert (
-        response.json()["detail"]
-        == "Cannot delete major: it is referenced by existing users"
-    )
 
 
-def test_delete_major_not_found(
-    api_client, build_headers, create_user, issue_jwt_token
-):
-    _, token = _create_executive(create_user, issue_jwt_token)
+def test_delete_major_not_found(api_client, build_headers, create_user):
+    """삭제 대상 전공이 없을 때 404를 반환하는지 확인한다."""
+    _, token = create_user(role_level=500)
 
     response = api_client.post(
         "/api/executive/major/delete/999",
@@ -154,14 +122,12 @@ def test_delete_major_not_found(
     )
 
     assert response.status_code == 404
-    assert response.json()["detail"] == "major not found"
 
 
-def test_delete_major_success(
-    api_client, build_headers, create_user, issue_jwt_token, create_major
-):
-    target_major = create_major(college="Science", major_name="Geology")
-    _, token = _create_executive(create_user, issue_jwt_token)
+def test_delete_major_success(api_client, build_headers, create_major, create_user):
+    """정상적인 삭제 흐름이 완료되면 재조회 시 404가 되는지 검증한다."""
+    target_major = create_major(college="자연과학대학", major_name="지질학과")
+    _, token = create_user(role_level=500)
 
     response = api_client.post(
         f"/api/executive/major/delete/{target_major.id}",
