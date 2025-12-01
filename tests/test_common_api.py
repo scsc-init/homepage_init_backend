@@ -16,7 +16,7 @@ def test_invalid_api_secret_is_rejected(api_client):
 
 
 def test_executive_routes_require_authentication(api_client, build_headers):
-    """집행 전용 API를 인증 없이 호출할 수 없는지 확인한다."""
+    """임원 전용 API를 인증 없이 호출할 수 없는지 확인한다."""
     response = api_client.post(
         "/api/executive/major/create",
         json={"college": "Engineering", "major_name": "Computer Science"},

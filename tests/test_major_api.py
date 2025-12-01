@@ -101,7 +101,7 @@ def test_delete_major_blocked_by_foreign_key(
 ):
     """전공에 소속된 사용자가 있으면 삭제가 막히는지 검증한다."""
     target_major = create_major(college="자연과학대학", major_name="생물학과")
-    create_user(role_level=300, major=target_major, issue_token=False)
+    create_user(role_level=300, major=target_major)
     _, token = create_user(role_level=500)
 
     response = api_client.post(

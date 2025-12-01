@@ -96,14 +96,13 @@ def create_major(db_session) -> Callable[..., Major]:
 @pytest.fixture
 def create_user(
     db_session, create_major, make_jwt_token
-) -> Callable[..., tuple[User, Optional[str]]]:
+) -> Callable[..., tuple[User, str]]:
     def _create_user(
         *,
         role_level: int = 300,
         status: UserStatus = UserStatus.active,
         major: Optional[Major] = None,
-        issue_token: bool = True,
-    ) -> tuple[User, Optional[str]]:
+    ) -> tuple[User, str]:
         assigned_major = major or create_major()
         unique = uuid.uuid4().hex[:8]
         user = User(
@@ -119,7 +118,7 @@ def create_user(
         db_session.add(user)
         db_session.commit()
         db_session.refresh(user)
-        token = make_jwt_token(user.id) if issue_token else None
+        token = make_jwt_token(user.id)
         return user, token
 
     return _create_user
