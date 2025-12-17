@@ -248,6 +248,7 @@ class SCSCService:
             )
             for user in active_newcomers:
                 user.status = UserStatus.pending
+                user.role = get_user_role_level("member")
                 self.session.add(user)
 
             active_members = self.user_repository.get_by_status_and_role(
