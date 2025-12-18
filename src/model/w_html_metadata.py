@@ -1,18 +1,27 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.db import Base
 
 
-class WHTMLMetadata(SQLModel, table=True):
-    __tablename__ = "w_html_metadata"  # type: ignore
+class WHTMLMetadata(Base):
+    __tablename__ = "w_html_metadata"
 
-    name: str = Field(primary_key=True)
-    size: int = Field(nullable=False, ge=0)
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    name: Mapped[str] = mapped_column(String, primary_key=True)
+    size: Mapped[int] = mapped_column(
+        Integer, CheckConstraint("size >= 0"), nullable=False
     )
-    updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    creator: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("user.id"), nullable=True
     )
-    creator: Optional[str] = Field(nullable=True, foreign_key="user.id")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default_factory=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )

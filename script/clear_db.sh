@@ -2,7 +2,7 @@
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-echo "WARNING: This will delete all database files, articles, and images!"
+echo "WARNING: This will delete all database files and the entire static directory!"
 
 while [[ true ]]; do
     read -p "Are you sure you want to continue? (yes/no): " confirm
@@ -16,9 +16,6 @@ while [[ true ]]; do
     fi
 done
 
-rm -f ../db/*.db && 
-rm -f ../static/article/*.md && 
-rm -f ../static/image/pfps/* && 
-rm -f ../static/image/photos/* && 
-rm -f ../static/downloads/* &&
-echo "successfully removed database files"
+rm ../db/*.db || { echo "Failed to remove database files"; exit 1; }
+rm -r ../static/ || { echo "Failed to remove static directory"; exit 1; }
+echo "Successfully removed database files and static directory"

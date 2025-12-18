@@ -1,53 +1,40 @@
-import logging
-from typing import Optional
+from typing import Sequence
 
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
+from fastapi import APIRouter
 
-from src.controller.key_value import get_kv_value as get_kv_value_ctrl
-from src.controller.key_value import update_kv_value as update_kv_value_ctrl
-from src.db import SessionDep
-from src.util import get_user
-
-logger = logging.getLogger("app")
+from src.dependencies import NullableUserDep, UserDep
+from src.schemas import KvResponse
+from src.services import KvServiceDep, KvUpdateBody
 
 kv_router = APIRouter(prefix="/kv", tags=["kv"])
-
-
-class KvUpdateBody(BaseModel):
-    value: Optional[str] = None
 
 
 @kv_router.get("/{key}")
 async def get_kv_value(
     key: str,
-    session: SessionDep,
-) -> dict[str, Optional[str]]:
-    entry = get_kv_value_ctrl(session, key)
-    return {"key": entry.key, "value": entry.value}
+    kv_service: KvServiceDep,
+) -> KvResponse:
+    kv = kv_service.get_kv_value(key)
+    return KvResponse.model_validate(kv)
+
+
+# This works as "api/kv" + "s" (="api/kvs")
+@kv_router.get("s")
+async def get_all_kv_values(
+    current_user: NullableUserDep,
+    kv_service: KvServiceDep,
+) -> Sequence[KvResponse]:
+    role = current_user.role if current_user else 0
+    kvs = kv_service.get_all_kv_values(role)
+    return KvResponse.model_validate_list(kvs)
 
 
 @kv_router.post("/{key}/update")
 async def update_kv_value(
     key: str,
+    current_user: UserDep,
     body: KvUpdateBody,
-    session: SessionDep,
-    request: Request,
-) -> dict[str, Optional[str]]:
-    current_user = get_user(request)
-
-    updated_entry = update_kv_value_ctrl(
-        session,
-        key=key,
-        value=body.value,
-        actor_role=current_user.role,
-    )
-
-    logger.info(
-        "info_type=kv_updated ; key=%s ; value=%s ; updater_id=%s",
-        key,
-        updated_entry.value,
-        current_user.id,
-    )
-
-    return {"key": updated_entry.key, "value": updated_entry.value}
+    kv_service: KvServiceDep,
+) -> KvResponse:
+    kv = kv_service.update_kv_value(key, current_user, body)
+    return KvResponse.model_validate(kv)

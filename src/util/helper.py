@@ -4,11 +4,9 @@ import hmac
 import io
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException, Request
 from pydantic import BaseModel, field_validator
 
 from src.core import get_settings
-from src.model import User
 
 map_semester_name = {
     1: "1",
@@ -50,13 +48,6 @@ def split_filename(filename: str) -> tuple[str, str]:
         return filename, ""
 
     return base_name, extension.lower()
-
-
-def get_user(request: Request) -> User:
-    user = request.state.user
-    if not user:
-        raise HTTPException(401, detail="Not logged in")
-    return user
 
 
 def kst2utc(kst_naive_dt: datetime) -> datetime:

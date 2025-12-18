@@ -1,30 +1,34 @@
 from datetime import datetime, timezone
+from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-
-class Comment(SQLModel, table=True):
-    __tablename__ = "comment"  # type: ignore
-    id: int = Field(
-        default=None, primary_key=True
-    )  # default=None because of autoincrement
-    content: str = Field()
-    author_id: str = Field(foreign_key="user.id")
-    article_id: int = Field(foreign_key="article.id")
-    parent_id: int | None = Field(default=None, foreign_key="comment.id", nullable=True)
-    is_deleted: bool = Field(default=False, nullable=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    deleted_at: datetime | None = Field(default=None, nullable=True)
+from src.db import Base
 
 
-class CommentResponse(SQLModel, table=False):
-    id: int
-    content: str
-    author_id: str
-    article_id: int
-    parent_id: int | None
-    is_deleted: bool
-    created_at: datetime
-    updated_at: datetime
-    deleted_at: datetime | None
+class Comment(Base):
+    __tablename__ = "comment"
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    content: Mapped[str] = mapped_column(String)
+    author_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"))
+    article_id: Mapped[int] = mapped_column(Integer, ForeignKey("article.id"))
+    parent_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("comment.id"), default=None, nullable=True
+    )
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default_factory=lambda: datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        default=None,
+        nullable=True,
+    )

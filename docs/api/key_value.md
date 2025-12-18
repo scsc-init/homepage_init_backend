@@ -59,6 +59,17 @@ END;
   - `200 OK`
   - `404 Not Found`: 존재하지 않는 키
 
+- **Method**: `GET`
+- **URL**: `/api/kvs`
+- **Response 예시**:
+  ```json
+  {
+    "footer-message": "서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com",
+    "president": "<hash-of-main-president>",
+    "vice-president": "<hash-of-vice-president>"
+  }
+  ```
+
 ### post 
 - **Method**: `POST`
 - **URL**: `/api/kv/{key}/update`

@@ -27,8 +27,8 @@ generate_hash() {
 }
 
 # Initialize counters
-phone_number_base=9900000001
-student_id_base=200000001
+phone_number_base=8900000001
+student_id_base=300000001
 
 SQL_VALUES=""
 
