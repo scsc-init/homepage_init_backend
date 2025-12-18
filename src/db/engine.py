@@ -4,6 +4,7 @@ import sqlalchemy
 from fastapi import Depends
 from sqlalchemy import event, orm
 from sqlalchemy.orm.session import Session
+from sqlalchemy.pool import NullPool
 
 from src.core import get_settings
 
@@ -14,7 +15,9 @@ class DBSessionFactory(metaclass=SingletonMeta):
     def __init__(self):
         self._sqlite_url = f"sqlite:///{get_settings().sqlite_filename}"
         self._engine: sqlalchemy.Engine = sqlalchemy.create_engine(
-            self._sqlite_url, connect_args={"check_same_thread": False}
+            self._sqlite_url,
+            poolclass=NullPool,
+            connect_args={"check_same_thread": False},
         )
 
         self._session_maker = orm.sessionmaker(
