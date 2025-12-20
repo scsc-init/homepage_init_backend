@@ -2,6 +2,7 @@ from typing import Annotated, Optional
 
 import jwt
 from fastapi import Depends, HTTPException, Request
+from sqlalchemy.orm import Session
 
 from src.core import get_settings
 from src.db import SessionDep
@@ -9,24 +10,21 @@ from src.model import User
 
 
 async def user_auth(request: Request, session: SessionDep):
+    request.state.user = resolve_request_user(request, session)
+
+
+def resolve_request_user(request: Request, session: Session) -> Optional[User]:
     settings = get_settings()
 
     if not settings.user_check:
-        user = session.get(
+        return session.get(
             User,
             "a44946fbf09c326520c2ca0a324b19100381911c9afe5af06a90b636d8f35dd5",
-        )  # bot@discord.com
-        if user:
-            request.state.user = user
-        else:
-            request.state.user = None
-        return
+        )
 
     encoded_jwt = request.headers.get("x-jwt")
-
     if encoded_jwt is None:
-        request.state.user = None
-        return
+        return None
 
     try:
         decoded_jwt = jwt.decode(
@@ -36,19 +34,15 @@ async def user_auth(request: Request, session: SessionDep):
             options={"require": ["user_id", "exp"], "verify_exp": True},
         )
     except jwt.exceptions.ExpiredSignatureError:
-        request.state.user = None
+        return None
     except jwt.exceptions.InvalidSignatureError:
-        request.state.user = None
+        return None
     except jwt.exceptions.MissingRequiredClaimError:
-        request.state.user = None
+        return None
     except jwt.exceptions.InvalidTokenError:
-        request.state.user = None
-    else:
-        user = session.get(User, decoded_jwt["user_id"])
-        if user:
-            request.state.user = user
-        else:
-            request.state.user = None
+        return None
+
+    return session.get(User, decoded_jwt["user_id"])
 
 
 def get_user(request: Request) -> User:

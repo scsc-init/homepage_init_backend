@@ -1,1 +1,2 @@
+from .assert_permission import AssertPermissionMiddleware
 from .http_logger import HTTPLoggerMiddleware
