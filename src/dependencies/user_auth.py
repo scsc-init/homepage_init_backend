@@ -10,7 +10,8 @@ from src.model import User
 
 
 async def user_auth(request: Request, session: SessionDep):
-    request.state.user = resolve_request_user(request, session)
+    if getattr(request.state, "user", None) is None:
+        request.state.user = resolve_request_user(request, session)
 
 
 def resolve_request_user(request: Request, session: Session) -> Optional[User]:

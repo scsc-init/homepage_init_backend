@@ -14,10 +14,13 @@ class AssertPermissionMiddleware(BaseHTTPMiddleware):
         ):
             return await call_next(request)
 
-        user = self._resolve_user(request)
-        request.state.user = user
-
         if request.url.path.startswith("/api/executive"):
+            session = DBSessionFactory().make_session()
+            try:
+                user = self._resolve_user(request, session)
+            finally:
+                session.close()
+            request.state.user = user
             if user is None:
                 raise HTTPException(status_code=401, detail="Not authenticated")
             if user.role < get_user_role_level("executive"):
@@ -28,9 +31,5 @@ class AssertPermissionMiddleware(BaseHTTPMiddleware):
 
         return await call_next(request)
 
-    def _resolve_user(self, request: Request):
-        session = DBSessionFactory().make_session()
-        try:
-            return resolve_request_user(request, session)
-        finally:
-            session.close()
+    def _resolve_user(self, request: Request, session):
+        return resolve_request_user(request, session)
