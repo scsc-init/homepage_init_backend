@@ -13,6 +13,7 @@ class RabbitMQClient:
         self.connection = None
         self.channel = None
         self.callback_queue = None
+        self.consumer_tag = None
         self.futures: dict[str, asyncio.Future[Any]] = {}
         self._lock = asyncio.Lock()
 
