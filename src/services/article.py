@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
+from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.model import Article, User
 from src.repositories import (
@@ -15,7 +16,7 @@ from src.repositories import (
     BoardRepositoryDep,
 )
 from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
-from src.util import DELETED, send_discord_bot_request_no_reply
+from src.util import DELETED
 
 
 class BodyCreateArticle(BaseModel):
@@ -89,7 +90,7 @@ class ArticleService:
 
         try:
             if body.board_id == 5:  # notice
-                await send_discord_bot_request_no_reply(
+                await mq_client.send_discord_bot_request_no_reply(
                     action_code=1002,
                     body={
                         "channel_id": get_settings().notice_channel_id,
@@ -97,7 +98,7 @@ class ArticleService:
                     },
                 )
             elif body.board_id == 6:  # grant
-                await send_discord_bot_request_no_reply(
+                await mq_client.send_discord_bot_request_no_reply(
                     action_code=1002,
                     body={
                         "channel_id": get_settings().grant_channel_id,

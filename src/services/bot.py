@@ -4,8 +4,8 @@ import httpx
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from src.amqp import mq_client
 from src.core import get_settings, logger
-from src.util import send_discord_bot_request, send_discord_bot_request_no_reply
 
 
 class BodySendMessageToID(BaseModel):
@@ -20,7 +20,7 @@ class BotService:
 
     async def get_discord_invite(self):
         try:
-            result = await send_discord_bot_request(action_code=1001)
+            result = await mq_client.send_discord_bot_request(action_code=1001)
             return {"result": result}
         except TimeoutError:
             logger.error("err_type=bot_discord_get_invite ; err_code=504 ; msg=timeout")
@@ -32,7 +32,7 @@ class BotService:
             raise HTTPException(status_code=500, detail="Unexpected error")
 
     async def send_message_to_id(self, body: BodySendMessageToID):
-        await send_discord_bot_request_no_reply(
+        await mq_client.send_discord_bot_request_no_reply(
             action_code=1002, body=body.model_dump()
         )
 
