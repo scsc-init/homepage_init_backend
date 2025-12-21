@@ -5,7 +5,7 @@ from typing import Any
 
 import aio_pika
 
-from src.core import get_settings
+from src.core import get_settings, logger
 
 
 class RabbitMQClient:
@@ -14,22 +14,58 @@ class RabbitMQClient:
         self.channel = None
         self.callback_queue = None
         self.futures: dict[str, asyncio.Future[Any]] = {}
+        self._lock = asyncio.Lock()
 
     async def connect(self):
         """Initializes connection, channel, and the callback consumer."""
-        self.connection = await aio_pika.connect_robust(
-            f"amqp://guest:guest@{get_settings().rabbitmq_host}/"
-        )
-        self.channel = await self.connection.channel()
-        self.callback_queue = await self.channel.declare_queue(
-            "", exclusive=True, auto_delete=True
-        )
+        async with self._lock:
+            if self.connection and not self.connection.is_closed:
+                return
+            dsn = f"amqp://guest:guest@{get_settings().rabbitmq_host}/"  # NOTE(`guest` and `guest` are each the username and password; for more security these should be moved to configurable env variables)
 
-        await self.callback_queue.consume(self.on_response, no_ack=True)
+            try:
+                self.connection = await aio_pika.connect_robust(dsn)
+                self.channel = await self.connection.channel()
+
+                self.callback_queue = await self.channel.declare_queue(
+                    "", exclusive=True, auto_delete=True
+                )
+
+                self.consumer_tag = await self.callback_queue.consume(
+                    self.on_response, no_ack=True
+                )
+
+                logger.info(
+                    f"Connected to RabbitMQ. RPC Queue: {self.callback_queue.name}"
+                )
+
+            except Exception as e:
+                logger.critical(f"Failed to connect to RabbitMQ: {e}", exc_info=True)
+                await self.close()
+                raise
 
     async def close(self):
-        if self.connection:
-            await self.connection.close()
+        async with self._lock:
+            if self.futures:
+                logger.warning(f"Cancelling {len(self.futures)} pending RPC requests.")
+                for correlation_id, future in self.futures.items():
+                    if not future.done():
+                        future.set_exception(
+                            RuntimeError("RabbitMQ connection closing")
+                        )
+                self.futures.clear()
+
+            if self.channel and not self.channel.is_closed:
+                await self.channel.close()
+
+            if self.connection and not self.connection.is_closed:
+                await self.connection.close()
+
+            self.connection = None
+            self.channel = None
+            self.callback_queue = None
+            self.consumer_tag = None
+            logger.info("RabbitMQ connection closed.")
 
     async def on_response(self, message: aio_pika.abc.AbstractIncomingMessage):
         """
@@ -44,10 +80,19 @@ class RabbitMQClient:
         future = self.futures.pop(correlation_id, None)
 
         if future:
+            if future.done():
+                return
             try:
-                payload = json.loads(message.body)
+                body_str = message.body.decode("utf-8")
+                payload = json.loads(body_str)
                 future.set_result(payload)
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                logger.error(f"Failed to decode response for {correlation_id}: {e}")
+                future.set_exception(e)
             except Exception as e:
+                logger.exception(
+                    f"Unexpected error processing response {correlation_id}"
+                )
                 future.set_exception(e)
 
     async def send_discord_bot_request(
@@ -57,7 +102,12 @@ class RabbitMQClient:
         RPC: Sends request to bot server through rabbitmq, returns reply from bot server.
         Raises TimeoutError if bot fails to respond in time.
         """
-        if not self.channel or not self.callback_queue:
+        if (
+            not self.connection
+            or self.connection.is_closed
+            or not self.channel
+            or not self.callback_queue
+        ):
             raise RuntimeError(
                 "Connection not established with bot server. Call connect() first."
             )
