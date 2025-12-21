@@ -10,10 +10,6 @@ from .helper import (
     split_filename,
 )
 from .logger_config import LOGGING_CONFIG, request_id_var
-from .rabbitmq import (
-    send_discord_bot_request,
-    send_discord_bot_request_no_reply,
-)
 from .validator import (
     create_uuid,
     is_valid_img_url,
