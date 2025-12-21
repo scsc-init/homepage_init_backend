@@ -1,8 +1,8 @@
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.db.engine import DBSessionFactory
-from src.dependencies.user_auth import resolve_request_user
+from src.db import SessionDep, get_session
+from src.dependencies import resolve_request_user
 from src.util import get_user_role_level
 
 
@@ -15,11 +15,26 @@ class AssertPermissionMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.url.path.startswith("/api/executive"):
-            session = DBSessionFactory().make_session()
+            dependency = get_session()
+            try:
+                session: SessionDep = next(dependency)
+            except StopIteration as exc:
+                raise RuntimeError(
+                    "get_session dependency did not yield a session"
+                ) from exc
             try:
                 user = self._resolve_user(request, session)
-            finally:
-                session.close()
+            except Exception as exc:
+                try:
+                    dependency.throw(exc)
+                except StopIteration:
+                    pass
+                raise
+            else:
+                try:
+                    next(dependency)
+                except StopIteration:
+                    pass
             request.state.user = user
             if user is None:
                 raise HTTPException(status_code=401, detail="Not authenticated")
@@ -31,5 +46,5 @@ class AssertPermissionMiddleware(BaseHTTPMiddleware):
 
         return await call_next(request)
 
-    def _resolve_user(self, request: Request, session):
+    def _resolve_user(self, request: Request, session: SessionDep):
         return resolve_request_user(request, session)
