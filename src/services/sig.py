@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
+from src.amqp import mq_client
 from src.core import logger
 from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, User
 from src.repositories import SigMemberRepositoryDep, SigRepositoryDep, UserRepositoryDep
@@ -11,7 +12,6 @@ from src.schemas import SigMemberResponse, UserResponse
 from src.util import (
     get_user_role_level,
     map_semester_name,
-    send_discord_bot_request_no_reply,
 )
 
 from .article import ArticleServiceDep, BodyCreateArticle
@@ -106,7 +106,7 @@ class SigService:
             ) from exc
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=4003,
                 body={
                     "sig_name": sig.title,
@@ -182,7 +182,9 @@ class SigService:
         if body.description:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
-            await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4006, body=bot_body
+            )
 
         logger.info(
             f"info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
@@ -205,7 +207,7 @@ class SigService:
         sig.status = SCSCStatus.inactive
         self.sig_repository.update(sig)
 
-        await send_discord_bot_request_no_reply(
+        await mq_client.send_discord_bot_request_no_reply(
             action_code=4004,
             body={
                 "sig_name": sig.title,
@@ -307,7 +309,7 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2001,
                 body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
@@ -334,7 +336,7 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2001,
                 body={"user_id": user.discord_id, "role_name": sig.title},
             )
@@ -367,7 +369,7 @@ class SigService:
         self.sig_member_repository.delete(member)
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002,
                 body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
@@ -399,7 +401,7 @@ class SigService:
         self.sig_member_repository.delete(member)
 
         if user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002,
                 body={"user_id": user.discord_id, "role_name": sig.title},
             )

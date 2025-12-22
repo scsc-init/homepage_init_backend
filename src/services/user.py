@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
+from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
 from src.repositories import (
@@ -28,7 +29,6 @@ from src.util import (
     is_valid_phone,
     is_valid_student_id,
     process_standby_user,
-    send_discord_bot_request_no_reply,
     sha256_hash,
     validate_and_read_file,
 )
@@ -409,10 +409,10 @@ class UserService:
         Change role of user by removing all possible roles and adding new one.
         """
         for role in self.user_role_repository.list_all():
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002, body={"user_id": discord_id, "role_name": role.name}
             )
-        await send_discord_bot_request_no_reply(
+        await mq_client.send_discord_bot_request_no_reply(
             action_code=2001, body={"user_id": discord_id, "role_name": to_role_name}
         )
 
