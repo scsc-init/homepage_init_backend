@@ -29,13 +29,27 @@ logging.config.dictConfig(LOGGING_CONFIG)
 
 # RabbitMQ
 from src.amqp import mq_client
+from src.core import logger
 
 
 # Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await mq_client.connect()
+    if not get_settings().rabbitmq_required:
+        logger.warning(
+            "Startup Warning: RabbitMQ connection is not enabled via environment variable RABBITMQ_REQUIRED. "
+            "The application will start, but amqp features will be unavailable."
+        )
+    else:
+        try:
+            await mq_client.connect()
+
+        except Exception:
+            logger.error("Startup Failed: RabbitMQ is required but could not connect.")
+            raise
+
     yield
+
     await mq_client.close()
 
 

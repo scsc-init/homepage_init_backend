@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     cors_all_accept: bool
     rabbitmq_host: str
     bot_host: str
-    reply_queue: str
     discord_receive_queue: str
+    rabbitmq_required: bool
     notice_channel_id: int
     grant_channel_id: int
     w_html_dir: str
