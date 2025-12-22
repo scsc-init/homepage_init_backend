@@ -34,8 +34,21 @@ from src.amqp import mq_client
 # Lifespan
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await mq_client.connect()
+    if not get_settings().rabbitmq_required:
+        print(
+            f"Startup Warning: RabbitMQ connection is not enabled via environment variable RABBITMQ_REQUIRED. "
+            "The application will start, but amqp features will be unavailable."
+        )
+    else:
+        try:
+            await mq_client.connect()
+
+        except Exception as e:
+            print("Startup Failed: RabbitMQ is required but could not connect.")
+            raise e
+
     yield
+
     await mq_client.close()
 
 

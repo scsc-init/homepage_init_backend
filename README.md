@@ -30,7 +30,6 @@ ENROLLMENT_FEE=300000
 CORS_ALL_ACCEPT=FALSE
 RABBITMQ_HOST="rabbitmq"
 BOT_HOST="bot"
-REPLY_QUEUE="main_response_queue"
 DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
@@ -52,8 +51,8 @@ W_HTML_DIR="static/w/"
 | `CORS_ALL_ACCEPT`        | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
 | `RABBITMQ_HOST`          | RabbitMQ가 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
 | `BOT_HOST`               | 디스코드 봇이 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
-| `REPLY_QUEUE`            | 봇 서버에서 결과를 반환하는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
+| `RABBITMQ_REQUIRED`      | RabbitMQ 서버와의 연결 여부. FALSE이면 연결을 시도하지 않고, TRUE이면 연결 시도 후 실패 시 오류를 띄움. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 | `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
