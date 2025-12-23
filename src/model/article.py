@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,12 +20,14 @@ class Board(Base):
         Integer, ForeignKey("user_role.level"), default=0, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), default_factory=datetime.now, nullable=False
+        DateTime(timezone=False),
+        default_factory=lambda: datetime.now(timezone.utc),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
-        onupdate=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
@@ -59,14 +61,14 @@ class Article(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
-        onupdate=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 

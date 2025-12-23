@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum as enum
 from typing import Optional
 
@@ -54,16 +54,16 @@ class User(Base):
 
     last_login: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), default_factory=datetime.now
+        DateTime(timezone=False), default_factory=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
-        onupdate=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
 
@@ -89,10 +89,10 @@ class OldboyApplicant(Base):
     id: Mapped[str] = mapped_column(ForeignKey("user.id"), primary_key=True)
     processed: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), default_factory=datetime.now
+        DateTime(timezone=False), default_factory=lambda: datetime.now(timezone.utc)
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
-        onupdate=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -43,12 +43,12 @@ class PIG(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
-        onupdate=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )
 
 
@@ -63,5 +63,5 @@ class PIGMember(Base):
     user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(timezone.utc),
     )

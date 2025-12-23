@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
@@ -80,7 +80,7 @@ class BoardService:
             board.writing_permission_level = body.writing_permission_level
         if body.reading_permission_level is not None:
             board.reading_permission_level = body.reading_permission_level
-        board.updated_at = datetime.now()
+        board.updated_at = datetime.now(timezone.utc)
 
         try:
             board = self.board_repository.update(board)

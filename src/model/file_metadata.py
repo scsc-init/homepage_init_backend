@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
@@ -20,5 +20,5 @@ class FileMetadata(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), default_factory=datetime.now
+        DateTime(timezone=False), default_factory=lambda: datetime.now(timezone.utc)
     )

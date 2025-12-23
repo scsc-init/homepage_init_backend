@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
@@ -140,7 +140,7 @@ class CommentService:
             )
 
         comment.content = body.content
-        comment.updated_at = datetime.now()
+        comment.updated_at = datetime.now(timezone.utc)
         try:
             comment = self.comment_repository.update(comment)
         except IntegrityError as exc:
@@ -170,7 +170,7 @@ class CommentService:
             )
 
         comment.is_deleted = True
-        comment.deleted_at = datetime.now()
+        comment.deleted_at = datetime.now(timezone.utc)
 
         try:
             comment = self.comment_repository.update(comment)
@@ -193,7 +193,7 @@ class CommentService:
             raise HTTPException(status_code=410, detail="Already deleted")
 
         comment.is_deleted = True
-        comment.deleted_at = datetime.now()
+        comment.deleted_at = datetime.now(timezone.utc)
 
         try:
             comment = self.comment_repository.update(comment)

@@ -336,7 +336,7 @@ class UserService:
         if user is None:
             raise HTTPException(404, detail="invalid email address")
 
-        user.last_login = datetime.now()
+        user.last_login = datetime.now(timezone.utc)
         self.user_repository.update(user)
 
         payload = {
@@ -433,7 +433,9 @@ class OldboyService:
         self.user_role_repository = user_role_repository
 
     async def register_applicant(self, current_user: User) -> OldboyApplicant:
-        if datetime.now() - current_user.created_at < timedelta(weeks=52 * 3):
+        if datetime.now(timezone.utc).replace(
+            tzinfo=None
+        ) - current_user.created_at < timedelta(weeks=52 * 3):
             raise HTTPException(
                 400, detail="must have been a member for at least 3 years."
             )
@@ -551,14 +553,14 @@ class StandbyService:
         if standbyreq:
             standbyreq.is_checked = True
             standbyreq.deposit_name = f"Manually by {current_user.name}"
-            standbyreq.deposit_time = datetime.now()
+            standbyreq.deposit_time = datetime.now(timezone.utc)
             self.standby_repository.update(standbyreq)
         else:
             standbyreq = StandbyReqTbl(
                 standby_user_id=user.id,
                 user_name=user.name,
                 deposit_name=f"Manually by {current_user.name}",
-                deposit_time=datetime.now(),
+                deposit_time=datetime.now(timezone.utc),
                 is_checked=True,
             )
             self.standby_repository.create(standbyreq)
