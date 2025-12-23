@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
@@ -8,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from src.core import logger
 from src.model import Board, User
 from src.repositories import BoardRepositoryDep
+from src.util import utcnow
 
 
 class BodyCreateBoard(BaseModel):
@@ -80,7 +80,7 @@ class BoardService:
             board.writing_permission_level = body.writing_permission_level
         if body.reading_permission_level is not None:
             board.reading_permission_level = body.reading_permission_level
-        board.updated_at = datetime.now(timezone.utc)
+        board.updated_at = utcnow()
 
         try:
             board = self.board_repository.update(board)

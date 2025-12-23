@@ -1,7 +1,7 @@
 import hashlib
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 
 import requests
 from fastapi import HTTPException, UploadFile
@@ -25,7 +25,7 @@ def is_valid_phone(phone: str) -> bool:
     return bool(re.fullmatch(r"^010\d{8}$", phone))
 
 
-_current_year = datetime.now(timezone.utc).year
+_current_year = datetime.now().year
 
 
 def is_valid_student_id(student_id: str) -> bool:

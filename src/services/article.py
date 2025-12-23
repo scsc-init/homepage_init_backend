@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from os import path
 from typing import Annotated
 
@@ -16,7 +15,7 @@ from src.repositories import (
     BoardRepositoryDep,
 )
 from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
-from src.util import DELETED
+from src.util import DELETED, utcnow
 
 
 class BodyCreateArticle(BaseModel):
@@ -213,7 +212,7 @@ class ArticleService:
 
         article.title = body.title
         article.board_id = body.board_id
-        article.updated_at = datetime.now(timezone.utc)
+        article.updated_at = utcnow()
         try:
             article = self.article_repository.update(article)
         except IntegrityError as exc:
@@ -286,7 +285,7 @@ class ArticleService:
             )
 
         article.is_deleted = True
-        article.deleted_at = datetime.now(timezone.utc)
+        article.deleted_at = utcnow()
 
         article = self.article_repository.update(article)
 
@@ -305,7 +304,7 @@ class ArticleService:
             raise HTTPException(status_code=410, detail="Article has been deleted")
 
         article.is_deleted = True
-        article.deleted_at = datetime.now(timezone.utc)
+        article.deleted_at = utcnow()
 
         article = self.article_repository.update(article)
 

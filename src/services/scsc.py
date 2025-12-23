@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Annotated, Type
 
 from fastapi import Depends, HTTPException
@@ -22,6 +22,7 @@ from src.util import (
     get_new_year_semester,
     get_user_role_level,
     map_semester_name,
+    utcnow,
 )
 
 from .user import OldboyServiceDep, UserServiceDep
@@ -143,9 +144,7 @@ class SCSCService:
                 UserStatus.pending, get_user_role_level("member")
             )
             for user in members:
-                if datetime.now(timezone.utc).replace(
-                    tzinfo=None
-                ) - user.created_at > timedelta(weeks=52 * 2):
+                if utcnow() - user.created_at > timedelta(weeks=52 * 2):
                     user.status = UserStatus.banned
                     self.session.add(user)
                 else:
@@ -236,9 +235,7 @@ class SCSCService:
             for standby in standbys:
                 self.session.delete(standby)
 
-            seasonal_starting_time = datetime.now(timezone.utc).replace(
-                tzinfo=None
-            ) - timedelta(weeks=16)
+            seasonal_starting_time = utcnow() - timedelta(weeks=16)
 
             self.session.execute(
                 update(User)

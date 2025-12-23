@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db import Base
+from src.util import utcnow
 
 
 class Board(Base):
@@ -21,13 +22,13 @@ class Board(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=utcnow,
         nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default_factory=utcnow,
+        onupdate=utcnow,
         nullable=False,
     )
 
@@ -61,14 +62,14 @@ class Article(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=utcnow,
         nullable=False,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
-        default_factory=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default_factory=utcnow,
+        onupdate=utcnow,
         nullable=False,
     )
 
