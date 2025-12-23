@@ -16,6 +16,7 @@ def _upload(client, url: str, headers: dict[str, str], file_tuple):
 
 
 def test_upload_doc_success(client, api_headers, doc_file):
+    """정상적인 문서 업로드 시 파일이 저장되고 메타데이터가 올바르게 반환되는지 검증합니다."""
     settings = get_settings()
 
     response = _upload(client, "/api/file/docs/upload", api_headers, doc_file)
@@ -29,6 +30,7 @@ def test_upload_doc_success(client, api_headers, doc_file):
 
 
 def test_upload_doc_invalid_extension(client, api_headers):
+    """지원되지 않는 확장자의 문서 업로드 시 400 오류를 발생시키는지 확인합니다"""
     stream = io.BytesIO(b"plain text")
     files = {"file": ("invalid.txt", stream.read(), "text/plain")}
 
@@ -40,6 +42,7 @@ def test_upload_doc_invalid_extension(client, api_headers):
 
 
 def test_upload_doc_payload_too_large(client, api_headers):
+    """파일 크기가 너무 큰 경우 413 오류를 발생시키는지 확인합니다."""
     limit = get_settings().file_max_size + 1
     stream = io.BytesIO(b"x" * limit)
     files = {"file": ("large.pdf", stream.read(), "application/pdf")}
@@ -51,10 +54,15 @@ def test_upload_doc_payload_too_large(client, api_headers):
     assert list(Path(get_settings().file_dir).iterdir()) == []
 
 
-def test_upload_doc_requires_auth(client, api_headers, set_current_user, doc_file):
-    set_current_user(None)
-
-    response = _upload(client, "/api/file/docs/upload", api_headers, doc_file)
+def test_upload_doc_requires_auth(anonymous_client, api_headers, doc_file):
+    """익명 사용자가 문서 업로드 시 401 오류를 발생시키는지 확인합니다."""
+    stream, filename, content_type = doc_file
+    stream.seek(0)
+    response = anonymous_client.post(
+        "/api/file/docs/upload",
+        headers=api_headers,
+        files={"file": (filename, stream.read(), content_type)},
+    )
 
     with pytest.raises(HTTPStatusError):
         response.raise_for_status()
@@ -62,6 +70,7 @@ def test_upload_doc_requires_auth(client, api_headers, set_current_user, doc_fil
 
 
 def test_download_doc_success(client, api_headers, doc_file):
+    """문서 다운로드 성공 시 파일 내용과 MIME 타입이 올바른지 검증합니다."""
     upload_response = _upload(client, "/api/file/docs/upload", api_headers, doc_file)
     upload_response.raise_for_status()
     file_id = upload_response.json()["id"]
@@ -74,6 +83,7 @@ def test_download_doc_success(client, api_headers, doc_file):
 
 
 def test_download_doc_not_found(client, api_headers):
+    """존재하지 않는 문서 ID를 다운로드하려고 할 때 404 오류를 발생시키는지 확인합니다."""
     response = client.get(
         f"/api/file/docs/download/{uuid.uuid4()}", headers=api_headers
     )
@@ -84,6 +94,7 @@ def test_download_doc_not_found(client, api_headers):
 
 
 def test_download_doc_requires_api_secret(client, set_current_user):
+    """API 시크릿키가 없는 경우 문서 다운로드를 시도할 때 401 오류를 발생시키는지 확인합니다."""
     set_current_user(None)
 
     response = client.get(f"/api/file/docs/download/{uuid.uuid4()}")
@@ -93,6 +104,7 @@ def test_download_doc_requires_api_secret(client, set_current_user):
 
 
 def test_upload_image_success(client, api_headers, image_file):
+    """정상적인 이미지 업로드 시 파일이 저장되고 메타데이터가 올바르게 반환되는지 검증합니다."""
     settings = get_settings()
 
     response = _upload(client, "/api/file/image/upload", api_headers, image_file)
@@ -106,6 +118,7 @@ def test_upload_image_success(client, api_headers, image_file):
 
 
 def test_upload_image_invalid_extension(client, api_headers):
+    """지원되지 않는 확장자의 이미지 업로드가 400 오류를 발생시키는지 확인합니다."""
     stream = io.BytesIO(b"data")
     files = {"file": ("invalid.bmp", stream.read(), "image/bmp")}
 
@@ -116,10 +129,15 @@ def test_upload_image_invalid_extension(client, api_headers):
     assert list(Path(get_settings().image_dir).iterdir()) == []
 
 
-def test_upload_image_requires_auth(client, api_headers, set_current_user, image_file):
-    set_current_user(None)
-
-    response = _upload(client, "/api/file/image/upload", api_headers, image_file)
+def test_upload_image_requires_auth(anonymous_client, api_headers, image_file):
+    """익명 사용자가 이미지 업로드를 시도할 때 401 오류를 발생시키는지 확인합니다."""
+    stream, filename, content_type = image_file
+    stream.seek(0)
+    response = anonymous_client.post(
+        "/api/file/image/upload",
+        headers=api_headers,
+        files={"file": (filename, stream.read(), content_type)},
+    )
 
     with pytest.raises(HTTPStatusError):
         response.raise_for_status()
@@ -127,6 +145,7 @@ def test_upload_image_requires_auth(client, api_headers, set_current_user, image
 
 
 def test_download_image_success(client, api_headers, image_file):
+    """이미지 다운로드 성공 시 파일 내용과 MIME 타입이 올바른지 검증합니다."""
     upload_response = _upload(client, "/api/file/image/upload", api_headers, image_file)
     upload_response.raise_for_status()
     file_id = upload_response.json()["id"]
@@ -139,6 +158,7 @@ def test_download_image_success(client, api_headers, image_file):
 
 
 def test_download_image_not_found(client, api_headers):
+    """존재하지 않는 이미지 ID를 다운로드하려고 할 때 404 오류를 발생시키는지 확인합니다."""
     response = client.get(
         f"/api/file/image/download/{uuid.uuid4()}", headers=api_headers
     )
@@ -149,6 +169,7 @@ def test_download_image_not_found(client, api_headers):
 
 
 def test_download_image_requires_api_secret(client, set_current_user):
+    """API 비밀키가 없는 경우 이미지 다운로드를 시도할 때 401 오류를 발생시키는지 확인합니다."""
     set_current_user(None)
 
     response = client.get(f"/api/file/image/download/{uuid.uuid4()}")

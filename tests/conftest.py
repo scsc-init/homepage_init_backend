@@ -5,12 +5,17 @@ from pathlib import Path
 from typing import Any, Dict
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 
-from src.db import DBSessionFactory
 from src.dependencies.user_auth import user_auth as user_auth_dependency
-from src.model import User
 from tests import factories
+from tests.types import DBSessionFactory, SessionDep, User
+
+
+async def _default_user_override(request: Request, session: SessionDep):
+    user = session.get(User, factories.DEFAULT_EXEC_USER_ID)
+    request.state.user = user
 
 
 def _ensure_directory(path: Path) -> Path:
@@ -25,6 +30,10 @@ def _clean_directory(path: Path) -> None:
             entry.unlink()
         else:
             shutil.rmtree(entry)
+
+
+async def _anonymous_user_override(request: Request, session: SessionDep):
+    request.state.user = None
 
 
 @pytest.fixture(scope="session")
@@ -66,8 +75,6 @@ def test_environment(tmp_path_factory) -> Dict[str, Any]:
 
     yield {"base_dir": base_dir, "db_path": db_path, "settings": settings}
 
-    from src.db import DBSessionFactory
-
     DBSessionFactory().teardown()
     get_settings.cache_clear()
     if db_path.exists():
@@ -79,7 +86,6 @@ def prepare_database(test_environment):
     from src.core.config import get_settings
     from src.db import Base, DBSessionFactory
     from src.util import get_user_role_level
-    from tests import factories
 
     engine = DBSessionFactory().get_engine()
     Base.metadata.drop_all(bind=engine)
@@ -118,14 +124,26 @@ def prepare_database(test_environment):
 def app(test_environment):
     from main import app as fastapi_app
 
-    return fastapi_app
+    fastapi_app.dependency_overrides[user_auth_dependency] = _default_user_override
+    try:
+        yield fastapi_app
+    finally:
+        fastapi_app.dependency_overrides.pop(user_auth_dependency, None)
 
 
 @pytest.fixture
 def client(app):
     with TestClient(app) as test_client:
         yield test_client
-    app.dependency_overrides.clear()
+    app.dependency_overrides[user_auth_dependency] = _default_user_override
+
+
+@pytest.fixture
+def anonymous_client(app):
+    app.dependency_overrides[user_auth_dependency] = _anonymous_user_override
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides[user_auth_dependency] = _default_user_override
 
 
 @pytest.fixture
@@ -137,16 +155,22 @@ def api_headers():
 def set_current_user(app):
     overrides = app.dependency_overrides
 
-    def _set(user):
+    def _set_override(user):
         async def override(request, session):
             request.state.user = user
 
         overrides[user_auth_dependency] = override
 
+    def _set_none():
+        async def override(request, session):
+            request.state.user = None
+
+        overrides[user_auth_dependency] = override
+
     try:
-        yield _set
+        yield lambda user=None: _set_none() if user is None else _set_override(user)
     finally:
-        overrides.pop(user_auth_dependency, None)
+        overrides[user_auth_dependency] = _default_user_override
 
 
 @pytest.fixture
@@ -171,25 +195,3 @@ def stub_discord(monkeypatch):
         "src.services.scsc.send_discord_bot_request_no_reply", _no_reply
     )
     monkeypatch.setattr("src.services.scsc.send_discord_bot_request", _reply)
-
-
-@pytest.fixture(autouse=True)
-def default_request_user(app, prepare_database):
-    session = DBSessionFactory().make_session()
-    try:
-        user = session.get(User, factories.DEFAULT_EXEC_USER_ID)
-    finally:
-        session.close()
-
-    if user is None:
-        yield
-        return
-
-    async def override(request, session):
-        request.state.user = user
-
-    app.dependency_overrides[user_auth_dependency] = override
-    try:
-        yield
-    finally:
-        app.dependency_overrides.pop(user_auth_dependency, None)

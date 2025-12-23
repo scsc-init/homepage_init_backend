@@ -1,3 +1,4 @@
+from src.db import DBSessionFactory, SessionDep
 from src.model import (
     Major,
     SCSCGlobalStatus,
@@ -8,6 +9,8 @@ from src.model import (
 )
 
 __all__ = [
+    "DBSessionFactory",
+    "SessionDep",
     "Major",
     "SCSCGlobalStatus",
     "SCSCStatus",
