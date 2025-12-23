@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
@@ -72,7 +72,6 @@ class BoardService:
                 status_code=404,
                 detail="Board not found",
             )
-        # TODO: Who can, What can?
         if body.name is not None:
             board.name = body.name
         if body.description is not None:
@@ -81,7 +80,7 @@ class BoardService:
             board.writing_permission_level = body.writing_permission_level
         if body.reading_permission_level is not None:
             board.reading_permission_level = body.reading_permission_level
-        board.updated_at = datetime.now(timezone.utc)
+        board.updated_at = datetime.now()
 
         try:
             board = self.board_repository.update(board)
@@ -103,7 +102,6 @@ class BoardService:
                 detail="Board not found",
             )
 
-        # TODO: Who can, What can?
         try:
             self.board_repository.delete(board)
         except IntegrityError:

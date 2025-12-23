@@ -1,6 +1,5 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -12,21 +11,22 @@ class Board(Base):
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True, init=False
     )
-    name: Mapped[str] = mapped_column(String)
-    description: Mapped[str] = mapped_column(String)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[str] = mapped_column(String, nullable=False)
     writing_permission_level: Mapped[int] = mapped_column(
-        Integer, ForeignKey("user_role.level"), default=0
+        Integer, ForeignKey("user_role.level"), default=0, nullable=False
     )
     reading_permission_level: Mapped[int] = mapped_column(
-        Integer, ForeignKey("user_role.level"), default=0
+        Integer, ForeignKey("user_role.level"), default=0, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default_factory=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=False), default_factory=datetime.now, nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
+        onupdate=datetime.now,
+        nullable=False,
     )
 
 
@@ -58,20 +58,20 @@ class Article(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
         nullable=False,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
+        onupdate=datetime.now,
         nullable=False,
     )
 
     deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
+        DateTime(timezone=False),
         nullable=True,
         default=None,
     )

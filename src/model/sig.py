@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
@@ -42,13 +42,13 @@ class SIG(Base):
         Boolean, default=False, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
+        onupdate=datetime.now,
     )
 
 
@@ -62,6 +62,6 @@ class SIGMember(Base):
     ig_id: Mapped[int] = mapped_column(Integer, ForeignKey("sig.id"), nullable=False)
     user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
     )

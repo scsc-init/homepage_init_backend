@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
@@ -16,11 +16,11 @@ class KeyValue(Base):
         Integer, ForeignKey("user_role.level"), default=500
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=datetime.now,
+        onupdate=datetime.now,
     )
