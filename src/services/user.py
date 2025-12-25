@@ -1,6 +1,6 @@
 import asyncio
 import hmac
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Annotated, Optional, Sequence
 
 import aiofiles
@@ -8,7 +8,6 @@ import jwt
 from aiofiles import os as aiofiles_os
 from fastapi import Depends, HTTPException, UploadFile
 from pydantic import BaseModel
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from src.amqp import mq_client
@@ -30,6 +29,7 @@ from src.util import (
     is_valid_student_id,
     process_standby_user,
     sha256_hash,
+    utcnow,
     validate_and_read_file,
 )
 
@@ -337,13 +337,12 @@ class UserService:
         if user is None:
             raise HTTPException(404, detail="invalid email address")
 
-        user.last_login = datetime.now(timezone.utc)
+        user.last_login = utcnow()
         self.user_repository.update(user)
 
         payload = {
             "user_id": user.id,
-            "exp": datetime.now(timezone.utc)
-            + timedelta(seconds=get_settings().jwt_valid_seconds),
+            "exp": utcnow() + timedelta(seconds=get_settings().jwt_valid_seconds),
         }
         encoded_jwt = jwt.encode(payload, get_settings().jwt_secret, "HS256")
         return ResponseLogin(jwt=encoded_jwt)
@@ -434,11 +433,7 @@ class OldboyService:
         self.user_role_repository = user_role_repository
 
     async def register_applicant(self, current_user: User) -> OldboyApplicant:
-        user_created_at_aware = current_user.created_at
-        if user_created_at_aware.tzinfo is None:
-            user_created_at_aware = user_created_at_aware.replace(tzinfo=timezone.utc)
-
-        if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3):
+        if utcnow() - current_user.created_at < timedelta(weeks=52 * 3):
             raise HTTPException(
                 400, detail="must have been a member for at least 3 years."
             )
@@ -556,14 +551,14 @@ class StandbyService:
         if standbyreq:
             standbyreq.is_checked = True
             standbyreq.deposit_name = f"Manually by {current_user.name}"
-            standbyreq.deposit_time = datetime.now(timezone.utc)
+            standbyreq.deposit_time = utcnow()
             self.standby_repository.update(standbyreq)
         else:
             standbyreq = StandbyReqTbl(
                 standby_user_id=user.id,
                 user_name=user.name,
                 deposit_name=f"Manually by {current_user.name}",
-                deposit_time=datetime.now(timezone.utc),
+                deposit_time=utcnow(),
                 is_checked=True,
             )
             self.standby_repository.create(standbyreq)

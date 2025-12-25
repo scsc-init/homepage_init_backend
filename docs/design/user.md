@@ -41,7 +41,7 @@
     * (pending, member) & 가입 후 104주(2년) 경과 -> (banned, newcomer)
     * (pending, member) & 가입 후 104주(2년) 경과하지 않음 -> (pending, dormant)
 - SCSC 전역 상태가 active -> inactive(계절학기 종료 시)
-    * (active, newcomer) -> (pending, newcomer)
+    * (active, newcomer) & 가입 후 16주 경과 -> (pending, member)
     * (active, member) -> (pending, member)
     * 모든 졸업생 전환 신청 승인
  
