@@ -18,9 +18,7 @@ from src.services import (
     UserService,
     UserServiceDep,
 )
-from src.util import (
-    DepositDTO,
-)
+from src.util import DepositDTO
 
 user_router = APIRouter(tags=["user"])
 
@@ -31,6 +29,14 @@ async def create_user(
     user_service: UserServiceDep,
 ) -> UserResponse:
     return await user_service.create_user(body)
+
+
+@user_router.post("/user/login")
+async def login(
+    body: BodyLogin,
+    user_service: UserServiceDep,
+) -> ResponseLogin:
+    return await user_service.login(body)
 
 
 @user_router.post("/user/enroll", status_code=204)
@@ -54,8 +60,9 @@ async def get_user_by_id(
     return user_service.get_user_by_id(id)
 
 
-@user_router.get("/users")
+@user_router.get("/executive/users")
 async def get_users(
+    current_user: UserDep,
     user_service: UserServiceDep,
     email: Optional[str] = None,
     name: Optional[str] = None,
@@ -109,14 +116,6 @@ async def delete_my_profile(
     user_service: UserServiceDep,
 ) -> None:
     await user_service.delete_my_profile(current_user)
-
-
-@user_router.post("/user/login")
-async def login(
-    body: BodyLogin,
-    user_service: UserServiceDep,
-) -> ResponseLogin:
-    return await user_service.login(body)
 
 
 @user_router.post("/executive/user/{id}", status_code=204)

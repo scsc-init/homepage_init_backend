@@ -7,8 +7,10 @@
 ## 공통
 
 ### 인증 관련
+다음 API 에 대해서만 `x-api-secret` 헤더 검증을 수행한다.
+- `POST /api/user/login`
+- `POST /api/user/create`
 
-- 모든 /api 경로의 GET/POST 요청에는 header에 `x-api-secret`을 포함해야 한다. 
 - `APISecretMiddleware`가 이를 처리한다. 
 
 ```http
