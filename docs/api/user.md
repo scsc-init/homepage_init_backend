@@ -243,10 +243,10 @@ CREATE TABLE standby_req_tbl (
     * `discord_name`: `str`: 빈 문자열을 입력하면 null을 검색한다. 
     * `major_id`: `int`
 * **Example Request**:
-    * To get executives: `/api/users?user_role=executive`
-    * To get presidents: `/api/users?user_role=president`
-    * To get all users:  `/api/users`
-    * To get users whose discord_id is null: `/api/users?discord_id=`
+    * To get executives: `/api/executive/users?user_role=executive`
+    * To get presidents: `/api/executive/users?user_role=president`
+    * To get all users:  `/api/executive/users`
+    * To get users whose discord_id is null: `/api/executive/users?discord_id=`
 * **Response**:
 
 ```json
