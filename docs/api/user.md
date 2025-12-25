@@ -218,7 +218,7 @@ CREATE TABLE standby_req_tbl (
     "name": "홍길동",
     "role": 500,
     "profile_picture": "https://google.oauth.etc",
-    "profile_picture_is_url": true,
+    "profile_picture_is_url": true
   }
 ]
 ```
