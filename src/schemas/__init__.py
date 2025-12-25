@@ -7,5 +7,10 @@ from .major import MajorResponse
 from .pig import PigMemberResponse, PigResponse
 from .scsc_global_status import SCSCGlobalStatusResponse
 from .sig import SigMemberResponse, SigResponse
-from .user import OldboyApplicantResponse, StandbyReqTblResponse, UserResponse
+from .user import (
+    OldboyApplicantResponse,
+    PublicUserResponse,
+    StandbyReqTblResponse,
+    UserResponse,
+)
 from .w import WHTMLMetadataResponse, WHTMLMetadataWithCreatorResponse

@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from fastapi import APIRouter, UploadFile
 
 from src.dependencies import UserDep
-from src.schemas import UserResponse
+from src.schemas import PublicUserResponse, UserResponse
 from src.services import (
     BodyCreateUser,
     BodyLogin,
@@ -46,15 +46,14 @@ async def get_my_profile(current_user: UserDep) -> UserResponse:
     return UserResponse.model_validate(current_user)
 
 
-@user_router.get("/user/{id}", response_model=UserResponse)
-async def get_user_by_id(
-    id: str,
+@user_router.get("/user/executives")
+async def get_public_executives(
     user_service: UserServiceDep,
-) -> UserResponse:
-    return user_service.get_user_by_id(id)
+) -> Sequence[PublicUserResponse]:
+    return user_service.get_public_executives()
 
 
-@user_router.get("/users")
+@user_router.get("/executive/users")
 async def get_users(
     user_service: UserServiceDep,
     email: Optional[str] = None,
@@ -78,6 +77,14 @@ async def get_users(
         discord_name,
         major_id,
     )
+
+
+@user_router.get("/executive/user/{id}", response_model=UserResponse)
+async def get_user_by_id(
+    id: str,
+    user_service: UserServiceDep,
+) -> UserResponse:
+    return user_service.get_user_by_id(id)
 
 
 @user_router.get("/role_names")

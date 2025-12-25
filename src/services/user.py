@@ -19,7 +19,7 @@ from src.repositories import (
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
-from src.schemas import UserResponse
+from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
@@ -229,7 +229,12 @@ class UserService:
                 filters["discord_name"] = discord_name
 
         users = self.user_repository.get_by_filters(filters)
-        return [UserResponse.model_validate(u) for u in users]
+        return UserResponse.model_validate_list(users)
+
+    def get_public_executives(self) -> Sequence[PublicUserResponse]:
+        return PublicUserResponse.model_validate_list(
+            self.user_repository.get_executives()
+        )
 
     @staticmethod
     def get_role_names(lang: str | None = "en"):
