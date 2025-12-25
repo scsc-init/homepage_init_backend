@@ -1,5 +1,3 @@
-"""/main.py"""
-
 import logging.config
 from contextlib import asynccontextmanager
 
@@ -13,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from src.core import get_settings
 
 # Dependencies
-from src.dependencies import api_secret, check_user_status, user_auth
+from src.dependencies import check_user_status, user_auth
 from src.middleware import (
     AssertPermissionMiddleware,
     HTTPLoggerMiddleware,
@@ -56,7 +54,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     dependencies=[
         Depends(user_auth),
-        Depends(api_secret),
         Depends(check_user_status),
     ],
     lifespan=lifespan,

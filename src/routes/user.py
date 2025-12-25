@@ -1,8 +1,8 @@
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
 
-from src.dependencies import UserDep
+from src.dependencies import UserDep, api_secret
 from src.schemas import UserResponse
 from src.services import (
     BodyCreateUser,
@@ -23,7 +23,7 @@ from src.util import DepositDTO
 user_router = APIRouter(tags=["user"])
 
 
-@user_router.post("/user/create", status_code=201)
+@user_router.post("/user/create", status_code=201, dependencies=[Depends(api_secret)])
 async def create_user(
     body: BodyCreateUser,
     user_service: UserServiceDep,
@@ -31,7 +31,7 @@ async def create_user(
     return await user_service.create_user(body)
 
 
-@user_router.post("/user/login")
+@user_router.post("/user/login", dependencies=[Depends(api_secret)])
 async def login(
     body: BodyLogin,
     user_service: UserServiceDep,
