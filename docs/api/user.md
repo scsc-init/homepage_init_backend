@@ -207,7 +207,7 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `GET`
 * **URL**: `/api/user/executives`
-* **Description**: executive 권한 이상의 사용자를 조회한다. 임원의 id, name, role, profile_picture, profile_picture_is_url를 반환한다. 인증 없이 접근할 수 있다. 
+* **Description**: executive 권한 이상의 사용자를 조회한다. 임원의 id, email, name, role, profile_picture, profile_picture_is_url를 반환한다. 인증 없이 접근할 수 있다. 
 * **Response**:
 
 ```json
