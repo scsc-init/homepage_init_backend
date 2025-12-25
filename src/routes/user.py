@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, UploadFile
 
-from src.dependencies import UserDep
+from src.dependencies import UserDep, api_secret
 from src.schemas import PublicUserResponse, UserResponse
 from src.services import (
     BodyCreateUser,
