@@ -203,52 +203,56 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
-## Get User by ID
+## Get Executives (임원 목록 조회)
 
-- **Method**: `GET`  
-- **URL**: `/api/user/:id`  
-- **설명**: ID로 사용자의 정보(이메일, 이름, 학과) 조회
-- **Response**:
+* **Method**: `GET`
+* **URL**: `/api/user/executives`
+* **Description**: executive 권한 이상의 사용자를 조회한다. 임원의 email, name, role, profile_picture, profile_picture_is_url를 반환한다. 인증 없이 접근할 수 있다. 
+* **Response**:
+
 ```json
-{
-  "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
-  "email": "user@example.com",
-  "name": "홍길동",
-  "major_id": 1
-}
+[
+  {
+    "email": "user@example.com",
+    "name": "홍길동",
+    "role": 500,
+    "profile_picture": "https://google.oauth.etc",
+    "profile_picture_is_url": true
+  }
+]
 ```
-- **Status Codes**:
-  - `200 OK`
-  - `404 Not Found` (유효하지 않은 ID)
+
+* **Status Codes**:
+  * `200 OK`
 
 ---
 
 ## Get Users (사용자 목록 조회)
 
 * **Method**: `GET`
-* **URL**: `/api/users`
+* **URL**: `/api/executive/users`
 * **Description**: Query Parameter에 맞는 사용자를 조회한다. 
 * **Query Parameters**: all optional
-    * `email`: `str`
-    * `name`: `str`
-    * `phone`: `str`
-    * `student_id`: `str`
-    * `user_role`: `str`
-    * `status`: `str`
-    * `discord_id`: `int`: 빈 문자열을 입력하면 null을 검색한다. 
-    * `discord_name`: `str`: 빈 문자열을 입력하면 null을 검색한다. 
-    * `major_id`: `int`
+  * `email`: `str`
+  * `name`: `str`
+  * `phone`: `str`
+  * `student_id`: `str`
+  * `user_role`: `str`
+  * `status`: `str`
+  * `discord_id`: `int`: 빈 문자열을 입력하면 null을 검색한다. 
+  * `discord_name`: `str`: 빈 문자열을 입력하면 null을 검색한다. 
+  * `major_id`: `int`
 * **Example Request**:
-    * To get executives: `/api/users?user_role=executive`
-    * To get presidents: `/api/users?user_role=president`
-    * To get all users:  `/api/users`
-    * To get users whose discord_id is null: `/api/users?discord_id=`
+  * To get executives: `/api/executive/users?user_role=executive`
+  * To get presidents: `/api/executive/users?user_role=president`
+  * To get all users:  `/api/executive/users`
+  * To get users whose discord_id is null: `/api/executive/users?discord_id=`
 * **Response**:
 
 ```json
 [
   {
-    "id": "f81d4fae7dec11d0a76500a0c91e6bf6",
+    "id": "a83c7aed49b69257312fb41419301e1dcbd563e6a2a682facd9752f80290449c",
     "email": "executive@example.com",
     "name": "홍길동",
     "phone": "01012345678",
@@ -268,9 +272,42 @@ CREATE TABLE standby_req_tbl (
 ```
 
 * **Status Codes**:
-    * `200 OK`
-    * `400 Bad Request`: If the `role` query parameter is invalid.
-    * `401 Unauthorized`
+  * `200 OK`
+  * `400 Bad Request`: If the `role` query parameter is invalid.
+  * `401 Unauthorized`
+  * `403 Forbidden`
+---
+
+## Get User by ID(Executive)
+
+- **Method**: `GET`  
+- **URL**: `/api/executive/user/:id`  
+- **설명**: ID로 사용자 조회
+- **Response**:
+```json
+{
+  "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+  "email": "user@example.com",
+  "name": "홍길동",
+  "phone": "01012345678",
+  "student_id": "202312345",
+  "role": 200,
+  "status": "active",
+  "discord_id": null,
+  "discord_name": null,
+  "major_id": 1,
+  "profile_picture": "https://google.oauth.etc",
+  "profile_picture_is_url": true,
+  "last_login": "2025-05-01T09:00:00",
+  "created_at": "2025-04-01T12:00:00",
+  "updated_at": "2025-04-30T12:00:00"
+}
+```
+- **Status Codes**:
+  - `200 OK`
+  - `401 Unauthorized`
+  - `403 Forbidden`
+  - `404 Not Found` (유효하지 않은 ID)
 
 ---
 

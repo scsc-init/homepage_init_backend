@@ -1,21 +1,16 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Annotated, Type
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import update
 
 from src.amqp import mq_client
 from src.core import logger
 from src.db import SessionDep
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import (
-    PIG,
-    SIG,
-    SCSCGlobalStatus,
-    SCSCStatus,
-    UserStatus,
-)
+from src.model import PIG, SIG, SCSCGlobalStatus, SCSCStatus, User, UserStatus
 from src.repositories import (
     OldboyApplicantRepositoryDep,
     PigRepositoryDep,
@@ -27,6 +22,7 @@ from src.util import (
     get_new_year_semester,
     get_user_role_level,
     map_semester_name,
+    utcnow,
 )
 
 from .user import OldboyServiceDep, UserServiceDep
@@ -148,10 +144,7 @@ class SCSCService:
                 UserStatus.pending, get_user_role_level("member")
             )
             for user in members:
-                user_created_at_aware = user.created_at.replace(tzinfo=timezone.utc)
-                if datetime.now(timezone.utc) - user_created_at_aware > timedelta(
-                    weeks=52 * 2
-                ):
+                if utcnow() - user.created_at > timedelta(weeks=52 * 2):
                     user.status = UserStatus.banned
                     self.session.add(user)
                 else:
@@ -242,20 +235,26 @@ class SCSCService:
             for standby in standbys:
                 self.session.delete(standby)
 
-            active_newcomers = self.user_repository.get_by_status_and_role(
-                UserStatus.active, get_user_role_level("newcomer")
-            )
-            for user in active_newcomers:
-                user.status = UserStatus.pending
-                user.role = get_user_role_level("member")
-                self.session.add(user)
+            seasonal_starting_time = utcnow() - timedelta(weeks=16)
 
-            active_members = self.user_repository.get_by_status_and_role(
-                UserStatus.active, get_user_role_level("member")
+            self.session.execute(
+                update(User)
+                .where(
+                    User.status == UserStatus.active,
+                    User.role == get_user_role_level("newcomer"),
+                    User.created_at <= seasonal_starting_time,
+                )
+                .values(status=UserStatus.pending, role=get_user_role_level("member"))
             )
-            for user in active_members:
-                user.status = UserStatus.pending
-                self.session.add(user)
+
+            self.session.execute(
+                update(User)
+                .where(
+                    User.status == UserStatus.active,
+                    User.role == get_user_role_level("member"),
+                )
+                .values(status=UserStatus.pending)
+            )
 
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:

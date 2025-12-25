@@ -24,6 +24,14 @@ class UserResponse(BaseResponse):
     updated_at: datetime
 
 
+class PublicUserResponse(BaseResponse):
+    email: str
+    name: str
+    role: int
+    profile_picture: Optional[str] = None
+    profile_picture_is_url: bool
+
+
 class StandbyReqTblResponse(BaseResponse):
     standby_user_id: str
     user_name: str

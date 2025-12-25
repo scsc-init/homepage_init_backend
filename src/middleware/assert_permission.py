@@ -1,4 +1,5 @@
-from fastapi import HTTPException, Request
+from fastapi import Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.db import DBSessionFactory
@@ -22,11 +23,15 @@ class AssertPermissionMiddleware(BaseHTTPMiddleware):
                 session.close()
             request.state.user = user
             if user is None:
-                raise HTTPException(status_code=401, detail="Not authenticated")
+                return JSONResponse(
+                    status_code=401, content={"detail": "Not authenticated"}
+                )
             if user.role < get_user_role_level("executive"):
-                raise HTTPException(
+                return JSONResponse(
                     status_code=403,
-                    detail="Permission denied: at least executive role required",
+                    content={
+                        "detail": "Permission denied: at least executive role required"
+                    },
                 )
 
         return await call_next(request)

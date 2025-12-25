@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy import func, select
 
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole, UserStatus
+from src.util import get_user_role_level
 
 from .dao import CRUDRepository
 
@@ -41,6 +42,11 @@ class UserRepository(CRUDRepository[User, str]):
 
     def get_by_name(self, name: str) -> Sequence[User]:
         return self.session.scalars(select(User).where(User.name == name)).all()
+
+    def get_executives(self) -> Sequence[User]:
+        return self.session.scalars(
+            select(User).where(User.role >= get_user_role_level("executive"))
+        ).all()
 
 
 class UserRoleRepository(CRUDRepository[UserRole, int]):
