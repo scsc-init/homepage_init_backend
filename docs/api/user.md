@@ -233,20 +233,20 @@ CREATE TABLE standby_req_tbl (
 * **URL**: `/api/executive/users`
 * **Description**: Query Parameter에 맞는 사용자를 조회한다. 
 * **Query Parameters**: all optional
-    * `email`: `str`
-    * `name`: `str`
-    * `phone`: `str`
-    * `student_id`: `str`
-    * `user_role`: `str`
-    * `status`: `str`
-    * `discord_id`: `int`: 빈 문자열을 입력하면 null을 검색한다. 
-    * `discord_name`: `str`: 빈 문자열을 입력하면 null을 검색한다. 
-    * `major_id`: `int`
+  * `email`: `str`
+  * `name`: `str`
+  * `phone`: `str`
+  * `student_id`: `str`
+  * `user_role`: `str`
+  * `status`: `str`
+  * `discord_id`: `int`: 빈 문자열을 입력하면 null을 검색한다. 
+  * `discord_name`: `str`: 빈 문자열을 입력하면 null을 검색한다. 
+  * `major_id`: `int`
 * **Example Request**:
-    * To get executives: `/api/executive/users?user_role=executive`
-    * To get presidents: `/api/executive/users?user_role=president`
-    * To get all users:  `/api/executive/users`
-    * To get users whose discord_id is null: `/api/executive/users?discord_id=`
+  * To get executives: `/api/executive/users?user_role=executive`
+  * To get presidents: `/api/executive/users?user_role=president`
+  * To get all users:  `/api/executive/users`
+  * To get users whose discord_id is null: `/api/executive/users?discord_id=`
 * **Response**:
 
 ```json
@@ -272,10 +272,10 @@ CREATE TABLE standby_req_tbl (
 ```
 
 * **Status Codes**:
-    * `200 OK`
-    * `400 Bad Request`: If the `role` query parameter is invalid.
-    * `401 Unauthorized`
-
+  * `200 OK`
+  * `400 Bad Request`: If the `role` query parameter is invalid.
+  * `401 Unauthorized`
+  * `403 Forbidden`
 ---
 
 ## Get User by ID(Executive)
@@ -305,6 +305,8 @@ CREATE TABLE standby_req_tbl (
 ```
 - **Status Codes**:
   - `200 OK`
+  - `401 Unauthorized`
+  - `403 Forbidden`
   - `404 Not Found` (유효하지 않은 ID)
 
 ---
