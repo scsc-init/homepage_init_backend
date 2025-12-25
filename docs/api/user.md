@@ -213,7 +213,8 @@ CREATE TABLE standby_req_tbl (
 ```json
 [
   {
-    "id": "f81d4fae7dec11d0a76500a0c91e6bf6",
+    "id": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+    "email": "user@example.com",
     "name": "홍길동",
     "role": 500,
     "profile_picture": "https://google.oauth.etc",
@@ -252,7 +253,7 @@ CREATE TABLE standby_req_tbl (
 ```json
 [
   {
-    "id": "f81d4fae7dec11d0a76500a0c91e6bf6",
+    "id": "a83c7aed49b69257312fb41419301e1dcbd563e6a2a682facd9752f80290449c",
     "email": "executive@example.com",
     "name": "홍길동",
     "phone": "01012345678",
