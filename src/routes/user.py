@@ -1,8 +1,8 @@
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
 
-from src.dependencies import UserDep
+from src.dependencies import UserDep, api_secret
 from src.schemas import PublicUserResponse, UserResponse
 from src.services import (
     BodyCreateUser,
@@ -18,19 +18,25 @@ from src.services import (
     UserService,
     UserServiceDep,
 )
-from src.util import (
-    DepositDTO,
-)
+from src.util import DepositDTO
 
 user_router = APIRouter(tags=["user"])
 
 
-@user_router.post("/user/create", status_code=201)
+@user_router.post("/user/create", status_code=201, dependencies=[Depends(api_secret)])
 async def create_user(
     body: BodyCreateUser,
     user_service: UserServiceDep,
 ) -> UserResponse:
     return await user_service.create_user(body)
+
+
+@user_router.post("/user/login", dependencies=[Depends(api_secret)])
+async def login(
+    body: BodyLogin,
+    user_service: UserServiceDep,
+) -> ResponseLogin:
+    return await user_service.login(body)
 
 
 @user_router.post("/user/enroll", status_code=204)
@@ -55,6 +61,7 @@ async def get_public_executives(
 
 @user_router.get("/executive/users")
 async def get_users(
+    current_user: UserDep,
     user_service: UserServiceDep,
     email: Optional[str] = None,
     name: Optional[str] = None,
@@ -116,14 +123,6 @@ async def delete_my_profile(
     user_service: UserServiceDep,
 ) -> None:
     await user_service.delete_my_profile(current_user)
-
-
-@user_router.post("/user/login")
-async def login(
-    body: BodyLogin,
-    user_service: UserServiceDep,
-) -> ResponseLogin:
-    return await user_service.login(body)
 
 
 @user_router.post("/executive/user/{id}", status_code=204)
