@@ -11,7 +11,7 @@
 - `POST /api/user/login`
 - `POST /api/user/create`
 
-- `APISecretMiddleware`가 이를 처리한다. 
+- `api_secret dependency`가 이를 처리한다. 
 
 ```http
 x-api-secret: YOUR_SECRET_KEY
