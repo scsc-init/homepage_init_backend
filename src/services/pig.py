@@ -138,7 +138,7 @@ class PigService:
         if semester:
             filters["semester"] = semester
         if status:
-            filters["status"] = status
+            filters["status"] = status.value
 
         pigs = self.pig_repository.get_by_filters(filters)
         return PigResponse.model_validate_list(pigs)

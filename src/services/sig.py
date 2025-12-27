@@ -138,7 +138,7 @@ class SigService:
         if semester:
             filters["semester"] = semester
         if status:
-            filters["status"] = status
+            filters["status"] = status.value
 
         sigs = self.sig_repository.get_by_filters(filters)
         return SigResponse.model_validate_list(sigs)
