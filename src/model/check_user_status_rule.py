@@ -3,8 +3,7 @@ from enum import Enum as enum
 from sqlalchemy import Enum, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db import Base
-
+from .base import Base
 from .user import UserStatus
 
 

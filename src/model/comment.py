@@ -4,8 +4,9 @@ from typing import Optional
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db import Base
 from src.util import utcnow
+
+from .base import Base
 
 
 class Comment(Base):
