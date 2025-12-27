@@ -7,10 +7,14 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, User
-from src.repositories import SigMemberRepositoryDep, SigRepositoryDep, UserRepositoryDep
+from src.repositories import (
+    SigMemberRepositoryDep,
+    SigRepositoryDep,
+    UserRepositoryDep,
+    get_user_role_level,
+)
 from src.schemas import SigMemberResponse, UserResponse
 from src.util import (
-    get_user_role_level,
     map_semester_name,
 )
 

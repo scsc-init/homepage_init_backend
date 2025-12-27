@@ -7,10 +7,14 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.model import PIG, PIGMember, SCSCGlobalStatus, SCSCStatus, User
-from src.repositories import PigMemberRepositoryDep, PigRepositoryDep, UserRepositoryDep
+from src.repositories import (
+    PigMemberRepositoryDep,
+    PigRepositoryDep,
+    UserRepositoryDep,
+    get_user_role_level,
+)
 from src.schemas import PigMemberResponse, UserResponse
 from src.util import (
-    get_user_role_level,
     map_semester_name,
 )
 

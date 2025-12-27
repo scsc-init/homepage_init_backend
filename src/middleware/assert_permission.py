@@ -4,7 +4,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.db import DBSessionFactory
 from src.dependencies import resolve_request_user
-from src.util import get_user_role_level
+from src.repositories import get_user_role_level
 
 
 class AssertPermissionMiddleware(BaseHTTPMiddleware):

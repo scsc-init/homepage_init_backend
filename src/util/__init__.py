@@ -1,6 +1,5 @@
 from typing import Final
 
-from .get_from_db import get_user_role_level
 from .helper import (
     DepositDTO,
     generate_user_hash,

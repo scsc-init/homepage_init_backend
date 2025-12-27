@@ -14,5 +14,6 @@ from .user import (
     StandbyReqTblRepositoryDep,
     UserRepositoryDep,
     UserRoleRepositoryDep,
+    get_user_role_level,
 )
 from .w import WRepositoryDep
