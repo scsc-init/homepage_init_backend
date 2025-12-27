@@ -3,8 +3,8 @@ from typing import Annotated, Any, Optional, Sequence
 from fastapi import Depends
 from sqlalchemy import func, select
 
+from src.db import get_user_role_level
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole, UserStatus
-from src.util import get_user_role_level
 
 from .dao import CRUDRepository
 

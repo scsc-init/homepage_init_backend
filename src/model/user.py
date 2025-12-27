@@ -5,8 +5,9 @@ from typing import Optional
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db import Base
 from src.util import utcnow
+
+from .base import Base
 
 
 class UserStatus(str, enum):

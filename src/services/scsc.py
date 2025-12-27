@@ -8,7 +8,7 @@ from sqlalchemy import update
 
 from src.amqp import mq_client
 from src.core import logger
-from src.db import SessionDep
+from src.db import SessionDep, get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
 from src.model import PIG, SIG, SCSCGlobalStatus, SCSCStatus, User, UserStatus
 from src.repositories import (
@@ -20,7 +20,6 @@ from src.repositories import (
 )
 from src.util import (
     get_new_year_semester,
-    get_user_role_level,
     map_semester_name,
     utcnow,
 )

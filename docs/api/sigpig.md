@@ -178,6 +178,12 @@ END;
 
 * **Method**: `GET`
 * **URL**: `/api/sigs`
+* **Query Parameters**: all optional
+  * `year`: `int`
+  * `semester`: `int`
+  * `status` `str`
+* **Example Request**:
+  * `/api/sigs?year=2025&semester=3&status=active`
 * **Response**:
 
 ```json

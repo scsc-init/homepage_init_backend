@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Sequence
+from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
 from sqlalchemy import select
@@ -25,6 +25,13 @@ class PigRepository(CRUDRepository[PIG, int]):
 
     def get_by_status(self, status: SCSCStatus) -> Sequence[PIG]:
         return self.session.scalars(select(PIG).where(PIG.status == status)).all()
+
+    def get_by_filters(self, filters: dict[str, Any]) -> Sequence[PIG]:
+        query = select(PIG)
+        for attr, value in filters.items():
+            if value is not None:
+                query = query.where(getattr(PIG, attr) == value)
+        return self.session.scalars(query).all()
 
 
 class PigMemberRepository(CRUDRepository[PIGMember, int]):

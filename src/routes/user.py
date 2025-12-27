@@ -61,7 +61,6 @@ async def get_public_executives(
 
 @user_router.get("/executive/users")
 async def get_users(
-    current_user: UserDep,
     user_service: UserServiceDep,
     email: Optional[str] = None,
     name: Optional[str] = None,

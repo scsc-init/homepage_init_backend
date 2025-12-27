@@ -3,8 +3,9 @@ from functools import lru_cache
 from fastapi import HTTPException
 from sqlalchemy import select
 
-from src.db import DBSessionFactory
 from src.model import UserRole
+
+from .engine import DBSessionFactory
 
 
 @lru_cache
