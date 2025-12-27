@@ -1,8 +1,9 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 from fastapi import APIRouter
 
 from src.dependencies import SCSCGlobalStatusDep, UserDep
+from src.model import SCSCStatus
 from src.schemas import PigMemberResponse, PigResponse
 from src.services import (
     BodyCreatePIG,
@@ -34,9 +35,17 @@ async def get_pig_by_id(id: int, pig_service: PigServiceDep) -> PigResponse:
 
 
 @pig_router.get("/pigs")
-async def get_all_pigs(pig_service: PigServiceDep) -> Sequence[PigResponse]:
-    pig_list = pig_service.get_all()
-    return PigResponse.model_validate_list(pig_list)
+async def get_all_pigs(
+    pig_service: PigServiceDep,
+    year: Optional[int] = None,
+    semester: Optional[int] = None,
+    status: Optional[SCSCStatus] = None,
+) -> Sequence[PigResponse]:
+    return pig_service.get_pigs(
+        year,
+        semester,
+        status,
+    )
 
 
 @pig_router.post("/pig/{id}/update", status_code=204)

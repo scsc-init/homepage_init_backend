@@ -12,9 +12,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db import Base
 from src.util import utcnow
 
+from .base import Base
 from .scsc_global_status import SCSCStatus
 
 

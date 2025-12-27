@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.amqp import mq_client
 from src.core import get_settings, logger
+from src.db import get_user_role_level
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
 from src.repositories import (
     OldboyApplicantRepositoryDep,
@@ -23,7 +24,6 @@ from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
-    get_user_role_level,
     is_valid_img_url,
     is_valid_phone,
     is_valid_student_id,

@@ -1,6 +1,5 @@
 from typing import Final
 
-from .get_from_db import get_user_role_level
 from .helper import (
     DepositDTO,
     generate_user_hash,
@@ -11,6 +10,7 @@ from .helper import (
     utcnow,
 )
 from .logger_config import LOGGING_CONFIG, request_id_var
+from .singleton import SingletonMeta
 from .validator import (
     create_uuid,
     is_valid_img_url,

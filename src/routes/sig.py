@@ -1,8 +1,9 @@
-from typing import Sequence
+from typing import Optional, Sequence
 
 from fastapi import APIRouter
 
 from src.dependencies import SCSCGlobalStatusDep, UserDep
+from src.model import SCSCStatus
 from src.schemas import SigMemberResponse, SigResponse
 from src.services import (
     BodyCreateSIG,
@@ -34,9 +35,17 @@ async def get_sig_by_id(id: int, sig_service: SigServiceDep) -> SigResponse:
 
 
 @sig_router.get("/sigs")
-async def get_all_sigs(sig_service: SigServiceDep) -> Sequence[SigResponse]:
-    sig_list = sig_service.get_all()
-    return SigResponse.model_validate_list(sig_list)
+async def get_all_sigs(
+    sig_service: SigServiceDep,
+    year: Optional[int] = None,
+    semester: Optional[int] = None,
+    status: Optional[SCSCStatus] = None,
+) -> Sequence[SigResponse]:
+    return sig_service.get_sigs(
+        year,
+        semester,
+        status,
+    )
 
 
 @sig_router.post("/sig/{id}/update", status_code=204)

@@ -7,8 +7,7 @@ from sqlalchemy.orm.session import Session
 from sqlalchemy.pool import NullPool
 
 from src.core import get_settings
-
-from .singleton import SingletonMeta
+from src.util import SingletonMeta
 
 
 class DBSessionFactory(metaclass=SingletonMeta):

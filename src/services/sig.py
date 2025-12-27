@@ -6,11 +6,11 @@ from sqlalchemy.exc import IntegrityError
 
 from src.amqp import mq_client
 from src.core import logger
+from src.db import get_user_role_level
 from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, User
 from src.repositories import SigMemberRepositoryDep, SigRepositoryDep, UserRepositoryDep
-from src.schemas import SigMemberResponse, UserResponse
+from src.schemas import SigMemberResponse, SigResponse, UserResponse
 from src.util import (
-    get_user_role_level,
     map_semester_name,
 )
 
@@ -126,8 +126,22 @@ class SigService:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
         return sig
 
-    def get_all(self) -> Sequence[SIG]:
-        return self.sig_repository.list_all()
+    def get_sigs(
+        self,
+        year: Optional[int] = None,
+        semester: Optional[int] = None,
+        status: Optional[SCSCStatus] = None,
+    ) -> Sequence[SigResponse]:
+        filters = {}
+        if year:
+            filters["year"] = year
+        if semester:
+            filters["semester"] = semester
+        if status:
+            filters["status"] = status
+
+        sigs = self.sig_repository.get_by_filters(filters)
+        return SigResponse.model_validate_list(sigs)
 
     async def update_sig(
         self,
