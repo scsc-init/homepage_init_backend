@@ -133,12 +133,12 @@ class SigService:
         status: Optional[SCSCStatus] = None,
     ) -> Sequence[SigResponse]:
         filters = {}
-        if year:
+        if year is not None:
             filters["year"] = year
-        if semester:
+        if semester is not None:
             filters["semester"] = semester
         if status:
-            filters["status"] = status.value
+            filters["status"] = status
 
         sigs = self.sig_repository.get_by_filters(filters)
         return SigResponse.model_validate_list(sigs)

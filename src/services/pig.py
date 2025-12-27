@@ -133,12 +133,12 @@ class PigService:
         status: Optional[SCSCStatus] = None,
     ) -> Sequence[PigResponse]:
         filters = {}
-        if year:
+        if year is not None:
             filters["year"] = year
-        if semester:
+        if semester is not None:
             filters["semester"] = semester
         if status:
-            filters["status"] = status.value
+            filters["status"] = status
 
         pigs = self.pig_repository.get_by_filters(filters)
         return PigResponse.model_validate_list(pigs)
