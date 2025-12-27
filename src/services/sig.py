@@ -107,7 +107,7 @@ class SigService:
 
         if current_user.discord_id:
             await mq_client.send_discord_bot_request_no_reply(
-                action_code=4003,
+                action_code=4001,
                 body={
                     "sig_name": sig.title,
                     "user_id_list": [current_user.discord_id],
@@ -183,7 +183,7 @@ class SigService:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
             await mq_client.send_discord_bot_request_no_reply(
-                action_code=4006, body=bot_body
+                action_code=4005, body=bot_body
             )
 
         logger.info(
@@ -208,7 +208,7 @@ class SigService:
         self.sig_repository.update(sig)
 
         await mq_client.send_discord_bot_request_no_reply(
-            action_code=4004,
+            action_code=4002,
             body={
                 "sig_name": sig.title,
                 "previous_semester": f"{sig.year}-{map_semester_name.get(sig.semester)}",
