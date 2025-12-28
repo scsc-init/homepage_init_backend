@@ -213,6 +213,7 @@ CREATE TABLE standby_req_tbl (
 ```json
 [
   {
+    "id" : "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
     "email": "user@example.com",
     "name": "홍길동",
     "role": 500,
