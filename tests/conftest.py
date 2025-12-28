@@ -1,7 +1,26 @@
 import os
+import sys
+from pathlib import Path
+
+print(sys.path)
+
+import logging.config
+
+# Disable logging configuration during tests
+logging.config.dictConfig = lambda *_args, **_kwargs: None
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Ensure pytest runs with project root as CWD
+os.chdir(PROJECT_ROOT)
+
+sys.path.insert(0, str(PROJECT_ROOT))
+
+# Ensure logs directory exists where logging expects it
+(PROJECT_ROOT / "logs").mkdir(parents=True, exist_ok=True)
+
 import uuid
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Callable, Optional
 
 import jwt

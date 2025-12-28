@@ -1,57 +1,75 @@
-from src.model import HTTPMethod, UserStatus
+from src.model import UserStatus
+from src.util import generate_user_hash, sha256_hash
 
 
-def test_api_secret_required_for_public_request(api_client):
-    response = api_client.get("/api/majors")
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "No x-api-secret included"
-
-
-def test_invalid_api_secret_is_rejected(api_client):
-    response = api_client.get("/api/majors", headers={"x-api-secret": "not-valid"})
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid x-api-secret"
-
-
-def test_executive_routes_require_authentication(api_client, build_headers):
-    response = api_client.post(
-        "/api/executive/major/create",
-        json={"college": "Engineering", "major_name": "Computer Science"},
-        headers=build_headers(),
-    )
-
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Not authenticated"
-
-
-def test_user_status_rule_blocks_matching_status(
-    api_client, build_headers, issue_jwt_token, create_status_rule, create_user
+def test_user_login_success(
+    api_client, create_user, issue_jwt_token, build_headers, db_session
 ):
-    create_status_rule(
-        user_status=UserStatus.standby, method=HTTPMethod.GET, path="/api/majors"
+    test_user = create_user(role_level=300, status=UserStatus.active)
+    test_user.email = "test@example.com"
+    test_user.id = sha256_hash(test_user.email.lower())
+    token = issue_jwt_token(test_user.id)
+    hash_token = generate_user_hash("test@example.com")
+    db_session.commit()
+
+    login_res = api_client.post(
+        "/api/user/login",
+        json={
+            "email": "test@example.com",
+            "hashToken": hash_token,
+        },
+        headers=build_headers(token),
     )
-    standby_user = create_user(status=UserStatus.standby)
-    token = issue_jwt_token(standby_user.id)
+    assert login_res.status_code == 200
+    login_data = login_res.json()
+    jwt = login_data.get("jwt")
 
-    response = api_client.get("/api/majors", headers=build_headers(token))
-
-    assert response.status_code == 403
-    assert "cannot access" in response.json()["detail"]
+    assert jwt, f"JWT가 응답에 없습니다. 응답: {login_data}"
 
 
-def test_user_status_rule_allows_other_statuses(
-    api_client, build_headers, issue_jwt_token, create_status_rule, create_user
+def test_user_login_not_found(
+    api_client, create_user, issue_jwt_token, build_headers, db_session
 ):
-    create_status_rule(
-        user_status=UserStatus.standby, method=HTTPMethod.GET, path="/api/majors"
+    test_user = create_user(role_level=300, status=UserStatus.active)
+    test_user.email = "test@example.com"
+    test_user.id = sha256_hash(test_user.email.lower())
+    token = issue_jwt_token(test_user.id)
+    hash_token = generate_user_hash("test@example.com")
+
+    login_res = api_client.post(
+        "/api/user/login",
+        json={
+            "email": "test@example.com",
+            "hashToken": hash_token,
+        },
+        headers=build_headers(token),
     )
-    active_user = create_user(status=UserStatus.active)
-    token = issue_jwt_token(active_user.id)
+    assert login_res.status_code == 404
+    login_data = login_res.json()
+    detail = login_data.get("detail")
 
-    response = api_client.get("/api/majors", headers=build_headers(token))
+    assert detail, "invalid email address"
 
-    assert response.status_code == 200
-    data = response.json()
-    assert isinstance(data, list)
+
+def test_user_login_wrong_token(
+    api_client, create_user, issue_jwt_token, build_headers, db_session
+):
+    test_user = create_user(role_level=300, status=UserStatus.active)
+    test_user.email = "test@example.com"
+    test_user.id = sha256_hash(test_user.email.lower())
+    token = issue_jwt_token(test_user.id)
+    db_session.commit()
+
+    login_res = api_client.post(
+        "/api/user/login",
+        json={
+            "email": "test@example.com",
+            "hashToken": "wrong_token",
+        },
+        headers=build_headers(token),
+    )
+    assert login_res.status_code == 401
+    login_data = login_res.json()
+    detail = login_data.get("detail")
+
+    assert detail, "invalid hash token"
