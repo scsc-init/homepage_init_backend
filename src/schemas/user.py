@@ -25,6 +25,7 @@ class UserResponse(BaseResponse):
 
 
 class PublicUserResponse(BaseResponse):
+    id: str
     email: str
     name: str
     role: int
