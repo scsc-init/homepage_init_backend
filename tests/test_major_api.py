@@ -96,6 +96,18 @@ def test_update_major_duplicate_returns_409(
     assert response.status_code == 409
 
 
+def test_delete_major_not_found(api_client, build_headers, create_user):
+    """삭제 대상 전공이 없을 때 404를 반환하는지 확인한다."""
+    _, token = create_user(role_level=500)
+
+    response = api_client.post(
+        "/api/executive/major/delete/999",
+        headers=build_headers(token),
+    )
+
+    assert response.status_code == 404
+
+
 def test_delete_major_success(api_client, build_headers, create_major, create_user):
     """정상적인 삭제 흐름이 완료되면 재조회 시 404가 되는지 검증한다."""
     target_major = create_major(college="자연과학대학", major_name="지질학과")
