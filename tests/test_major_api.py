@@ -1,4 +1,4 @@
-﻿def test_create_major_success(api_client, build_headers, create_user):
+def test_create_major_success(api_client, build_headers, create_user):
     """임원진이 새 전공을 생성할 수 있는지 확인한다."""
     _, token = create_user(role_level=500)
 

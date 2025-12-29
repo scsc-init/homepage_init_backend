@@ -1,4 +1,4 @@
-﻿from tests.types import HTTPMethod, UserStatus
+from tests.types import HTTPMethod, UserStatus
 
 
 def test_api_secret_required_for_public_request(api_client):
