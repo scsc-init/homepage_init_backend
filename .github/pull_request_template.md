@@ -12,7 +12,7 @@ Common gitmoji examples for quick copy-paste:
 
 ### 이 PR이 어떤 이슈를 고쳤나요?
 
-<!-- fixed#n의 형식으로 작성해 주세요 -->
+<!-- fixed #n의 형식으로 작성해 주세요 -->
 
 ---
 
