@@ -1,4 +1,4 @@
-﻿<!--
+<!--
 Please follow the gitmoji convention for commit messages.
 Common gitmoji examples for quick copy-paste:
 ✨  :sparkles:  → Introduce new features
