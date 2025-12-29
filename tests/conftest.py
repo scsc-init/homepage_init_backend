@@ -11,7 +11,8 @@ from fastapi.testclient import TestClient
 # Configure SQLite path for tests before importing FastAPI app
 TEST_DB_PATH = Path(__file__).resolve().parent / "test.sqlite3"
 TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-os.environ.setdefault("SQLITE_FILENAME", str(TEST_DB_PATH))
+# Always use an isolated SQLite file for tests, regardless of any pre‑existing env.
+os.environ["SQLITE_FILENAME"] = str(TEST_DB_PATH)
 
 import src.model
 from main import app
