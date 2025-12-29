@@ -77,4 +77,10 @@ app.add_middleware(HTTPLoggerMiddleware)
 
 app.include_router(root_router)
 
+
+@app.get("/health", include_in_schema=False)
+async def health_check():
+    return {"status": "ok"}
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
