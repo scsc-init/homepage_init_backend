@@ -43,7 +43,6 @@ dependencies = [
     "pydantic-settings==2.9.1",
     "pygments==2.19.1",
     "pyjwt==2.10.1",
-    "pytest>=9.0,<10",
     "python-dotenv==1.1.0",
     "python-multipart==0.0.20",
     "pyyaml==6.0.2",
@@ -72,6 +71,7 @@ dev = [
     "black>=25.9.0",
     "isort>=6.1.0",
     "pre-commit>=4.3.0",
+    "pytest>=9.0,<10",
 ]
 
 [tool.black]
