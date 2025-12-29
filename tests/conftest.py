@@ -1,4 +1,5 @@
 import os
+import subprocess
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -11,8 +12,18 @@ from fastapi.testclient import TestClient
 # Configure SQLite path for tests before importing FastAPI app
 TEST_DB_PATH = Path(__file__).resolve().parent / "test.sqlite3"
 TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-# Always use an isolated SQLite file for tests, regardless of any pre‑existing env.
+# Always use an isolated SQLite file for tests, regardless of any pre-existing env.
 os.environ["SQLITE_FILENAME"] = str(TEST_DB_PATH)
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+MIGRATION_SCRIPT = ROOT_DIR / "script/migrations/index.sh"
+CLEAR_DB_SCRIPT = ROOT_DIR / "script/clear_db.sh"
+
+
+def run_script(script_path: Path, *args: str) -> None:
+    cmd = ["bash", str(script_path), *[str(arg) for arg in args]]
+    subprocess.run(cmd, check=True)
+
 
 import src.model
 from main import app
@@ -43,11 +54,14 @@ ROLE_DATA = [
 @pytest.fixture(scope="session", autouse=True)
 def manage_test_database():
     if TEST_DB_PATH.exists():
-        TEST_DB_PATH.unlink()
-    yield
-    DBSessionFactory().teardown()
-    if TEST_DB_PATH.exists():
-        TEST_DB_PATH.unlink()
+        run_script(CLEAR_DB_SCRIPT, "--force", TEST_DB_PATH)
+    run_script(MIGRATION_SCRIPT, TEST_DB_PATH)
+    try:
+        yield
+    finally:
+        DBSessionFactory().teardown()
+        if TEST_DB_PATH.exists():
+            run_script(CLEAR_DB_SCRIPT, "--force", TEST_DB_PATH)
 
 
 @pytest.fixture(autouse=True)
