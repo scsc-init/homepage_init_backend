@@ -15,7 +15,6 @@ from src.services import (
     ProcessStandbyListResponse,
     ResponseLogin,
     StandbyServiceDep,
-    UserService,
     UserServiceDep,
 )
 from src.util import DepositDTO
@@ -94,8 +93,8 @@ async def get_user_by_id(
 
 
 @user_router.get("/role_names")
-async def get_role_names(lang: Optional[str] = None):
-    return UserService.get_role_names(lang)
+async def get_role_names(user_service: UserServiceDep, lang: Optional[str] = None):
+    return user_service.get_role_names(lang)
 
 
 @user_router.post("/user/update", status_code=204)

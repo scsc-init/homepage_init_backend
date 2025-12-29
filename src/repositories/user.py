@@ -1,6 +1,7 @@
+from functools import lru_cache
 from typing import Annotated, Any, Optional, Sequence
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from sqlalchemy import func, select
 
 from src.db import get_user_role_level
@@ -50,9 +51,38 @@ class UserRepository(CRUDRepository[User, str]):
 
 
 class UserRoleRepository(CRUDRepository[UserRole, int]):
+    cached_user_role = None
+
     @property
     def model(self) -> type[UserRole]:
         return UserRole
+
+    @lru_cache
+    def list_all(self) -> Sequence[UserRole]:
+        print("list_all called")
+        roles = super().list_all()
+        UserRoleRepository.cached_user_role = roles
+        return roles
+
+    def get_user_role_level(self, role_name: str) -> int:
+        """
+        Retrieves the numerical level for a given role name from the database.
+        Raises ValueError if the role name does not exist.
+
+        Args:
+            role_name (str): The name of the role to look up.
+
+        Returns:
+            int: The level associated with the role.
+
+        Raises:
+            HTTPException: 400 if a role with the given name is not found in the database.
+        """
+        roles = UserRoleRepository.cached_user_role or self.list_all()
+        for role in roles:
+            if role.name == role_name:
+                return role.level
+        raise HTTPException(400, f"Role '{role_name}' not found in the database.")
 
 
 class StandbyReqTblRepository(CRUDRepository[StandbyReqTbl, str]):

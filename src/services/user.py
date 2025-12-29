@@ -236,31 +236,11 @@ class UserService:
             self.user_repository.get_executives()
         )
 
-    @staticmethod
-    def get_role_names(lang: str | None = "en"):
+    def get_role_names(self, lang: str | None = "en"):
+        roles = self.user_role_repository.list_all()
         if lang == "ko":
-            return {
-                "role_names": {
-                    "0": "최저권한",
-                    "100": "휴회원",
-                    "200": "준회원",
-                    "300": "정회원",
-                    "400": "졸업생",
-                    "500": "운영진",
-                    "1000": "회장",
-                }
-            }
-        return {
-            "role_names": {
-                "0": "lowest",
-                "100": "dormant",
-                "200": "newcomer",
-                "300": "member",
-                "400": "oldboy",
-                "500": "executive",
-                "1000": "president",
-            }
-        }
+            return {"role_names": {str(role.level): role.kor_name for role in roles}}
+        return {"role_names": {str(role.level): role.name for role in roles}}
 
     async def update_my_profile(
         self, current_user: User, body: BodyUpdateMyProfile
