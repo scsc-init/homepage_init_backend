@@ -182,6 +182,12 @@ Run FastAPI dev server with HTTPS:
 ```bash
 uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfile=cert.pem
 ```
+## Tests
+Pytest는 파이썬 테스트 러너로, 이 프로젝트의 모든 API/서비스 시나리오를 자동으로 검증합니다. 다음 명령어를 통해 pytest를 실행시킵니다.
+
+```bash
+uv run env PYTHONPATH=. pytest
+```
 
 ## 디렉토리 구조
 
