@@ -5,7 +5,7 @@ from sqlalchemy import literal, select
 
 from src.model import CheckUserStatusRule
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class CheckUserStatusRuleRepository(CRUDRepository[CheckUserStatusRule, int]):

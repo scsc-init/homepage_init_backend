@@ -5,7 +5,7 @@ from sqlalchemy import delete, insert, select
 
 from src.model import Article, Attachment, FileMetadata
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class AttachmentRepository(CRUDRepository[Attachment, int]):

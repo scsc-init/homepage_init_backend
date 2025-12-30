@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from src.model import Board
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class BoardRepository(CRUDRepository[Board, int]):

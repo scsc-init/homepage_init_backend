@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from src.model import FileMetadata
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class FileMetadataRepository(CRUDRepository[FileMetadata, str]):

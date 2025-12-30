@@ -4,7 +4,7 @@ from fastapi import Depends
 
 from src.model import SCSCGlobalStatus
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class SCSCGlobalStatusRepository(CRUDRepository[SCSCGlobalStatus, int]):
