@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from src.model import Article
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class ArticleRepository(CRUDRepository[Article, int]):

@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from src.model import SIG, SCSCStatus, SIGMember
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class SigRepository(CRUDRepository[SIG, int]):

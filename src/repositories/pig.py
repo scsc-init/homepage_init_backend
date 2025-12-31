@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from src.model import PIG, PIGMember, SCSCStatus
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class PigRepository(CRUDRepository[PIG, int]):

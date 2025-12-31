@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from src.db import get_user_role_level
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole, UserStatus
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class UserRepository(CRUDRepository[User, str]):
@@ -50,9 +50,16 @@ class UserRepository(CRUDRepository[User, str]):
 
 
 class UserRoleRepository(CRUDRepository[UserRole, int]):
+    cached_user_role = None
+
     @property
     def model(self) -> type[UserRole]:
         return UserRole
+
+    def list_all(self) -> Sequence[UserRole]:
+        if UserRoleRepository.cached_user_role is None:
+            UserRoleRepository.cached_user_role = super().list_all()
+        return UserRoleRepository.cached_user_role
 
 
 class StandbyReqTblRepository(CRUDRepository[StandbyReqTbl, str]):
