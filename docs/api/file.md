@@ -73,7 +73,6 @@ GET /api/file/download/4c85a8be-59c3-4e1a-bd2f-9f22a0f4d22e
 
 ---
 
-
 ## Upload Image (이미지 업로드)
 
 * **Method**: `POST`
