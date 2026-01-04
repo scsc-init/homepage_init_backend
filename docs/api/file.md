@@ -73,6 +73,52 @@ GET /api/file/download/4c85a8be-59c3-4e1a-bd2f-9f22a0f4d22e
 
 ---
 
+## Get File Metadata (파일 메타데이터 조회)
+
+* **Method**: `POST`
+* **URL**: `/api/file/metadata`
+* **설명**: 여러 파일 ID에 대한 메타데이터(원본 파일명 등)를 조회한다. 존재하지 않는 ID는 무시된다.
+
+* **Request**:
+
+```json
+{
+  "ids": [
+    "4c85a8be-59c3-4e1a-bd2f-9f22a0f4d22e",
+    "a66c8706-2b40-4c23-90ed-a8d928f21d7a"
+  ]
+}
+```
+
+* **Response**:
+
+```json
+[
+  {
+    "id": "4c85a8be-59c3-4e1a-bd2f-9f22a0f4d22e",
+    "original_filename": "report.pdf",
+    "size": 204832,
+    "mime_type": "application/pdf",
+    "created_at": "2025-05-21T14:30:00",
+    "owner": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514"
+  },
+  {
+    "id": "a66c8706-2b40-4c23-90ed-a8d928f21d7a",
+    "original_filename": "budget.xlsx",
+    "size": 91844,
+    "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "created_at": "2025-05-22T09:10:00",
+    "owner": null
+  }
+]
+```
+
+* **Status Codes**:
+  * `200 OK` - 조회 성공
+  * `400 Bad Request` - 요청 본문 오류
+
+---
+
 ## Upload Image (이미지 업로드)
 
 * **Method**: `POST`
