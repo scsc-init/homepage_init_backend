@@ -3,8 +3,8 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2025-10-05  
-> 최신개정자: [윤영우](dan.yun0821@gmail.com)  
+> 최신개정일: 2025-01-05  
+> 최신개정자: [최정원](jwchoi915@snu.ac.kr)  
 > 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com)  
 
 ## 브랜치
@@ -168,20 +168,6 @@ DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파�
 
 `./script/clear_db.sh`를 실행합니다.
 
-
-## https 설정 및 실행
-
-https 설정 후 main.py 25행의 `https_only=False` 값을 True로 바꿀 것이 요구됩니다.
-
-Generate self-signed certs:
-```bash
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
-```
-
-Run FastAPI dev server with HTTPS:
-```bash
-uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfile=cert.pem
-```
 ## Tests
 Pytest는 파이썬 테스트 러너로, 이 프로젝트의 모든 API/서비스 시나리오를 자동으로 검증합니다. 다음 명령어를 통해 pytest를 실행시킵니다.
 
