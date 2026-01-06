@@ -76,7 +76,8 @@ mkdir -p \
   ./static/download \
   ./static/article \
   ./static/image/photo \
-  ./static/image/pfps
+  ./static/image/pfps \
+  ./static/w
 ```
 
 db 파일을 생성합니다.
