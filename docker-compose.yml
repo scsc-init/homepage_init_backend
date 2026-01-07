@@ -14,7 +14,7 @@ services:
       -c '
       set -e
 
-      mkdir -p /app/db /app/logs /app/static/article /app/static/image/photo /app/static/image/pfps /app/static/download;
+      mkdir -p /app/db /app/logs /app/static/article /app/static/image/photo /app/static/image/pfps /app/static/download /app/static/w;
       chown -R nonroot:nonroot /app/db /app/logs /app/static || true;
       chmod -R u+rwX /app/db /app/logs /app/static;
 
