@@ -3,6 +3,7 @@ name: Sync Submodule to Root
 on:
   push:
     branches: [ develop ]
+  workflow_dispatch:
 
 jobs:
   update-root:
