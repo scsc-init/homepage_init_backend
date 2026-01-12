@@ -47,7 +47,7 @@ GRANT_CHANNEL_ID=0
 
 ## 기타 설정 파일
 
-### `script/migrations/president.csv`(Optional)
+### `script/insert_sample_data/president.csv`(Optional)
 
 - DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
 - `script/insert_sample_data/president.example.csv`의 형식을 참고하여 작성합니다
