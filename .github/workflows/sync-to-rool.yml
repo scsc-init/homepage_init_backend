@@ -14,7 +14,7 @@ jobs:
           github-token: ${{ secrets.SYNC_TOKEN }}
           script: |
             await github.rest.repos.createDispatchEvent({
-              owner: 'your-github-username',
+              owner: 'scsc-init',
               repo: 'homepage_init_be_msa',
               event_type: 'submodule-updated',
               client_payload: {
