@@ -1,0 +1,23 @@
+name: Sync Submodule to Root
+
+on:
+  push:
+    branches: [ develop ]
+
+jobs:
+  update-root:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Root Repository Update
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.SYNC_TOKEN }}
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: 'your-github-username',
+              repo: 'homepage_init_be_msa',
+              event_type: 'submodule-updated',
+              client_payload: {
+                submodule: context.repo.repo
+              }
+            });
