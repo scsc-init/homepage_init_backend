@@ -9,15 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Root Repository Update
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.SYNC_TOKEN }}
-          script: |
-            await github.rest.repos.createDispatchEvent({
-              owner: 'scsc-init',
-              repo: 'homepage_init_be_msa',
-              event_type: 'submodule-updated',
-              client_payload: {
-                submodule: context.repo.repo
-              }
-            });
+        run: gh api /repos/scsc-init/homepage_init_be_msa/dispatches -f event_type='submodule-updated'
+        env:
+          GITHUB_TOKEN: ${{ secrets.SYNC_TOKEN }}
