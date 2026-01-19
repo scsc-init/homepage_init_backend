@@ -9,7 +9,6 @@
     FOREIGN KEY (pig_id) REFERENCES pig(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_pig_website_pig_id ON pig_website(pig_id);
 CREATE INDEX idx_pig_website_sort ON pig_website(pig_id, sort_order);
 
 CREATE TRIGGER update_pig_website_updated_at

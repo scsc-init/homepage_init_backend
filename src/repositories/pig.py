@@ -70,8 +70,6 @@ class PigWebsiteRepository(CRUDRepository[PIGWebsite, int]):
             self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
             for website in websites:
                 self.session.add(website)
-            if websites:
-                self.session.flush()
 
     def delete_by_pig_id(self, pig_id: int) -> None:
         with self.transaction:
