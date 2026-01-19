@@ -1,9 +1,11 @@
+﻿from __future__ import annotations
+
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
-from src.model import PIG, PIGMember, SCSCStatus
+from src.model import PIG, PIGMember, PIGWebsite, SCSCStatus
 
 from .crud_repository import CRUDRepository
 
@@ -50,5 +52,30 @@ class PigMemberRepository(CRUDRepository[PIGMember, int]):
         return self.session.scalars(stmt).all()
 
 
+class PigWebsiteRepository(CRUDRepository[PIGWebsite, int]):
+    @property
+    def model(self) -> type[PIGWebsite]:
+        return PIGWebsite
+
+    def get_by_pig_id(self, pig_id: int) -> Sequence[PIGWebsite]:
+        stmt = (
+            select(PIGWebsite)
+            .where(PIGWebsite.pig_id == pig_id)
+            .order_by(PIGWebsite.sort_order, PIGWebsite.id)
+        )
+        return self.session.scalars(stmt).all()
+
+    def replace_for_pig(self, pig_id: int, websites: Sequence[PIGWebsite]) -> None:
+        with self.transaction:
+            self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
+            for website in websites:
+                self.session.add(website)
+
+    def delete_by_pig_id(self, pig_id: int) -> None:
+        with self.transaction:
+            self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
+
+
 PigRepositoryDep = Annotated[PigRepository, Depends()]
 PigMemberRepositoryDep = Annotated[PigMemberRepository, Depends()]
+PigWebsiteRepositoryDep = Annotated[PigWebsiteRepository, Depends()]
