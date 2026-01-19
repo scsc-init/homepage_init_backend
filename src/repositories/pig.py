@@ -1,3 +1,5 @@
+﻿from __future__ import annotations
+
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
@@ -64,14 +66,16 @@ class PigWebsiteRepository(CRUDRepository[PIGWebsite, int]):
         return self.session.scalars(stmt).all()
 
     def replace_for_pig(self, pig_id: int, websites: Sequence[PIGWebsite]) -> None:
-        self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
-        for website in websites:
-            self.session.add(website)
-        if websites:
-            self.session.flush()
+        with self.transaction:
+            self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
+            for website in websites:
+                self.session.add(website)
+            if websites:
+                self.session.flush()
 
     def delete_by_pig_id(self, pig_id: int) -> None:
-        self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
+        with self.transaction:
+            self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
 
 
 PigRepositoryDep = Annotated[PigRepository, Depends()]
