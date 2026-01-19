@@ -1,4 +1,4 @@
-﻿CREATE TABLE pig_website (
+CREATE TABLE pig_website (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pig_id INTEGER NOT NULL,
     label TEXT NOT NULL,
