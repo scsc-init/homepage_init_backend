@@ -25,13 +25,13 @@ async def create_pig(
     pig_service: PigServiceDep,
 ) -> PigResponse:
     pig = await pig_service.create_pig(scsc_global_status, current_user, body)
-    return PigResponse.model_validate(pig)
+    return pig_service.get_pig_response(pig)
 
 
 @pig_router.get("/pig/{id}")
 async def get_pig_by_id(id: int, pig_service: PigServiceDep) -> PigResponse:
     pig = pig_service.get_by_id(id)
-    return PigResponse.model_validate(pig)
+    return pig_service.get_pig_response(pig)
 
 
 @pig_router.get("/pigs")

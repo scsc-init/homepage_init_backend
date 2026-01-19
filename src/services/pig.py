@@ -1,4 +1,5 @@
 from typing import Annotated, Optional, Sequence
+from urllib.parse import urlparse
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -7,9 +8,14 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
-from src.model import PIG, PIGMember, SCSCGlobalStatus, SCSCStatus, User
-from src.repositories import PigMemberRepositoryDep, PigRepositoryDep, UserRepositoryDep
-from src.schemas import PigMemberResponse, PigResponse, UserResponse
+from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
+from src.repositories import (
+    PigMemberRepositoryDep,
+    PigRepositoryDep,
+    PigWebsiteRepositoryDep,
+    UserRepositoryDep,
+)
+from src.schemas import PigMemberResponse, PigResponse, PigWebsiteResponse, UserResponse
 from src.util import (
     map_semester_name,
 )
@@ -18,11 +24,18 @@ from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
 
 
+class BodyPigWebsite(BaseModel):
+    label: str
+    url: str
+    sort_order: Optional[int] = None
+
+
 class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
     is_rolling_admission: bool = False
+    websites: Optional[list[BodyPigWebsite]] = None
 
 
 class BodyUpdatePIG(BaseModel):
@@ -32,6 +45,7 @@ class BodyUpdatePIG(BaseModel):
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
     is_rolling_admission: Optional[bool] = None
+    websites: Optional[list[BodyPigWebsite]] = None
 
 
 class BodyHandoverPIG(BaseModel):
@@ -52,11 +66,13 @@ class PigService:
         article_service: ArticleServiceDep,
         pig_repository: PigRepositoryDep,
         pig_member_repository: PigMemberRepositoryDep,
+        pig_website_repository: PigWebsiteRepositoryDep,
         user_repository: UserRepositoryDep,
     ) -> None:
         self.article_service = article_service
         self.pig_repository = pig_repository
         self.pig_member_repository = pig_member_repository
+        self.pig_website_repository = pig_website_repository
         self.user_repository = user_repository
 
     async def create_pig(
@@ -95,6 +111,8 @@ class PigService:
 
         if pig.id is None:
             raise HTTPException(503, detail="pig primary key does not exist")
+
+        self._replace_websites(pig.id, body.websites)
 
         pig_member = PIGMember(ig_id=pig.id, user_id=current_user.id)
         try:
@@ -188,6 +206,9 @@ class PigService:
             self.pig_repository.update(pig)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+
+        if body.websites is not None:
+            self._replace_websites(id, body.websites)
 
         bot_body = {}
         bot_body["pig_name"] = old_title
@@ -423,6 +444,48 @@ class PigService:
         logger.info(
             f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
         )
+
+    def get_pig_response(self, pig: PIG) -> PigResponse:
+        websites = []
+        if pig.id is not None:
+            websites = self.pig_website_repository.get_by_pig_id(pig.id)
+        website_responses = PigWebsiteResponse.model_validate_list(websites)
+        pig_response = PigResponse.model_validate(pig)
+        return pig_response.model_copy(update={"websites": website_responses})
+
+    def _replace_websites(
+        self, pig_id: int, websites: Optional[Sequence[BodyPigWebsite]]
+    ) -> None:
+        if websites is None:
+            return
+        website_models = self._prepare_website_models(pig_id, websites)
+        self.pig_website_repository.replace_for_pig(pig_id, website_models)
+
+    def _prepare_website_models(
+        self, pig_id: int, websites: Sequence[BodyPigWebsite]
+    ) -> list[PIGWebsite]:
+        if not websites:
+            return []
+        if len(websites) > 10:
+            raise HTTPException(
+                400, detail="웹사이트는 최대 10개까지 등록할 수 있습니다"
+            )
+
+        prepared: list[PIGWebsite] = []
+        for idx, website in enumerate(websites):
+            url = (website.url or "").strip()
+            if not url:
+                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
+            sort_order = website.sort_order if website.sort_order is not None else idx
+            prepared.append(
+                PIGWebsite(
+                    pig_id=pig_id,
+                    label=url,
+                    url=url,
+                    sort_order=sort_order,
+                )
+            )
+        return prepared
 
 
 PigServiceDep = Annotated[PigService, Depends()]

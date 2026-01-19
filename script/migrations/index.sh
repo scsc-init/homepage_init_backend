@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 set -e
 
@@ -40,5 +40,6 @@ trap cleanup EXIT
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V8__update_kv_footer-message.sql")
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V9__set_standby_default_status.sql")
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V10__create_attachment.sql")
+(cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V11__create_pig_website.sql")
 
 echo "Database initialization and inserts completed successfully."
