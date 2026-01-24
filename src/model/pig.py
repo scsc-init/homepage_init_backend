@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
@@ -65,4 +65,25 @@ class PIGMember(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
         default_factory=utcnow,
+    )
+
+
+class PIGWebsite(Base):
+    __tablename__ = "pig_website"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    pig_id: Mapped[int] = mapped_column(Integer, ForeignKey("pig.id"), nullable=False)
+    label: Mapped[str] = mapped_column(String, nullable=False)
+    url: Mapped[str] = mapped_column(String, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+        onupdate=utcnow,
     )

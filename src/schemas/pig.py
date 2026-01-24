@@ -15,6 +15,16 @@ class PigMemberResponse(BaseResponse):
     user: Optional[UserResponse] = None
 
 
+class PigWebsiteResponse(BaseResponse):
+    id: int
+    pig_id: int
+    label: str
+    url: str
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class PigResponse(BaseResponse):
     id: int
     title: str
@@ -28,3 +38,4 @@ class PigResponse(BaseResponse):
     is_rolling_admission: bool
     created_at: datetime
     updated_at: datetime
+    websites: list[PigWebsiteResponse] = []

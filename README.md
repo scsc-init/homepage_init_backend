@@ -14,27 +14,14 @@ SCSC 홈페이지 Main BE 문서
 
 ## .env 파일
 
-.env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 
+.env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 아래 예시 env에 없는 항목은 하드코딩된 기본 값이 설정되어 있습니다. `src.core.config.py`에서 확인할 수 있습니다. env 파일에서 이를 설정하면 기본 값보다 env 파일 값이 우선하여 적용됩니다.
 
 ```env
 API_SECRET="some-secret-code"
 JWT_SECRET="some-session-secret"
 JWT_VALID_SECONDS=3600
-SQLITE_FILENAME="db/YOUR_DB_FILENAME.db"
-IMAGE_DIR="static/image/photo/"
-FILE_DIR="static/download/"
-FILE_MAX_SIZE=10000000
-ARTICLE_DIR="static/article/"
-USER_CHECK=TRUE
-ENROLLMENT_FEE=300000
-CORS_ALL_ACCEPT=FALSE
-RABBITMQ_HOST="rabbitmq"
-BOT_HOST="bot"
-DISCORD_RECEIVE_QUEUE="discord_bot_queue"
-RABBITMQ_REQUIRED=TRUE
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
-W_HTML_DIR="static/w/"
 ```
 
 | Key Name             | Description                                                      |
@@ -60,7 +47,7 @@ W_HTML_DIR="static/w/"
 
 ## 기타 설정 파일
 
-### `script/migrations/president.csv`(Optional)
+### `script/insert_sample_data/president.csv`(Optional)
 
 - DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
 - `script/insert_sample_data/president.example.csv`의 형식을 참고하여 작성합니다
@@ -88,7 +75,8 @@ mkdir -p \
   ./static/download \
   ./static/article \
   ./static/image/photo \
-  ./static/image/pfps
+  ./static/image/pfps \
+  ./static/w
 ```
 
 db 파일을 생성합니다.
