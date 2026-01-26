@@ -239,7 +239,7 @@ class ArticleService:
         self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
 
     async def update_article_by_author(
-        self, id: int, current_user: Optional[User], body: BodyUpdateArticle
+        self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if article is None:
@@ -257,7 +257,7 @@ class ArticleService:
         await self._update_article(article, body, current_user)
 
     async def update_article_by_executive(
-        self, id: int, current_user: Optional[User], body: BodyUpdateArticle
+        self, id: int, current_user: User, body: BodyUpdateArticle
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
@@ -269,7 +269,7 @@ class ArticleService:
             raise HTTPException(status_code=410, detail="Article has been deleted")
         await self._update_article(article, body, current_user)
 
-    def delete_article_by_author(self, id: int, current_user: Optional[User]) -> None:
+    def delete_article_by_author(self, id: int, current_user: User) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(
@@ -297,9 +297,7 @@ class ArticleService:
             f"info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}"
         )
 
-    def delete_article_by_executive(
-        self, id: int, current_user: Optional[User]
-    ) -> None:
+    def delete_article_by_executive(self, id: int, current_user: User) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(
