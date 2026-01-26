@@ -1,5 +1,5 @@
 from os import path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import aiofiles
 from fastapi import Depends, HTTPException
@@ -113,13 +113,15 @@ class ArticleService:
         return article_response
 
     def get_article_list_by_board(
-        self, board_id: int, current_user: User
+        self, board_id: int, current_user: Optional[User]
     ) -> list[ArticleResponse]:
         board = self.board_repository.get_by_id(board_id)
         if board is None:
             raise HTTPException(404, detail="Board not found")
 
         if board.reading_permission_level > 0:
+            if current_user is None:
+                raise HTTPException(status_code=401, detail="Not authenticated")
             if current_user.role < board.reading_permission_level:
                 raise HTTPException(
                     403, detail="You are not allowed to read this board"
@@ -157,7 +159,7 @@ class ArticleService:
         return result
 
     def get_article_by_id(
-        self, id: int, current_user: User
+        self, id: int, current_user: Optional[User]
     ) -> ArticleWithAttachmentResponse:
         article = self.article_repository.get_by_id(id)
         if not article:
@@ -167,6 +169,8 @@ class ArticleService:
             raise HTTPException(503, detail="board does not exist")
 
         if board.reading_permission_level > 0:
+            if current_user is None:
+                raise HTTPException(status_code=401, detail="Not authenticated")
             if current_user.role < board.reading_permission_level:
                 raise HTTPException(
                     403, detail="You are not allowed to read this article"
@@ -235,7 +239,7 @@ class ArticleService:
         self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
 
     async def update_article_by_author(
-        self, id: int, current_user: User, body: BodyUpdateArticle
+        self, id: int, current_user: Optional[User], body: BodyUpdateArticle
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if article is None:
@@ -253,7 +257,7 @@ class ArticleService:
         await self._update_article(article, body, current_user)
 
     async def update_article_by_executive(
-        self, id: int, current_user: User, body: BodyUpdateArticle
+        self, id: int, current_user: Optional[User], body: BodyUpdateArticle
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
@@ -265,7 +269,7 @@ class ArticleService:
             raise HTTPException(status_code=410, detail="Article has been deleted")
         await self._update_article(article, body, current_user)
 
-    def delete_article_by_author(self, id: int, current_user: User) -> None:
+    def delete_article_by_author(self, id: int, current_user: Optional[User]) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(
@@ -293,7 +297,9 @@ class ArticleService:
             f"info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}"
         )
 
-    def delete_article_by_executive(self, id: int, current_user: User) -> None:
+    def delete_article_by_executive(
+        self, id: int, current_user: Optional[User]
+    ) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(
