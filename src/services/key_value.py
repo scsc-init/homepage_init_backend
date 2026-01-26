@@ -1,4 +1,4 @@
-﻿from typing import Annotated, Optional, Sequence
+from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel

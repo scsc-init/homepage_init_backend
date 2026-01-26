@@ -1,4 +1,4 @@
-﻿from .article import Article, Board
+from .article import Article, Board
 from .attachment import Attachment
 from .check_user_status_rule import CheckUserStatusRule, HTTPMethod
 from .comment import Comment
