@@ -1,4 +1,4 @@
-﻿from typing import Annotated, Optional
+﻿from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel, EmailStr
@@ -43,6 +43,17 @@ class TestUserService:
         self.major_repository = major_repository
         self.standby_repository = standby_repository
         self.oldboy_repository = oldboy_repository
+
+    def list_test_users(
+        self, email: Optional[str] = None, name: Optional[str] = None
+    ) -> Sequence[UserResponse]:
+        filters: dict[str, str] = {}
+        if email:
+            filters["email"] = email
+        if name:
+            filters["name"] = name
+        users = self.user_repository.get_by_filters(filters)
+        return UserResponse.model_validate_list(users)
 
     def create_test_user(self, body: BodyCreateTestUser) -> UserResponse:
         if not is_valid_phone(body.phone):

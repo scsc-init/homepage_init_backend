@@ -1,4 +1,6 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+﻿from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from src.core import get_settings
 from src.dependencies import api_secret
@@ -12,6 +14,16 @@ def _ensure_test_routes_enabled() -> None:
 
 
 test_router = APIRouter(tags=["test"], dependencies=[Depends(api_secret)])
+
+
+@test_router.get("/users")
+async def list_test_users(
+    test_user_service: TestUserServiceDep,
+    _: None = Depends(_ensure_test_routes_enabled),
+    email: Optional[str] = None,
+    name: Optional[str] = None,
+) -> list[UserResponse]:
+    return test_user_service.list_test_users(email=email, name=name)
 
 
 @test_router.post("/users", status_code=201)

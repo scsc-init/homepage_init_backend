@@ -1,4 +1,4 @@
-﻿from .article import (
+from .article import (
     ArticleServiceDep,
     BodyCreateArticle,
     BodyUpdateArticle,
