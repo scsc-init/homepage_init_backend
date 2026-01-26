@@ -1,0 +1,111 @@
+﻿from typing import Annotated, Optional
+
+from fastapi import Depends, HTTPException
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.exc import IntegrityError
+
+from src.core import logger
+from src.db import get_user_role_level
+from src.model import User, UserStatus
+from src.repositories import (
+    MajorRepositoryDep,
+    OldboyApplicantRepositoryDep,
+    StandbyReqTblRepositoryDep,
+    UserRepositoryDep,
+)
+from src.schemas import UserResponse
+from src.util import create_uuid, is_valid_phone, is_valid_student_id
+
+
+class BodyCreateTestUser(BaseModel):
+    email: EmailStr
+    name: str
+    phone: str
+    student_id: str
+    major_id: int
+    role_name: str = "member"
+    status: UserStatus = UserStatus.active
+    profile_picture: Optional[str] = None
+    profile_picture_is_url: bool = False
+    discord_id: Optional[int] = None
+    discord_name: Optional[str] = None
+
+
+class TestUserService:
+    def __init__(
+        self,
+        user_repository: UserRepositoryDep,
+        major_repository: MajorRepositoryDep,
+        standby_repository: StandbyReqTblRepositoryDep,
+        oldboy_repository: OldboyApplicantRepositoryDep,
+    ) -> None:
+        self.user_repository = user_repository
+        self.major_repository = major_repository
+        self.standby_repository = standby_repository
+        self.oldboy_repository = oldboy_repository
+
+    def create_test_user(self, body: BodyCreateTestUser) -> UserResponse:
+        if not is_valid_phone(body.phone):
+            raise HTTPException(422, detail="invalid phone number")
+        if not is_valid_student_id(body.student_id):
+            raise HTTPException(422, detail="invalid student_id")
+        if body.profile_picture_is_url and not body.profile_picture:
+            raise HTTPException(
+                422,
+                detail="profile_picture is required when profile_picture_is_url is true",
+            )
+
+        major = self.major_repository.get_by_id(body.major_id)
+        if not major:
+            raise HTTPException(404, detail="major not found")
+
+        role_level = get_user_role_level(body.role_name)
+
+        user = User(
+            id=create_uuid(),
+            email=body.email,
+            name=body.name,
+            phone=body.phone,
+            student_id=body.student_id,
+            role=role_level,
+            major_id=body.major_id,
+            status=body.status,
+            profile_picture=body.profile_picture,
+            profile_picture_is_url=body.profile_picture_is_url,
+            discord_id=body.discord_id,
+            discord_name=body.discord_name,
+        )
+
+        try:
+            created = self.user_repository.create(user)
+        except IntegrityError as exc:
+            raise HTTPException(409, detail="unique field already exists") from exc
+
+        logger.info(f"info_type=test_user_created ; user_id={created.id}")
+        return UserResponse.model_validate(created)
+
+    def delete_test_user(self, user_id: str) -> None:
+        user = self.user_repository.get_by_id(user_id)
+        if not user:
+            raise HTTPException(404, detail="user not found")
+
+        standby = self.standby_repository.get_by_user_id(user_id)
+        if standby:
+            self.standby_repository.delete(standby)
+
+        oldboy = self.oldboy_repository.get_by_id(user_id)
+        if oldboy:
+            self.oldboy_repository.delete(oldboy)
+
+        try:
+            self.user_repository.delete(user)
+        except IntegrityError as exc:
+            raise HTTPException(
+                409,
+                detail="cannot delete user: remove related records first",
+            ) from exc
+
+        logger.info(f"info_type=test_user_deleted ; user_id={user_id}")
+
+
+TestUserServiceDep = Annotated[TestUserService, Depends()]

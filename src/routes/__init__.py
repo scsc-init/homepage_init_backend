@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+﻿from fastapi import APIRouter
+
+from src.core import get_settings
 
 from .article import article_router
 from .board import board_router
@@ -10,6 +12,7 @@ from .major import major_router
 from .pig import pig_router
 from .scsc import scsc_router
 from .sig import sig_router
+from .test_utils import test_router
 from .user import user_router
 from .w import w_router
 
@@ -27,3 +30,5 @@ root_router.include_router(scsc_router, prefix="/api")
 root_router.include_router(bot_router, prefix="/api")
 root_router.include_router(w_router, prefix="/api")
 root_router.include_router(kv_router, prefix="/api")
+if get_settings().enable_test_routes:
+    root_router.include_router(test_router, prefix="/test")
