@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter
+from fastapi import APIRouter
 
 from src.dependencies import NullableUserDep, UserDep
 from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
