@@ -20,7 +20,6 @@ SCSC 홈페이지 Main BE 문서
 API_SECRET="some-secret-code"
 JWT_SECRET="some-session-secret"
 JWT_VALID_SECONDS=3600
-SQLITE_FILENAME="db/YOUR_DB_FILENAME.db"
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
 ```
@@ -30,7 +29,7 @@ GRANT_CHANNEL_ID=0
 | `API_SECRET`             | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
 | `JWT_SECRET`             | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
 | `JWT_VALID_SECONDS`      | 로그인 관련 JWT 유효 시간(초)          |
-| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름. MSA가 아닌 단독으로 실행할 때는 생략할 수 없음.    |
 | `IMAGE_DIR`              | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_DIR`               | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`          | 파일 최대 용량(바이트) |
