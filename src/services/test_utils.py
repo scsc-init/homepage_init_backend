@@ -14,7 +14,7 @@ from src.repositories import (
     UserRepositoryDep,
 )
 from src.schemas import UserResponse
-from src.util import create_uuid, is_valid_phone, is_valid_student_id
+from src.util import is_valid_phone, is_valid_student_id, sha256_hash
 
 
 class BodyCreateTestUser(BaseModel):
@@ -23,7 +23,7 @@ class BodyCreateTestUser(BaseModel):
     phone: str
     student_id: str
     major_id: int
-    role_name: str = "member"
+    role_name: str = "executive"
     status: UserStatus = UserStatus.active
     profile_picture: Optional[str] = None
     profile_picture_is_url: bool = False
@@ -73,7 +73,7 @@ class TestUserService:
         role_level = get_user_role_level(body.role_name)
 
         user = User(
-            id=create_uuid(),
+            id=sha256_hash(body.email.lower()),
             email=body.email,
             name=body.name,
             phone=body.phone,
@@ -117,6 +117,19 @@ class TestUserService:
             ) from exc
 
         logger.info(f"info_type=test_user_deleted ; user_id={user_id}")
+
+    def delete_test_user_all(self) -> None:
+        try:
+            self.standby_repository.delete_all()
+            self.oldboy_repository.delete_all()
+            self.user_repository.delete_all()
+        except IntegrityError as exc:
+            raise HTTPException(
+                409,
+                detail="cannot delete user: remove related records first",
+            ) from exc
+
+        logger.info("info_type=test_user_all_deleted")
 
 
 TestUserServiceDep = Annotated[TestUserService, Depends()]
