@@ -29,7 +29,7 @@ GRANT_CHANNEL_ID=0
 | `API_SECRET`             | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
 | `JWT_SECRET`             | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
 | `JWT_VALID_SECONDS`      | 로그인 관련 JWT 유효 시간(초)          |
-| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름. MSA가 아닌 단독으로 실행할 때는 생략할 수 없음.    |
 | `IMAGE_DIR`              | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_DIR`               | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`          | 파일 최대 용량(바이트) |
@@ -41,7 +41,7 @@ GRANT_CHANNEL_ID=0
 | `BOT_HOST`               | 디스코드 봇이 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `RABBITMQ_REQUIRED`      | RabbitMQ 서버와의 연결 여부. FALSE이면 연결을 시도하지 않고, TRUE이면 연결 시도 후 실패 시 오류를 띄움. |
-| `ENABLE_TEST_ROUTES`     | 테스트 전용 API(/test/users) 여부를 제어. 기본값은 False이며, 테스트 서버에서 True로 변경하여 사용. |
+| `ENABLE_TEST_ROUTES`     | 테스트 전용 API(/api/test) 여부를 제어. 기본값은 False이며, 테스트 서버에서 True로 변경하여 사용. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 | `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |

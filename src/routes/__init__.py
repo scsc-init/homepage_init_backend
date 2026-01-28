@@ -31,4 +31,4 @@ root_router.include_router(bot_router, prefix="/api")
 root_router.include_router(w_router, prefix="/api")
 root_router.include_router(kv_router, prefix="/api")
 if get_settings().enable_test_routes:
-    root_router.include_router(test_router, prefix="/test")
+    root_router.include_router(test_router, prefix="/api/test")

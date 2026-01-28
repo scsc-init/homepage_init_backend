@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -22,7 +22,7 @@ async def list_test_users(
     _: None = Depends(_ensure_test_routes_enabled),
     email: Optional[str] = None,
     name: Optional[str] = None,
-) -> list[UserResponse]:
+) -> Sequence[UserResponse]:
     return test_user_service.list_test_users(email=email, name=name)
 
 
@@ -42,3 +42,11 @@ async def delete_test_user(
     _: None = Depends(_ensure_test_routes_enabled),
 ) -> None:
     test_user_service.delete_test_user(user_id)
+
+
+@test_router.delete("/users", status_code=204)
+async def delete_test_user_all(
+    test_user_service: TestUserServiceDep,
+    _: None = Depends(_ensure_test_routes_enabled),
+) -> None:
+    test_user_service.delete_test_user_all()
