@@ -39,7 +39,7 @@
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "id": "hash of email",
   "email": "user@example.com",
   "name": "홍길동",
   "phone": "010-1234-5678",
