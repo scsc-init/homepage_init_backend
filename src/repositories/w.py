@@ -5,7 +5,7 @@ from sqlalchemy import Row, select
 
 from src.model import User, WHTMLMetadata
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class WRepository(CRUDRepository[WHTMLMetadata, str]):

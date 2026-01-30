@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db import Base
+from .base import Base
 
 
 class Attachment(Base):

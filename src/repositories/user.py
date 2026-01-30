@@ -3,9 +3,10 @@ from typing import Annotated, Any, Optional, Sequence
 from fastapi import Depends
 from sqlalchemy import func, select
 
+from src.db import get_user_role_level
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole, UserStatus
 
-from .dao import CRUDRepository
+from .crud_repository import CRUDRepository
 
 
 class UserRepository(CRUDRepository[User, str]):
@@ -42,11 +43,23 @@ class UserRepository(CRUDRepository[User, str]):
     def get_by_name(self, name: str) -> Sequence[User]:
         return self.session.scalars(select(User).where(User.name == name)).all()
 
+    def get_executives(self) -> Sequence[User]:
+        return self.session.scalars(
+            select(User).where(User.role >= get_user_role_level("executive"))
+        ).all()
+
 
 class UserRoleRepository(CRUDRepository[UserRole, int]):
+    cached_user_role = None
+
     @property
     def model(self) -> type[UserRole]:
         return UserRole
+
+    def list_all(self) -> Sequence[UserRole]:
+        if UserRoleRepository.cached_user_role is None:
+            UserRoleRepository.cached_user_role = super().list_all()
+        return UserRoleRepository.cached_user_role
 
 
 class StandbyReqTblRepository(CRUDRepository[StandbyReqTbl, str]):

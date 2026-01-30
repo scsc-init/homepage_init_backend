@@ -1,6 +1,5 @@
 from typing import Final
 
-from .get_from_db import get_user_role_level
 from .helper import (
     DepositDTO,
     generate_user_hash,
@@ -8,12 +7,10 @@ from .helper import (
     map_semester_name,
     process_standby_user,
     split_filename,
+    utcnow,
 )
 from .logger_config import LOGGING_CONFIG, request_id_var
-from .rabbitmq import (
-    send_discord_bot_request,
-    send_discord_bot_request_no_reply,
-)
+from .singleton import SingletonMeta
 from .validator import (
     create_uuid,
     is_valid_img_url,

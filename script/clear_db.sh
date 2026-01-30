@@ -1,21 +1,78 @@
 #!/bin/bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+set -e
 
-echo "WARNING: This will delete all database files and the entire static directory!"
+usage() {
+  cat <<USAGE
+Usage: $0 [--force] [--static-dir <dir>] <database_file>
+  --force        Delete without interactive prompts
+  --static-dir   Optional static directory to delete after removing DB
+USAGE
+  exit 1
+}
 
-while [[ true ]]; do
-    read -p "Are you sure you want to continue? (yes/no): " confirm
-    if [[ "$confirm" == "no" ]]; then
-        echo "Aborted."
-        exit 1
-    elif [[ "$confirm" != "yes" ]]; then
-        echo "Please type 'yes' or 'no'"
-    else
-        break
-    fi
+FORCE=false
+STATIC_DIR=""
+DB_FILE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force)
+      FORCE=true
+      shift
+      ;;
+    --static-dir)
+      STATIC_DIR="$2"
+      shift 2
+      ;;
+    -*|--*)
+      echo "Unknown option: $1"
+      usage
+      ;;
+    *)
+      DB_FILE="$1"
+      shift
+      ;;
+  esac
 done
 
-rm ../db/*.db || { echo "Failed to remove database files"; exit 1; }
-rm -r ../static/ || { echo "Failed to remove static directory"; exit 1; }
-echo "Successfully removed database files and static directory"
+if [[ -z "$DB_FILE" ]]; then
+  usage
+fi
+
+DB_FILE="$(realpath "$DB_FILE")"
+
+prompt_confirm() {
+  local prompt="$1"
+  if [[ "$FORCE" == "true" ]]; then
+    return 0
+  fi
+  read -p "$prompt (yes/no): " reply
+  [[ "$reply" == "yes" ]]
+}
+
+if [[ -f "$DB_FILE" ]]; then
+  if prompt_confirm "Delete database file '$DB_FILE'?"; then
+    rm "$DB_FILE"
+    echo "Deleted database file '$DB_FILE'"
+  else
+    echo "Skipped deleting database file"
+    exit 1
+  fi
+else
+  echo "Database file '$DB_FILE' does not exist."
+fi
+
+if [[ -n "$STATIC_DIR" ]]; then
+  STATIC_DIR="$(realpath "$STATIC_DIR" 2>/dev/null)"
+  if [[ -n "$STATIC_DIR" && -d "$STATIC_DIR" ]]; then
+    if prompt_confirm "Delete static directory '$STATIC_DIR'?"; then
+      rm -rf "$STATIC_DIR"
+      echo "Deleted static directory '$STATIC_DIR'"
+    else
+      echo "Skipped deleting static directory"
+    fi
+  else
+    echo "Static directory '$STATIC_DIR' does not exist."
+  fi
+fi

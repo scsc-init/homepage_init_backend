@@ -1,6 +1,6 @@
 name: '✨ New Feature'
 description: 'Request a new feature to be added'
-labels: ['feature']
+labels: ['new feature']
 body:
   - type: input
     id: summary

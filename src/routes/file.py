@@ -1,4 +1,6 @@
-from fastapi import APIRouter, UploadFile
+from typing import Optional
+
+from fastapi import APIRouter, Query, UploadFile
 from fastapi.responses import FileResponse
 
 from src.dependencies import UserDep
@@ -36,3 +38,12 @@ async def upload_image(
 @file_router.get("/file/image/download/{id}")
 async def get_image_by_id(id: str, file_service: FileServiceDep) -> FileResponse:
     return file_service.get_image_by_id(id=id)
+
+
+@file_router.get("/file/metadata")
+async def get_file_metadata(
+    file_service: FileServiceDep,
+    ids: Optional[list[str]] = Query(None, description="File IDs to fetch"),
+) -> list[FileMetadataResponse]:
+    files = file_service.get_metadata_by_ids(ids or [])
+    return FileMetadataResponse.model_validate_list(files)

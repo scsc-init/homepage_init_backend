@@ -24,7 +24,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sqlite3 bash \
+    sqlite3 bash curl \
  && rm -rf /var/lib/apt/lists/*
 
 # Setup a non-root user
@@ -42,3 +42,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # Use `/app` as the working directory
 WORKDIR /app
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+  CMD curl -fsS http://localhost:8080/health || exit 1
+

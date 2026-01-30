@@ -1,6 +1,6 @@
 import asyncio
 import hmac
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from typing import Annotated, Optional, Sequence
 
 import aiofiles
@@ -8,10 +8,11 @@ import jwt
 from aiofiles import os as aiofiles_os
 from fastapi import Depends, HTTPException, UploadFile
 from pydantic import BaseModel
-from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
+from src.amqp import mq_client
 from src.core import get_settings, logger
+from src.db import get_user_role_level
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
 from src.repositories import (
     OldboyApplicantRepositoryDep,
@@ -19,17 +20,16 @@ from src.repositories import (
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
-from src.schemas import UserResponse
+from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
-    get_user_role_level,
     is_valid_img_url,
     is_valid_phone,
     is_valid_student_id,
     process_standby_user,
-    send_discord_bot_request_no_reply,
     sha256_hash,
+    utcnow,
     validate_and_read_file,
 )
 
@@ -229,33 +229,18 @@ class UserService:
                 filters["discord_name"] = discord_name
 
         users = self.user_repository.get_by_filters(filters)
-        return [UserResponse.model_validate(u) for u in users]
+        return UserResponse.model_validate_list(users)
 
-    @staticmethod
-    def get_role_names(lang: str | None = "en"):
+    def get_public_executives(self) -> Sequence[PublicUserResponse]:
+        return PublicUserResponse.model_validate_list(
+            self.user_repository.get_executives()
+        )
+
+    def get_role_names(self, lang: str | None = "en"):
+        roles = self.user_role_repository.list_all()
         if lang == "ko":
-            return {
-                "role_names": {
-                    "0": "최저권한",
-                    "100": "휴회원",
-                    "200": "준회원",
-                    "300": "정회원",
-                    "400": "졸업생",
-                    "500": "운영진",
-                    "1000": "회장",
-                }
-            }
-        return {
-            "role_names": {
-                "0": "lowest",
-                "100": "dormant",
-                "200": "newcomer",
-                "300": "member",
-                "400": "oldboy",
-                "500": "executive",
-                "1000": "president",
-            }
-        }
+            return {"role_names": {str(role.level): role.kor_name for role in roles}}
+        return {"role_names": {str(role.level): role.name for role in roles}}
 
     async def update_my_profile(
         self, current_user: User, body: BodyUpdateMyProfile
@@ -337,13 +322,12 @@ class UserService:
         if user is None:
             raise HTTPException(404, detail="invalid email address")
 
-        user.last_login = datetime.now(timezone.utc)
+        user.last_login = utcnow()
         self.user_repository.update(user)
 
         payload = {
             "user_id": user.id,
-            "exp": datetime.now(timezone.utc)
-            + timedelta(seconds=get_settings().jwt_valid_seconds),
+            "exp": utcnow() + timedelta(seconds=get_settings().jwt_valid_seconds),
         }
         encoded_jwt = jwt.encode(payload, get_settings().jwt_secret, "HS256")
         return ResponseLogin(jwt=encoded_jwt)
@@ -409,10 +393,10 @@ class UserService:
         Change role of user by removing all possible roles and adding new one.
         """
         for role in self.user_role_repository.list_all():
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002, body={"user_id": discord_id, "role_name": role.name}
             )
-        await send_discord_bot_request_no_reply(
+        await mq_client.send_discord_bot_request_no_reply(
             action_code=2001, body={"user_id": discord_id, "role_name": to_role_name}
         )
 
@@ -434,11 +418,7 @@ class OldboyService:
         self.user_role_repository = user_role_repository
 
     async def register_applicant(self, current_user: User) -> OldboyApplicant:
-        user_created_at_aware = current_user.created_at
-        if user_created_at_aware.tzinfo is None:
-            user_created_at_aware = user_created_at_aware.replace(tzinfo=timezone.utc)
-
-        if datetime.now(timezone.utc) - user_created_at_aware < timedelta(weeks=52 * 3):
+        if utcnow() - current_user.created_at < timedelta(weeks=52 * 3):
             raise HTTPException(
                 400, detail="must have been a member for at least 3 years."
             )
@@ -556,14 +536,14 @@ class StandbyService:
         if standbyreq:
             standbyreq.is_checked = True
             standbyreq.deposit_name = f"Manually by {current_user.name}"
-            standbyreq.deposit_time = datetime.now(timezone.utc)
+            standbyreq.deposit_time = utcnow()
             self.standby_repository.update(standbyreq)
         else:
             standbyreq = StandbyReqTbl(
                 standby_user_id=user.id,
                 user_name=user.name,
                 deposit_name=f"Manually by {current_user.name}",
-                deposit_time=datetime.now(timezone.utc),
+                deposit_time=utcnow(),
                 is_checked=True,
             )
             self.standby_repository.create(standbyreq)

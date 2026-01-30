@@ -56,6 +56,14 @@ def kst2utc(kst_naive_dt: datetime) -> datetime:
     return utc_dt_aware
 
 
+def utcnow() -> datetime:
+    """
+    :return: naive datetime object of now of utc
+    :rtype: datetime
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
 def get_new_year_semester(old_year: int, old_semester: int) -> tuple[int, int]:
     return old_year + old_semester // 4, old_semester % 4 + 1
 

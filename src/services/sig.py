@@ -4,14 +4,14 @@ from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
+from src.amqp import mq_client
 from src.core import logger
+from src.db import get_user_role_level
 from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, User
 from src.repositories import SigMemberRepositoryDep, SigRepositoryDep, UserRepositoryDep
-from src.schemas import SigMemberResponse, UserResponse
+from src.schemas import SigMemberResponse, SigResponse, UserResponse
 from src.util import (
-    get_user_role_level,
     map_semester_name,
-    send_discord_bot_request_no_reply,
 )
 
 from .article import ArticleServiceDep, BodyCreateArticle
@@ -106,8 +106,8 @@ class SigService:
             ) from exc
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
-                action_code=4003,
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4001,
                 body={
                     "sig_name": sig.title,
                     "user_id_list": [current_user.discord_id],
@@ -126,8 +126,22 @@ class SigService:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
         return sig
 
-    def get_all(self) -> Sequence[SIG]:
-        return self.sig_repository.list_all()
+    def get_sigs(
+        self,
+        year: Optional[int] = None,
+        semester: Optional[int] = None,
+        status: Optional[SCSCStatus] = None,
+    ) -> Sequence[SigResponse]:
+        filters = {}
+        if year is not None:
+            filters["year"] = year
+        if semester is not None:
+            filters["semester"] = semester
+        if status:
+            filters["status"] = status
+
+        sigs = self.sig_repository.get_by_filters(filters)
+        return SigResponse.model_validate_list(sigs)
 
     async def update_sig(
         self,
@@ -182,7 +196,9 @@ class SigService:
         if body.description:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
-            await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4005, body=bot_body
+            )
 
         logger.info(
             f"info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
@@ -205,8 +221,8 @@ class SigService:
         sig.status = SCSCStatus.inactive
         self.sig_repository.update(sig)
 
-        await send_discord_bot_request_no_reply(
-            action_code=4004,
+        await mq_client.send_discord_bot_request_no_reply(
+            action_code=4002,
             body={
                 "sig_name": sig.title,
                 "previous_semester": f"{sig.year}-{map_semester_name.get(sig.semester)}",
@@ -307,7 +323,7 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2001,
                 body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
@@ -334,7 +350,7 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2001,
                 body={"user_id": user.discord_id, "role_name": sig.title},
             )
@@ -367,7 +383,7 @@ class SigService:
         self.sig_member_repository.delete(member)
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002,
                 body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
@@ -399,7 +415,7 @@ class SigService:
         self.sig_member_repository.delete(member)
 
         if user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002,
                 body={"user_id": user.discord_id, "role_name": sig.title},
             )

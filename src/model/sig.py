@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
@@ -12,8 +12,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.db import Base
+from src.util import utcnow
 
+from .base import Base
 from .scsc_global_status import SCSCStatus
 
 
@@ -42,13 +43,13 @@ class SIG(Base):
         Boolean, default=False, nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=utcnow,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=utcnow,
+        onupdate=utcnow,
     )
 
 
@@ -62,6 +63,6 @@ class SIGMember(Base):
     ig_id: Mapped[int] = mapped_column(Integer, ForeignKey("sig.id"), nullable=False)
     user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default_factory=lambda: datetime.now(timezone.utc),
+        DateTime(timezone=False),
+        default_factory=utcnow,
     )

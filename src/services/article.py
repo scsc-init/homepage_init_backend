@@ -1,12 +1,12 @@
-from datetime import datetime, timezone
 from os import path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import aiofiles
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
+from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.model import Article, User
 from src.repositories import (
@@ -15,7 +15,7 @@ from src.repositories import (
     BoardRepositoryDep,
 )
 from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
-from src.util import DELETED, send_discord_bot_request_no_reply
+from src.util import DELETED, utcnow
 
 
 class BodyCreateArticle(BaseModel):
@@ -89,7 +89,7 @@ class ArticleService:
 
         try:
             if body.board_id == 5:  # notice
-                await send_discord_bot_request_no_reply(
+                await mq_client.send_discord_bot_request_no_reply(
                     action_code=1002,
                     body={
                         "channel_id": get_settings().notice_channel_id,
@@ -97,7 +97,7 @@ class ArticleService:
                     },
                 )
             elif body.board_id == 6:  # grant
-                await send_discord_bot_request_no_reply(
+                await mq_client.send_discord_bot_request_no_reply(
                     action_code=1002,
                     body={
                         "channel_id": get_settings().grant_channel_id,
@@ -113,13 +113,15 @@ class ArticleService:
         return article_response
 
     def get_article_list_by_board(
-        self, board_id: int, current_user: User
+        self, board_id: int, current_user: Optional[User]
     ) -> list[ArticleResponse]:
         board = self.board_repository.get_by_id(board_id)
         if board is None:
             raise HTTPException(404, detail="Board not found")
 
         if board.reading_permission_level > 0:
+            if current_user is None:
+                raise HTTPException(status_code=401, detail="Not authenticated")
             if current_user.role < board.reading_permission_level:
                 raise HTTPException(
                     403, detail="You are not allowed to read this board"
@@ -157,7 +159,7 @@ class ArticleService:
         return result
 
     def get_article_by_id(
-        self, id: int, current_user: User
+        self, id: int, current_user: Optional[User]
     ) -> ArticleWithAttachmentResponse:
         article = self.article_repository.get_by_id(id)
         if not article:
@@ -167,6 +169,8 @@ class ArticleService:
             raise HTTPException(503, detail="board does not exist")
 
         if board.reading_permission_level > 0:
+            if current_user is None:
+                raise HTTPException(status_code=401, detail="Not authenticated")
             if current_user.role < board.reading_permission_level:
                 raise HTTPException(
                     403, detail="You are not allowed to read this article"
@@ -212,7 +216,7 @@ class ArticleService:
 
         article.title = body.title
         article.board_id = body.board_id
-        article.updated_at = datetime.now(timezone.utc)
+        article.updated_at = utcnow()
         try:
             article = self.article_repository.update(article)
         except IntegrityError as exc:
@@ -285,7 +289,7 @@ class ArticleService:
             )
 
         article.is_deleted = True
-        article.deleted_at = datetime.now(timezone.utc)
+        article.deleted_at = utcnow()
 
         article = self.article_repository.update(article)
 
@@ -304,7 +308,7 @@ class ArticleService:
             raise HTTPException(status_code=410, detail="Article has been deleted")
 
         article.is_deleted = True
-        article.deleted_at = datetime.now(timezone.utc)
+        article.deleted_at = utcnow()
 
         article = self.article_repository.update(article)
 

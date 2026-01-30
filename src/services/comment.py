@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
@@ -13,7 +12,7 @@ from src.repositories import (
     CommentRepositoryDep,
 )
 from src.schemas import CommentResponse
-from src.util import DELETED
+from src.util import DELETED, utcnow
 
 
 class BodyCreateComment(BaseModel):
@@ -140,7 +139,7 @@ class CommentService:
             )
 
         comment.content = body.content
-        comment.updated_at = datetime.now(timezone.utc)
+        comment.updated_at = utcnow()
         try:
             comment = self.comment_repository.update(comment)
         except IntegrityError as exc:
@@ -170,7 +169,7 @@ class CommentService:
             )
 
         comment.is_deleted = True
-        comment.deleted_at = datetime.now(timezone.utc)
+        comment.deleted_at = utcnow()
 
         try:
             comment = self.comment_repository.update(comment)
@@ -193,7 +192,7 @@ class CommentService:
             raise HTTPException(status_code=410, detail="Already deleted")
 
         comment.is_deleted = True
-        comment.deleted_at = datetime.now(timezone.utc)
+        comment.deleted_at = utcnow()
 
         try:
             comment = self.comment_repository.update(comment)

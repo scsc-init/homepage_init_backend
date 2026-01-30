@@ -1,21 +1,33 @@
 from typing import Annotated, Optional, Sequence
+from urllib.parse import urlparse
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
+from src.amqp import mq_client
 from src.core import logger
-from src.model import PIG, PIGMember, SCSCGlobalStatus, SCSCStatus, User
-from src.repositories import PigMemberRepositoryDep, PigRepositoryDep, UserRepositoryDep
-from src.schemas import PigMemberResponse, UserResponse
+from src.db import get_user_role_level
+from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
+from src.repositories import (
+    PigMemberRepositoryDep,
+    PigRepositoryDep,
+    PigWebsiteRepositoryDep,
+    UserRepositoryDep,
+)
+from src.schemas import PigMemberResponse, PigResponse, PigWebsiteResponse, UserResponse
 from src.util import (
-    get_user_role_level,
     map_semester_name,
-    send_discord_bot_request_no_reply,
 )
 
 from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
+
+
+class BodyPigWebsite(BaseModel):
+    label: str
+    url: str
+    sort_order: Optional[int] = None
 
 
 class BodyCreatePIG(BaseModel):
@@ -23,6 +35,7 @@ class BodyCreatePIG(BaseModel):
     description: str
     content: str
     is_rolling_admission: bool = False
+    websites: Optional[list[BodyPigWebsite]] = None
 
 
 class BodyUpdatePIG(BaseModel):
@@ -32,6 +45,7 @@ class BodyUpdatePIG(BaseModel):
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
     is_rolling_admission: Optional[bool] = None
+    websites: Optional[list[BodyPigWebsite]] = None
 
 
 class BodyHandoverPIG(BaseModel):
@@ -52,11 +66,13 @@ class PigService:
         article_service: ArticleServiceDep,
         pig_repository: PigRepositoryDep,
         pig_member_repository: PigMemberRepositoryDep,
+        pig_website_repository: PigWebsiteRepositoryDep,
         user_repository: UserRepositoryDep,
     ) -> None:
         self.article_service = article_service
         self.pig_repository = pig_repository
         self.pig_member_repository = pig_member_repository
+        self.pig_website_repository = pig_website_repository
         self.user_repository = user_repository
 
     async def create_pig(
@@ -96,6 +112,8 @@ class PigService:
         if pig.id is None:
             raise HTTPException(503, detail="pig primary key does not exist")
 
+        self._replace_websites(pig.id, body.websites)
+
         pig_member = PIGMember(ig_id=pig.id, user_id=current_user.id)
         try:
             self.pig_member_repository.create(pig_member)
@@ -106,7 +124,7 @@ class PigService:
             ) from exc
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=4003,
                 body={
                     "pig_name": pig.title,
@@ -126,8 +144,22 @@ class PigService:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
         return pig
 
-    def get_all(self) -> Sequence[PIG]:
-        return self.pig_repository.list_all()
+    def get_pigs(
+        self,
+        year: Optional[int] = None,
+        semester: Optional[int] = None,
+        status: Optional[SCSCStatus] = None,
+    ) -> Sequence[PigResponse]:
+        filters = {}
+        if year is not None:
+            filters["year"] = year
+        if semester is not None:
+            filters["semester"] = semester
+        if status:
+            filters["status"] = status
+
+        pigs = self.pig_repository.get_by_filters(filters)
+        return PigResponse.model_validate_list(pigs)
 
     async def update_pig(
         self,
@@ -175,6 +207,9 @@ class PigService:
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
+        if body.websites is not None:
+            self._replace_websites(id, body.websites)
+
         bot_body = {}
         bot_body["pig_name"] = old_title
         if body.title:
@@ -182,7 +217,9 @@ class PigService:
         if body.description:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
-            await send_discord_bot_request_no_reply(action_code=4006, body=bot_body)
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4006, body=bot_body
+            )
 
         logger.info(
             f"info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={current_user.id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
@@ -205,7 +242,7 @@ class PigService:
         pig.status = SCSCStatus.inactive
         self.pig_repository.update(pig)
 
-        await send_discord_bot_request_no_reply(
+        await mq_client.send_discord_bot_request_no_reply(
             action_code=4004,
             body={
                 "pig_name": pig.title,
@@ -307,7 +344,7 @@ class PigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2001,
                 body={"user_id": current_user.discord_id, "role_name": pig.title},
             )
@@ -334,7 +371,7 @@ class PigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2001,
                 body={"user_id": user.discord_id, "role_name": pig.title},
             )
@@ -367,7 +404,7 @@ class PigService:
         self.pig_member_repository.delete(member)
 
         if current_user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002,
                 body={"user_id": current_user.discord_id, "role_name": pig.title},
             )
@@ -399,7 +436,7 @@ class PigService:
         self.pig_member_repository.delete(member)
 
         if user.discord_id:
-            await send_discord_bot_request_no_reply(
+            await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002,
                 body={"user_id": user.discord_id, "role_name": pig.title},
             )
@@ -407,6 +444,51 @@ class PigService:
         logger.info(
             f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
         )
+
+    def get_pig_response(self, pig: PIG) -> PigResponse:
+        websites = []
+        if pig.id is not None:
+            websites = self.pig_website_repository.get_by_pig_id(pig.id)
+        website_responses = PigWebsiteResponse.model_validate_list(websites)
+        pig_response = PigResponse.model_validate(pig)
+        return pig_response.model_copy(update={"websites": website_responses})
+
+    def _replace_websites(
+        self, pig_id: int, websites: Optional[Sequence[BodyPigWebsite]]
+    ) -> None:
+        if websites is None:
+            return
+        website_models = self._prepare_website_models(pig_id, websites)
+        self.pig_website_repository.replace_for_pig(pig_id, website_models)
+
+    def _prepare_website_models(
+        self, pig_id: int, websites: Sequence[BodyPigWebsite]
+    ) -> list[PIGWebsite]:
+        if not websites:
+            return []
+        if len(websites) > 10:
+            raise HTTPException(
+                400, detail="웹사이트는 최대 10개까지 등록할 수 있습니다"
+            )
+
+        prepared: list[PIGWebsite] = []
+        for idx, website in enumerate(websites):
+            label = (website.label or "").strip()
+            url = (website.url or "").strip()
+            if not url:
+                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
+            if not label:
+                label = url
+            sort_order = website.sort_order if website.sort_order is not None else idx
+            prepared.append(
+                PIGWebsite(
+                    pig_id=pig_id,
+                    label=label,
+                    url=url,
+                    sort_order=sort_order,
+                )
+            )
+        return prepared
 
 
 PigServiceDep = Annotated[PigService, Depends()]

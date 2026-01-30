@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Generic, Optional, Sequence, TypeVar
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from src.db import SessionDep, TransactionDep
 
@@ -40,3 +40,7 @@ class CRUDRepository(Generic[ModelT, IdT], ABC):
         with self.transaction:
             self.session.merge(obj)
         return obj
+
+    def delete_all(self) -> None:
+        with self.transaction:
+            self.session.execute(delete(self.model))

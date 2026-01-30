@@ -3,8 +3,8 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2025-10-05  
-> 최신개정자: [윤영우](dan.yun0821@gmail.com)  
+> 최신개정일: 2025-01-05  
+> 최신개정자: [최정원](jwchoi915@snu.ac.kr)  
 > 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com)  
 
 ## 브랜치
@@ -14,27 +14,14 @@ SCSC 홈페이지 Main BE 문서
 
 ## .env 파일
 
-.env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 
+.env 파일은 반드시 root에 위치해야 하며 아래 형식으로 작성합니다. 아래 예시 env에 없는 항목은 하드코딩된 기본 값이 설정되어 있습니다. `src.core.config.py`에서 확인할 수 있습니다. env 파일에서 이를 설정하면 기본 값보다 env 파일 값이 우선하여 적용됩니다.
 
 ```env
 API_SECRET="some-secret-code"
 JWT_SECRET="some-session-secret"
 JWT_VALID_SECONDS=3600
-SQLITE_FILENAME="db/YOUR_DB_FILENAME.db"
-IMAGE_DIR="static/image/photo/"
-FILE_DIR="static/download/"
-FILE_MAX_SIZE=10000000
-ARTICLE_DIR="static/article/"
-USER_CHECK=TRUE
-ENROLLMENT_FEE=300000
-CORS_ALL_ACCEPT=FALSE
-RABBITMQ_HOST="rabbitmq"
-BOT_HOST="bot"
-REPLY_QUEUE="main_response_queue"
-DISCORD_RECEIVE_QUEUE="discord_bot_queue"
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
-W_HTML_DIR="static/w/"
 ```
 
 | Key Name             | Description                                                      |
@@ -42,7 +29,7 @@ W_HTML_DIR="static/w/"
 | `API_SECRET`             | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
 | `JWT_SECRET`             | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
 | `JWT_VALID_SECONDS`      | 로그인 관련 JWT 유효 시간(초)          |
-| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름                  |
+| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름. MSA가 아닌 단독으로 실행할 때는 생략할 수 없음.    |
 | `IMAGE_DIR`              | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_DIR`               | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`          | 파일 최대 용량(바이트) |
@@ -52,15 +39,16 @@ W_HTML_DIR="static/w/"
 | `CORS_ALL_ACCEPT`        | 개발용 설정. TRUE이면 모든 경로에 대해 허용한다.  |
 | `RABBITMQ_HOST`          | RabbitMQ가 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
 | `BOT_HOST`               | 디스코드 봇이 돌아가는 호스트명. docker의 경우 container 이름과 동일. |
-| `REPLY_QUEUE`            | 봇 서버에서 결과를 반환하는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
 | `DISCORD_RECEIVE_QUEUE`  | 메인 서버에서 요청을 받는 큐의 명칭. 봇 서버의 환경 변수명과 동일해야 함. |
+| `RABBITMQ_REQUIRED`      | RabbitMQ 서버와의 연결 여부. FALSE이면 연결을 시도하지 않고, TRUE이면 연결 시도 후 실패 시 오류를 띄움. |
+| `ENABLE_TEST_ROUTES`     | 테스트 전용 API(/api/test) 여부를 제어. 기본값은 False이며, 테스트 서버에서 True로 변경하여 사용. |
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 | `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 
 ## 기타 설정 파일
 
-### `script/migrations/president.csv`(Optional)
+### `script/insert_sample_data/president.csv`(Optional)
 
 - DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
 - `script/insert_sample_data/president.example.csv`의 형식을 참고하여 작성합니다
@@ -88,7 +76,8 @@ mkdir -p \
   ./static/download \
   ./static/article \
   ./static/image/photo \
-  ./static/image/pfps
+  ./static/image/pfps \
+  ./static/w
 ```
 
 db 파일을 생성합니다.
@@ -168,19 +157,11 @@ DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파�
 
 `./script/clear_db.sh`를 실행합니다.
 
+## Tests
+Pytest는 파이썬 테스트 러너로, 이 프로젝트의 모든 API/서비스 시나리오를 자동으로 검증합니다. 다음 명령어를 통해 pytest를 실행시킵니다.
 
-## https 설정 및 실행
-
-https 설정 후 main.py 25행의 `https_only=False` 값을 True로 바꿀 것이 요구됩니다.
-
-Generate self-signed certs:
 ```bash
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
-```
-
-Run FastAPI dev server with HTTPS:
-```bash
-uvicorn main:app --host 127.0.0.1 --port 8000 --ssl-keyfile=key.pem --ssl-certfile=cert.pem
+uv run env PYTHONPATH=. pytest
 ```
 
 ## 디렉토리 구조

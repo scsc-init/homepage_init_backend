@@ -1,0 +1,15 @@
+name: Sync Submodule to Root
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  update-root:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Root Repository Update
+        run: gh api /repos/scsc-init/homepage_init_be_msa/dispatches -f event_type='submodule-updated'
+        env:
+          GITHUB_TOKEN: ${{ secrets.SYNC_TOKEN }}

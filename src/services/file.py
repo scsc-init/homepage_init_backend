@@ -1,6 +1,6 @@
 import os
 from os import path
-from typing import Annotated
+from typing import Annotated, Sequence
 
 from fastapi import Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -99,6 +99,16 @@ class FileService:
             raise HTTPException(404, detail="image not found")
         _, ext = split_filename(image.original_filename)
         return FileResponse(path.join(get_settings().image_dir, f"{image.id}.{ext}"))
+
+    def get_metadata_by_ids(self, ids: Sequence[str]) -> list[FileMetadata]:
+        if not ids:
+            return []
+        normalized = [i for i in ids if isinstance(i, str) and i]
+        if not normalized:
+            return []
+        records = self.file_metadata_repository.get_by_ids(normalized)
+        record_map = {record.id: record for record in records}
+        return [record_map[i] for i in normalized if i in record_map]
 
 
 FileServiceDep = Annotated[FileService, Depends()]
