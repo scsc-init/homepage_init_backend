@@ -31,7 +31,12 @@ from .sig import (
     BodyUpdateSIG,
     SigServiceDep,
 )
-from .test_utils import BodyCreateTestUser, TestUserServiceDep
+from .test_utils import (
+    BodyAssignPresident,
+    BodyCreateTestUser,
+    TestSemesterServiceDep,
+    TestUserServiceDep,
+)
 from .user import (
     BodyCreateUser,
     BodyLogin,

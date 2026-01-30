@@ -5,16 +5,22 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.exc import IntegrityError
 
 from src.core import logger
-from src.db import get_user_role_level
-from src.model import User, UserStatus
+from src.db import SessionDep, get_user_role_level
+from src.dependencies import SCSCGlobalStatusDep
+from src.model import SCSCGlobalStatus, User, UserStatus
 from src.repositories import (
     MajorRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
     UserRepositoryDep,
 )
-from src.schemas import UserResponse
-from src.util import is_valid_phone, is_valid_student_id, sha256_hash
+from src.schemas import SCSCGlobalStatusResponse, UserResponse
+from src.util import (
+    get_new_year_semester,
+    is_valid_phone,
+    is_valid_student_id,
+    sha256_hash,
+)
 
 
 class BodyCreateTestUser(BaseModel):
@@ -29,6 +35,10 @@ class BodyCreateTestUser(BaseModel):
     profile_picture_is_url: bool = False
     discord_id: Optional[int] = None
     discord_name: Optional[str] = None
+
+
+class BodyAssignPresident(BaseModel):
+    user_id: str
 
 
 class TestUserService:
@@ -131,5 +141,43 @@ class TestUserService:
 
         logger.info("info_type=test_user_all_deleted")
 
+    def assign_president(self, body: BodyAssignPresident) -> UserResponse:
+        president_level = get_user_role_level("president")
+        current_presidents = self.user_repository.get_by_filters(
+            {"role": president_level}
+        )
+        if current_presidents:
+            current_president = current_presidents[0]
+            executive_level = get_user_role_level("executive")
+            current_president.role = executive_level
+            self.user_repository.update(current_president)
+        user = self.user_repository.get_by_id(body.user_id)
+        if not user:
+            raise HTTPException(404, detail="user not found")
+        user.role = president_level
+        self.user_repository.update(user)
+        logger.info("info_type=test_president_assigned ; user_id=%s", user.id)
+        return UserResponse.model_validate(user)
+
+
+class TestSemesterService:
+    def __init__(self, session: SessionDep, scsc_global_status: SCSCGlobalStatusDep):
+        self.session = session
+        self.scsc_global_status = scsc_global_status
+
+    def get_semester(self) -> SCSCGlobalStatus:
+        return SCSCGlobalStatusResponse.model_validate(self.scsc_global_status)
+
+    def update_semester(self) -> SCSCGlobalStatusResponse:
+        new_year, new_semester = get_new_year_semester(
+            self.scsc_global_status.year, self.scsc_global_status.semester
+        )
+        self.scsc_global_status.year = new_year
+        self.scsc_global_status.semester = new_semester
+        self.session.add(self.scsc_global_status)
+        self.session.commit()
+        return SCSCGlobalStatusResponse.model_validate(self.scsc_global_status)
+
 
 TestUserServiceDep = Annotated[TestUserService, Depends()]
+TestSemesterServiceDep = Annotated[TestSemesterService, Depends()]
