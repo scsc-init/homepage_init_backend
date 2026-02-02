@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from src.core import logger
 from src.db import SessionDep, get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import SCSCGlobalStatus, User, UserStatus
+from src.model import SCSCStatus, User, UserStatus
 from src.repositories import (
     MajorRepositoryDep,
     OldboyApplicantRepositoryDep,
@@ -143,17 +143,11 @@ class TestUserService:
 
     def assign_president(self, body: BodyAssignPresident) -> UserResponse:
         president_level = get_user_role_level("president")
-        current_presidents = self.user_repository.get_by_filters(
-            {"role": president_level}
-        )
-        if current_presidents:
-            current_president = current_presidents[0]
-            executive_level = get_user_role_level("executive")
-            current_president.role = executive_level
-            self.user_repository.update(current_president)
         user = self.user_repository.get_by_id(body.user_id)
         if not user:
             raise HTTPException(404, detail="user not found")
+        if user.role == president_level:
+            return UserResponse.model_validate(user)
         user.role = president_level
         self.user_repository.update(user)
         logger.info("info_type=test_president_assigned ; user_id=%s", user.id)
@@ -165,15 +159,24 @@ class TestSemesterService:
         self.session = session
         self.scsc_global_status = scsc_global_status
 
-    def get_semester(self) -> SCSCGlobalStatus:
+    def get_semester(self) -> SCSCGlobalStatusResponse:
         return SCSCGlobalStatusResponse.model_validate(self.scsc_global_status)
 
     def update_semester(self) -> SCSCGlobalStatusResponse:
-        new_year, new_semester = get_new_year_semester(
-            self.scsc_global_status.year, self.scsc_global_status.semester
-        )
-        self.scsc_global_status.year = new_year
-        self.scsc_global_status.semester = new_semester
+        status = self.scsc_global_status.status
+        if status == SCSCStatus.active:
+            new_year, new_semester = get_new_year_semester(
+                self.scsc_global_status.year, self.scsc_global_status.semester
+            )
+            self.scsc_global_status.year = new_year
+            self.scsc_global_status.semester = new_semester
+            self.scsc_global_status.status = SCSCStatus.recruiting
+        elif status == SCSCStatus.recruiting:
+            self.scsc_global_status.status = SCSCStatus.active
+        elif status == SCSCStatus.inactive:
+            self.scsc_global_status.status = SCSCStatus.recruiting
+        else:
+            raise HTTPException(400, detail="invalid scsc status")
         self.session.add(self.scsc_global_status)
         self.session.commit()
         return SCSCGlobalStatusResponse.model_validate(self.scsc_global_status)
