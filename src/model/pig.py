@@ -12,6 +12,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.core.enums import RollingAdmission
 from src.util import utcnow
 
 from .base import Base
@@ -39,8 +40,14 @@ class PIG(Base):
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     owner: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     should_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    is_rolling_admission: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
+    is_rolling_admission: Mapped[RollingAdmission] = mapped_column(
+        Enum(
+            RollingAdmission,
+            name="rolling_admission_enum",
+            native_enum=False,
+        ),
+        nullable=False,
+        default=RollingAdmission.always,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),

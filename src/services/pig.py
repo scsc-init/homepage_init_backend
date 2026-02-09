@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.amqp import mq_client
 from src.core import logger
+from src.core.enums import RollingAdmission
 from src.db import get_user_role_level
 from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
 from src.repositories import (
@@ -34,7 +35,7 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: bool = False
+    is_rolling_admission: RollingAdmission
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -44,7 +45,7 @@ class BodyUpdatePIG(BaseModel):
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
-    is_rolling_admission: Optional[bool] = None
+    is_rolling_admission: Optional[RollingAdmission] = None
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -327,11 +328,18 @@ class PigService:
 
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
+
+        ROLLING_ALLOWED = {
+            RollingAdmission.always,
+            RollingAdmission.during_recruiting_period,
+        }
+
         allowed = (
             ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
+            if pig.is_rolling_admission in ROLLING_ALLOWED
             else ctrl_status_available.join_sigpig
         )
+
         if pig.status not in allowed:
             raise HTTPException(
                 400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
