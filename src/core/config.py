@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     bot_host: str = "bot"
     discord_receive_queue: str = "discord_bot_queue"
     rabbitmq_required: bool = True
+    enable_test_routes: bool = False
     notice_channel_id: int
     grant_channel_id: int
     w_html_dir: str = "static/w/"

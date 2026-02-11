@@ -17,33 +17,49 @@ class RabbitMQClient:
         self.futures: dict[str, asyncio.Future[Any]] = {}
         self._lock = asyncio.Lock()
 
-    async def connect(self):
+    async def connect(self, retries: int = 5, delay: int = 3):
         """Initializes connection, channel, and the callback consumer."""
         async with self._lock:
             if self.connection and not self.connection.is_closed:
                 return
-            dsn = f"amqp://guest:guest@{get_settings().rabbitmq_host}/"  # NOTE(`guest` and `guest` are each the username and password; for more security these should be moved to configurable env variables)
+            # NOTE(`guest` and `guest` are each the username and password; for more security these should be moved to configurable env variables)
+            dsn = f"amqp://guest:guest@{get_settings().rabbitmq_host}/"
 
-            try:
-                self.connection = await aio_pika.connect_robust(dsn)
-                self.channel = await self.connection.channel()
+            for attempt in range(retries):
+                try:
+                    self.connection = await aio_pika.connect_robust(dsn)
+                    self.channel = await self.connection.channel()
 
-                self.callback_queue = await self.channel.declare_queue(
-                    "", exclusive=True, auto_delete=True
-                )
+                    self.callback_queue = await self.channel.declare_queue(
+                        "", exclusive=True, auto_delete=True
+                    )
 
-                self.consumer_tag = await self.callback_queue.consume(
-                    self.on_response, no_ack=True
-                )
+                    self.consumer_tag = await self.callback_queue.consume(
+                        self.on_response, no_ack=True
+                    )
 
-                logger.info(
-                    f"Connected to RabbitMQ. RPC Queue: {self.callback_queue.name}"
-                )
+                    logger.info(
+                        f"Connected to RabbitMQ on attempt {attempt + 1}. RPC Queue: {self.callback_queue.name}"
+                    )
+                    return
 
-            except Exception as e:
-                logger.critical(f"Failed to connect to RabbitMQ: {e}", exc_info=True)
-                await self.close()
-                raise
+                except (
+                    ConnectionRefusedError,
+                    aio_pika.exceptions.AMQPConnectionError,
+                ) as e:
+                    if attempt < retries - 1:
+                        logger.warning(
+                            f"RabbitMQ not ready (Attempt {attempt + 1}/{retries}). Retrying in {delay}s..."
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        logger.critical(
+                            "Could not connect to RabbitMQ after multiple attempts."
+                        )
+                        raise e
+                except Exception as e:
+                    logger.critical(f"Unexpected error connecting to RabbitMQ: {e}")
+                    raise e
 
     async def close(self):
         async with self._lock:

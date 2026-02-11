@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from src.dependencies import UserDep
+from src.dependencies import NullableUserDep, UserDep
 from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
 from src.services import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
 
@@ -25,7 +25,7 @@ async def create_article(
 async def get_article_list_by_board(
     board_id: int,
     article_service: ArticleServiceDep,
-    current_user: UserDep,
+    current_user: NullableUserDep,
 ) -> list[ArticleResponse]:
     return article_service.get_article_list_by_board(board_id, current_user)
 
@@ -34,7 +34,7 @@ async def get_article_list_by_board(
 async def get_article_by_id(
     id: int,
     article_service: ArticleServiceDep,
-    current_user: UserDep,
+    current_user: NullableUserDep,
 ) -> ArticleWithAttachmentResponse:
     return article_service.get_article_by_id(id, current_user)
 
