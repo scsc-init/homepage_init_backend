@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum as PythonEnum
 
 from sqlalchemy import (
     Boolean,
@@ -12,11 +13,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from src.core.enums import RollingAdmission
 from src.util import utcnow
 
 from .base import Base
 from .scsc_global_status import SCSCStatus
+
+
+class RollingAdmission(str, PythonEnum):
+    ALWAYS = "always"
+    NEVER = "never"
+    DURING_RECRUITING = "during_recruiting"
 
 
 class PIG(Base):
@@ -45,9 +51,10 @@ class PIG(Base):
             RollingAdmission,
             name="rolling_admission_enum",
             native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
         ),
         nullable=False,
-        default=RollingAdmission.always,
+        default=RollingAdmission.ALWAYS,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),

@@ -122,7 +122,9 @@ class TestUserService:
         try:
             self.standby_repository.delete_all()
             self.oldboy_repository.delete_all()
-            self.user_repository.delete_all()
+            self.user_repository.delete_all_except_student_ids(
+                ["200000001", "200000002"]
+            )
         except IntegrityError as exc:
             raise HTTPException(
                 409,

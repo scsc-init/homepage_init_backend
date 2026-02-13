@@ -7,9 +7,9 @@ from sqlalchemy.exc import IntegrityError
 
 from src.amqp import mq_client
 from src.core import logger
-from src.core.enums import RollingAdmission
 from src.db import get_user_role_level
 from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
+from src.model.pig import RollingAdmission
 from src.repositories import (
     PigMemberRepositoryDep,
     PigRepositoryDep,
@@ -35,7 +35,7 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: RollingAdmission
+    is_rolling_admission: RollingAdmission = "during_recruiting"
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -107,8 +107,9 @@ class PigService:
 
         try:
             pig = self.pig_repository.create(pig)
-        except IntegrityError:
-            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+        except IntegrityError as e:
+            logger.exception(e)
+            raise HTTPException(409, detail=str(e))
 
         if pig.id is None:
             raise HTTPException(503, detail="pig primary key does not exist")
@@ -329,16 +330,14 @@ class PigService:
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
 
-        ROLLING_ALLOWED = {
-            RollingAdmission.always,
-            RollingAdmission.during_recruiting_period,
-        }
-
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission in ROLLING_ALLOWED
-            else ctrl_status_available.join_sigpig
-        )
+        if pig.is_rolling_admission == RollingAdmission.NEVER:
+            allowed = False
+        elif pig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = pig.status in ctrl_status_available.join_sigpig_rolling_admission
+        elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = pig.status in ctrl_status_available.join_sigpig
+        else:
+            allowed = False
 
         if pig.status not in allowed:
             raise HTTPException(

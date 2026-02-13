@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
-from src.core.enums import RollingAdmission
 from src.model import SCSCStatus
+from src.model.pig import RollingAdmission
 
 from .base import BaseResponse
 from .user import UserResponse

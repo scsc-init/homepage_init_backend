@@ -13,7 +13,7 @@ CREATE TABLE pig (
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
 
     should_extend BOOLEAN NOT NULL DEFAULT FALSE,
-    is_rolling_admission TEXT DEFAULT 'always' NOT NULL CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting_period')),
+    is_rolling_admission TEXT DEFAULT 'always' NOT NULL CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -67,6 +67,7 @@ FROM pig_member_old;
 DROP TABLE pig_member_old;  
 
 DROP TABLE pig_old;
-PRAGMA foreign_keys = ON;
 
 END;
+
+PRAGMA foreign_keys = ON;
