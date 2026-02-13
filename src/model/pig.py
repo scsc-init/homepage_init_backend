@@ -21,9 +21,16 @@ from .scsc_global_status import SCSCStatus
 class PIG(Base):
     __tablename__ = "pig"
     __table_args__ = (
-        UniqueConstraint("title", "year", "semester", name="uq_title_year_semester"),
+        UniqueConstraint(
+            "title",
+            "created_year",
+            "created_semester",
+            name="uq_title_created_year_created_semester",
+        ),
         CheckConstraint("year >= 2025", name="ck_year_min"),
         CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
+        CheckConstraint("created_year >= 2025", name="ck_created_year_min"),
+        CheckConstraint("created_semester IN (1, 2, 3, 4)", name="ck_created_semester_valid"),
     )
 
     id: Mapped[int] = mapped_column(
@@ -35,8 +42,13 @@ class PIG(Base):
         Integer, ForeignKey("article.id"), nullable=False, unique=True
     )
     status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    created_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_semester: Mapped[int] = mapped_column(Integer, nullable=False)
+
     owner: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     should_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_rolling_admission: Mapped[bool] = mapped_column(
