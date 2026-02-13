@@ -54,7 +54,7 @@ class PIG(Base):
             values_callable=lambda obj: [e.value for e in obj],
         ),
         nullable=False,
-        default=RollingAdmission.ALWAYS,
+        default=RollingAdmission.DURING_RECRUITING,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),

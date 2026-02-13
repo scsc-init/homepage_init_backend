@@ -107,9 +107,8 @@ class PigService:
 
         try:
             pig = self.pig_repository.create(pig)
-        except IntegrityError as e:
-            logger.exception(e)
-            raise HTTPException(409, detail=str(e))
+        except IntegrityError:
+            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다.")
 
         if pig.id is None:
             raise HTTPException(503, detail="pig primary key does not exist")
