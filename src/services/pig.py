@@ -330,13 +330,13 @@ class PigService:
         pig = self.get_by_id(id)
 
         if pig.is_rolling_admission == RollingAdmission.NEVER:
-            allowed = False
+            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
         elif pig.is_rolling_admission == RollingAdmission.ALWAYS:
-            allowed = pig.status in ctrl_status_available.join_sigpig_rolling_admission
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
         elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
-            allowed = pig.status in ctrl_status_available.join_sigpig
+            allowed = ctrl_status_available.join_sigpig
         else:
-            allowed = False
+            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
 
         if pig.status not in allowed:
             raise HTTPException(
