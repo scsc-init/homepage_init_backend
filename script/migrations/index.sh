@@ -41,5 +41,6 @@ trap cleanup EXIT
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V9__set_standby_default_status.sql")
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V10__create_attachment.sql")
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V11__create_pig_website.sql")
+(cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V12__alter_pig_admission.sql")
 
 echo "Database initialization and inserts completed successfully."

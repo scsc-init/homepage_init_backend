@@ -44,3 +44,10 @@ class CRUDRepository(Generic[ModelT, IdT], ABC):
     def delete_all(self) -> None:
         with self.transaction:
             self.session.execute(delete(self.model))
+
+    def delete_all_except(self, excluded_ids: list[IdT]) -> None:
+        if not excluded_ids:
+            raise ValueError("예외 없이 모든 유저 삭제 불가")
+        stmt = delete(self.model).where(~self.model.id.in_(excluded_ids))
+        with self.transaction:
+            self.session.execute(stmt)

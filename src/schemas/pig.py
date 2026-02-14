@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from src.model import SCSCStatus
+from src.model.pig import RollingAdmission
 
 from .base import BaseResponse
 from .user import UserResponse
@@ -35,7 +36,7 @@ class PigResponse(BaseResponse):
     semester: int
     owner: str
     should_extend: bool
-    is_rolling_admission: bool
+    is_rolling_admission: RollingAdmission
     created_at: datetime
     updated_at: datetime
     websites: list[PigWebsiteResponse] = []
