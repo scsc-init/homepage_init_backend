@@ -29,7 +29,7 @@ def backup_db_before_semester_change(year: int, semester: int) -> Path:
     semester_label = map_semester_name.get(semester, str(semester))
     suffix = sqlite_path.suffix or ".db"
     backup_name = (
-        f"{sqlite_path.stem}_{year}{semester_label}_{timestamp}_before_semester_change"
+        f"{sqlite_path.stem}_{year}_{semester_label}_{timestamp}_before_semester_change"
         f"{suffix}"
     )
     backup_path = backup_dir / backup_name
