@@ -35,9 +35,9 @@ class PIG(Base):
             name="uq_pig_created_year_created_semester_title",
         ),
         UniqueConstraint(
-            "title",
             "year",
             "semester",
+            "title",
             name="uq_pig_title_year_semester",
         ),
         CheckConstraint("year >= 2025", name="ck_pig_year_min"),

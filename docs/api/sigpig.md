@@ -13,8 +13,8 @@ CREATE TABLE sig (
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
-    created_year INTEGER NOT NULL CHECK (>=2025)
-    created_semester INTEGER NOT NULL CHECK (IN (1,2,3,4))
+    created_year INTEGER NOT NULL CHECK (created_year >= 2025),
+    created_semester INTEGER NOT NULL CHECK (created_semester IN (1, 2, 3, 4)),
 
     should_extend BOOLEAN NOT NULL DEFAULT FALSE,
     is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
