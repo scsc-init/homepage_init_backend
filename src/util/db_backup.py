@@ -1,4 +1,4 @@
-import shutil
+import sqlite3
 from datetime import datetime
 from pathlib import Path
 
@@ -31,7 +31,15 @@ def backup_db_before_semester_change(year: int, semester: int) -> Path:
     )
     backup_path = backup_dir / backup_name
 
-    shutil.copy2(sqlite_path, backup_path)
+    src_conn = sqlite3.connect(str(sqlite_path))
+    dst_conn = sqlite3.connect(str(backup_path))
+    try:
+        with dst_conn:
+            src_conn.backup(dst_conn)
+    finally:
+        dst_conn.close()
+        src_conn.close()
+
     logger.info(
         "info_type=db_backup ; action=before_semester_change ; source=%s ; backup=%s",
         sqlite_path,
