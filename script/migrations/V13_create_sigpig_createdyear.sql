@@ -16,9 +16,7 @@ CREATE TABLE sig_new (
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
 
     should_extend BOOLEAN NOT NULL DEFAULT FALSE,
-    is_rolling_admission TEXT NOT NULL DEFAULT 'during_recruiting'
-        CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
-
+    is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -88,7 +86,9 @@ CREATE TABLE pig_new (
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
 
     should_extend BOOLEAN NOT NULL DEFAULT FALSE,
-    is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
+    is_rolling_admission TEXT NOT NULL DEFAULT 'during_recruiting'
+        CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
+
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
