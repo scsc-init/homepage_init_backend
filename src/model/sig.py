@@ -21,9 +21,25 @@ from .scsc_global_status import SCSCStatus
 class SIG(Base):
     __tablename__ = "sig"
     __table_args__ = (
-        UniqueConstraint("title", "year", "semester", name="uq_title_year_semester"),
-        CheckConstraint("year >= 2025", name="ck_year_min"),
-        CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
+        UniqueConstraint(
+            "created_year",
+            "created_semester",
+            "title",
+            name="uq_sig_created_year_created_semester_title",
+        ),
+        UniqueConstraint(
+            "year",
+            "semester",
+            "title",
+            name="uq_sig_year_semester_title",
+        ),
+        CheckConstraint("year >= 2025", name="ck_sig_year_min"),
+        CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_sig_semester_valid"),
+        CheckConstraint("created_year >= 2025", name="ck_sig_created_year_min"),
+        CheckConstraint(
+            "created_semester IN (1, 2, 3, 4)",
+            name="ck_sig_created_semester_valid",
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -35,6 +51,8 @@ class SIG(Base):
         Integer, ForeignKey("article.id"), nullable=False, unique=True
     )
     status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    created_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_semester: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     owner: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
