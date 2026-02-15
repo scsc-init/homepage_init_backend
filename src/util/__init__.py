@@ -22,5 +22,5 @@ from .validator import (
 )
 
 DELETED: Final[str] = (
-    "(??????"  # used as placeholder for deleted article/comment content
+    "(삭제됨)"  # used as placeholder for deleted article/comment content
 )
