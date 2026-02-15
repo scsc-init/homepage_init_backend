@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import sqlite3
-from datetime import datetime
+from contextlib import closing
+from datetime import datetime, timezone
 from pathlib import Path
 
 from src.core import get_settings, logger
@@ -22,7 +25,7 @@ def backup_db_before_semester_change(year: int, semester: int) -> Path:
     backup_dir = _PROJECT_ROOT / "logs" / "db_backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     semester_label = map_semester_name.get(semester, str(semester))
     suffix = sqlite_path.suffix or ".db"
     backup_name = (
@@ -31,14 +34,12 @@ def backup_db_before_semester_change(year: int, semester: int) -> Path:
     )
     backup_path = backup_dir / backup_name
 
-    src_conn = sqlite3.connect(str(sqlite_path))
-    dst_conn = sqlite3.connect(str(backup_path))
-    try:
+    with (
+        closing(sqlite3.connect(str(sqlite_path))) as src_conn,
+        closing(sqlite3.connect(str(backup_path))) as dst_conn,
+    ):
         with dst_conn:
             src_conn.backup(dst_conn)
-    finally:
-        dst_conn.close()
-        src_conn.close()
 
     logger.info(
         "info_type=db_backup ; action=before_semester_change ; source=%s ; backup=%s",
