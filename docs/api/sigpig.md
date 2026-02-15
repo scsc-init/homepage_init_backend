@@ -13,6 +13,8 @@ CREATE TABLE sig (
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+    created_year INTEGER NOT NULL CHECK (>=2025)
+    created_semester INTEGER NOT NULL CHECK (IN (1,2,3,4))
 
     should_extend BOOLEAN NOT NULL DEFAULT FALSE,
     is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
@@ -21,12 +23,16 @@ CREATE TABLE sig (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     owner TEXT NOT NULL,
+    UNIQUE(created_year, created_semester, title),
     UNIQUE (title, year, semester),
     FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
     FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE RESTRICT
 );
 ```
 - status 중 'surveying'은 더 이상 사용하지 않습니다. 기존 'surveying'은 모두 'recruiting'으로 변경됩니다. 
+- `created_year`, `created_semester`: SIG가 **처음 생성된 학기**. 이후 변경되지 않습니다.  
+- `year`, `semester`: SIG가 **현재 속한 학기(운영/종료 학기)**. 학기 이월 시 이 값만 업데이트됩니다.  
+
 
 ```sql
 CREATE TABLE pig (
@@ -35,6 +41,8 @@ CREATE TABLE pig (
     ... -- same as sig
 );
 ```
+
+- `is_rolling_admission` 기본값은 `"during_recruiting"`입니다.
 
 ## SIG/PIG MEMBER DB
 ```sql
@@ -127,13 +135,16 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
   "status": "recruiting",
+  "created_year": 2025,
+  "created_semester": 1,
   "year": 2025,
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
   "owner": "hash_of_owner_user",
-  "is_rolling_admission": false,
+  "is_rolling_admission": false
 }
+
 ```
 
 * **Status Codes**:
@@ -159,6 +170,8 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
   "status": "active",
+  "created_year": 2025,
+  "created_semester": 1,
   "year": 2025,
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
@@ -196,6 +209,8 @@ END;
     "description": "인공지능을 연구하는 소모임입니다.",
     "content_id": 1,
     "status": "active",
+    "created_year": 2025,
+    "created_semester": 1,
     "year": 2025,
     "semester": 1,
     "created_at": "2025-03-01T10:00:00Z",
@@ -206,6 +221,7 @@ END;
   },
   ...
 ]
+
 ```
 
 * **Status Codes**:
@@ -493,6 +509,8 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
   "status": "recruiting",
+  "created_year": 2025,
+  "created_semester": 1,
   "year": 2025,
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
@@ -500,6 +518,7 @@ END;
   "owner": "hash_of_owner_user",
   "is_rolling_admission": "during_recruiting",
 }
+
 ```
 
 * **Status Codes**:
@@ -525,6 +544,8 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
   "status": "active",
+  "created_year": 2025,
+  "created_semester": 1,
   "year": 2025,
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
@@ -533,6 +554,7 @@ END;
   "should_extend": true,
   "is_rolling_admission": "during_recruiting",
 }
+
 ```
 
 * **Status Codes**:
@@ -562,6 +584,8 @@ END;
     "description": "인공지능을 연구하는 소모임입니다.",
     "content_id": 1,
     "status": "active",
+    "created_year": 2025,
+    "created_semester": 1,
     "year": 2025,
     "semester": 1,
     "created_at": "2025-03-01T10:00:00Z",
@@ -572,6 +596,7 @@ END;
   },
   ...
 ]
+
 ```
 
 * **Status Codes**:
