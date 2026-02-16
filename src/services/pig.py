@@ -9,6 +9,7 @@ from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
 from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
+from src.model.pig import RollingAdmission
 from src.repositories import (
     PigMemberRepositoryDep,
     PigRepositoryDep,
@@ -34,8 +35,8 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: bool = False
-    websites: list[BodyPigWebsite] = []
+    is_rolling_admission: RollingAdmission = "during_recruiting"
+    websites: Optional[list[BodyPigWebsite]] = None
 
 
 class BodyUpdatePIG(BaseModel):
@@ -44,7 +45,7 @@ class BodyUpdatePIG(BaseModel):
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
-    is_rolling_admission: Optional[bool] = None
+    is_rolling_admission: Optional[RollingAdmission] = None
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -97,6 +98,8 @@ class PigService:
             title=body.title,
             description=body.description,
             content_id=pig_article.id,
+            created_year=scsc_global_status.year,
+            created_semester=scsc_global_status.semester,
             year=scsc_global_status.year,
             semester=scsc_global_status.semester,
             owner=current_user.id,
@@ -108,7 +111,7 @@ class PigService:
         try:
             pig = self.pig_repository.create(pig)
         except IntegrityError:
-            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다.")
 
         if pig.id is None:
             raise HTTPException(503, detail="pig primary key does not exist")
@@ -160,11 +163,7 @@ class PigService:
             filters["status"] = status
 
         pigs = self.pig_repository.get_by_filters(filters)
-        res = PigResponse.model_validate_list(pigs)
-        for i, pig in enumerate(pigs):
-            websites = self.pig_website_repository.get_by_pig_id(pig.id)
-            res[i].websites = PigWebsiteResponse.model_validate_list(websites)
-        return res
+        return PigResponse.model_validate_list(pigs)
 
     async def update_pig(
         self,
@@ -207,13 +206,13 @@ class PigService:
         if body.is_rolling_admission is not None:
             pig.is_rolling_admission = body.is_rolling_admission
 
-        if body.websites is not None:
-            self._replace_websites(id, body.websites)
-
         try:
             self.pig_repository.update(pig)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+
+        if body.websites is not None:
+            self._replace_websites(id, body.websites)
 
         bot_body = {}
         bot_body["pig_name"] = old_title
@@ -332,11 +331,16 @@ class PigService:
 
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+
+        if pig.is_rolling_admission == RollingAdmission.NEVER:
+            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
+        elif pig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
+
         if pig.status not in allowed:
             raise HTTPException(
                 400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
@@ -450,21 +454,50 @@ class PigService:
             f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
         )
 
-    def _replace_websites(self, pig_id: int, websites: list[BodyPigWebsite]) -> None:
-        entities: list[PIGWebsite] = []
-        for i, w in enumerate(websites):
-            parsed = urlparse(w.url)
-            if not parsed.scheme or not parsed.netloc:
-                raise HTTPException(422, detail="url 형식이 올바르지 않습니다")
-            entities.append(
+    def get_pig_response(self, pig: PIG) -> PigResponse:
+        websites = []
+        if pig.id is not None:
+            websites = self.pig_website_repository.get_by_pig_id(pig.id)
+        website_responses = PigWebsiteResponse.model_validate_list(websites)
+        pig_response = PigResponse.model_validate(pig)
+        return pig_response.model_copy(update={"websites": website_responses})
+
+    def _replace_websites(
+        self, pig_id: int, websites: Optional[Sequence[BodyPigWebsite]]
+    ) -> None:
+        if websites is None:
+            return
+        website_models = self._prepare_website_models(pig_id, websites)
+        self.pig_website_repository.replace_for_pig(pig_id, website_models)
+
+    def _prepare_website_models(
+        self, pig_id: int, websites: Sequence[BodyPigWebsite]
+    ) -> list[PIGWebsite]:
+        if not websites:
+            return []
+        if len(websites) > 10:
+            raise HTTPException(
+                400, detail="웹사이트는 최대 10개까지 등록할 수 있습니다"
+            )
+
+        prepared: list[PIGWebsite] = []
+        for idx, website in enumerate(websites):
+            label = (website.label or "").strip()
+            url = (website.url or "").strip()
+            if not url:
+                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
+            if not label:
+                label = url
+            sort_order = website.sort_order if website.sort_order is not None else idx
+            prepared.append(
                 PIGWebsite(
                     pig_id=pig_id,
-                    label=w.label,
-                    url=w.url,
-                    sort_order=w.sort_order if w.sort_order is not None else i,
+                    label=label,
+                    url=url,
+                    sort_order=sort_order,
                 )
             )
-        self.pig_website_repository.replace_for_pig(pig_id, entities)
+        return prepared
 
 
 PigServiceDep = Annotated[PigService, Depends()]
