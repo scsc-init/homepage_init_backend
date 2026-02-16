@@ -90,7 +90,6 @@ class SigService:
             is_rolling_admission=body.is_rolling_admission,
         )
 
-
         try:
             sig = self.sig_repository.create(sig)
         except IntegrityError:

@@ -107,7 +107,6 @@ class PigService:
             is_rolling_admission=body.is_rolling_admission,
         )
 
-
         try:
             pig = self.pig_repository.create(pig)
         except IntegrityError:
