@@ -37,7 +37,7 @@ CREATE TABLE sig (
 ```sql
 CREATE TABLE pig (
     ... -- same as sig
-    is_rolling_admission TEXT DEFAULT 'always' NOT NULL CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
+    is_rolling_admission TEXT DEFAULT 'during_recruiting' NOT NULL CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
     ... -- same as sig
 );
 ```

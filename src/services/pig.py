@@ -9,7 +9,6 @@ from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
 from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
-from src.model.pig import RollingAdmission
 from src.repositories import (
     PigMemberRepositoryDep,
     PigRepositoryDep,
@@ -35,7 +34,7 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: RollingAdmission = "during_recruiting"
+    is_rolling_admission: bool = False
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -45,7 +44,7 @@ class BodyUpdatePIG(BaseModel):
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
-    is_rolling_admission: Optional[RollingAdmission] = None
+    is_rolling_admission: Optional[bool] = None
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -100,6 +99,8 @@ class PigService:
             content_id=pig_article.id,
             year=scsc_global_status.year,
             semester=scsc_global_status.semester,
+            created_year=scsc_global_status.year,
+            created_semester=scsc_global_status.semester,
             owner=current_user.id,
             status=scsc_global_status.status,
             is_rolling_admission=body.is_rolling_admission,
@@ -108,7 +109,7 @@ class PigService:
         try:
             pig = self.pig_repository.create(pig)
         except IntegrityError:
-            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다.")
+            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if pig.id is None:
             raise HTTPException(503, detail="pig primary key does not exist")
@@ -147,20 +148,61 @@ class PigService:
 
     def get_pigs(
         self,
-        year: Optional[int] = None,
-        semester: Optional[int] = None,
-        status: Optional[SCSCStatus] = None,
+        year: Optional[int],
+        semester: Optional[int],
+        status: Optional[SCSCStatus],
     ) -> Sequence[PigResponse]:
         filters = {}
-        if year is not None:
+        if year:
             filters["year"] = year
-        if semester is not None:
+        if semester:
             filters["semester"] = semester
         if status:
             filters["status"] = status
 
         pigs = self.pig_repository.get_by_filters(filters)
         return PigResponse.model_validate_list(pigs)
+
+    def _validate_websites(self, websites: Optional[list[BodyPigWebsite]]) -> list[BodyPigWebsite]:
+        if not websites:
+            return []
+
+        out: list[BodyPigWebsite] = []
+        for i, w in enumerate(websites):
+            label = (w.label or "").strip()
+            url = (w.url or "").strip()
+            if not label:
+                raise HTTPException(400, detail=f"websites[{i}].label이 비어있습니다")
+            if not url:
+                raise HTTPException(400, detail=f"websites[{i}].url이 비어있습니다")
+
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise HTTPException(400, detail=f"websites[{i}].url 형식이 올바르지 않습니다")
+
+            out.append(
+                BodyPigWebsite(
+                    label=label,
+                    url=url,
+                    sort_order=w.sort_order,
+                )
+            )
+        return out
+
+    def _replace_websites(self, pig_id: int, websites: Optional[list[BodyPigWebsite]]) -> None:
+        validated = self._validate_websites(websites)
+        self.pig_website_repository.delete_by_pig_id(pig_id)
+
+        for idx, w in enumerate(validated):
+            sort_order = w.sort_order if w.sort_order is not None else idx
+            self.pig_website_repository.create(
+                PIGWebsite(
+                    pig_id=pig_id,
+                    label=w.label,
+                    url=w.url,
+                    sort_order=sort_order,
+                )
+            )
 
     async def update_pig(
         self,
@@ -203,13 +245,13 @@ class PigService:
         if body.is_rolling_admission is not None:
             pig.is_rolling_admission = body.is_rolling_admission
 
+        if body.websites is not None:
+            self._replace_websites(pig.id, body.websites)
+
         try:
             self.pig_repository.update(pig)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
-
-        if body.websites is not None:
-            self._replace_websites(id, body.websites)
 
         bot_body = {}
         bot_body["pig_name"] = old_title
@@ -244,7 +286,7 @@ class PigService:
         self.pig_repository.update(pig)
 
         await mq_client.send_discord_bot_request_no_reply(
-            action_code=4004,
+            action_code=4007,
             body={
                 "pig_name": pig.title,
                 "previous_semester": f"{pig.year}-{map_semester_name.get(pig.semester)}",
@@ -260,35 +302,21 @@ class PigService:
     ) -> PIG:
         if pig.owner == new_owner_id:
             raise HTTPException(
-                status_code=400,
-                detail="새로운 시그/피그장은 현재 시그/피그장과 달라야 합니다",
+                400, detail="시그/피그장을 이미 동일한 사용자로 지정했습니다"
             )
 
-        new_owner_user = self.user_repository.get_by_id(new_owner_id)
-        if not new_owner_user:
-            raise HTTPException(
-                status_code=404,
-                detail="새로운 시그/피그장에 해당하는 사용자가 없습니다",
-            )
+        if not is_forced:
+            if pig.owner != executor_id:
+                raise HTTPException(
+                    403, detail="타인의 시그/피그장 권한을 위임할 수 없습니다"
+                )
 
-        member = self.pig_member_repository.get_by_pig_and_user_id(pig.id, new_owner_id)
-        if member is None:
-            raise HTTPException(
-                status_code=404,
-                detail="새로운 시그/피그장은 해당 시그/피그의 구성원이어야 합니다",
-            )
+        new_owner = self.user_repository.get_by_id(new_owner_id)
+        if not new_owner:
+            raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
 
-        old_owner = pig.owner
-        pig.owner = new_owner_id
+        pig.owner = new_owner.id
         self.pig_repository.update(pig)
-
-        handover_type = "forced" if is_forced else "voluntary"
-        logger.info(
-            f"info_type=pig_handover ; handover_type={handover_type} ; pig_id={pig.id} ; title={pig.title} ; "
-            f"executor_id={executor_id} ; old_owner_id={old_owner} ; new_owner_id={new_owner_id} ; "
-            f"year={pig.year} ; semester={pig.semester}"
-        )
-
         return pig
 
     def handover_pig(
@@ -297,204 +325,90 @@ class PigService:
         current_user: User,
         body: BodyHandoverPIG,
         is_executive: bool,
-    ):
+    ) -> None:
         pig = self.get_by_id(id)
-        if not is_executive and current_user.id != pig.owner:
-            raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
         self._handover_pig_ctrl(pig, body.new_owner, current_user.id, is_executive)
 
     def get_members(self, id: int) -> Sequence[PigMemberResponse]:
-        self.get_by_id(id)
+        members = self.pig_member_repository.get_members(id)
+        return PigMemberResponse.model_validate_list(members)
 
-        members = self.pig_member_repository.get_members_by_pig_id(id)
-        res: list[PigMemberResponse] = []
-        for member in members:
-            user = self.user_repository.get_by_id(member.user_id)
-
-            user_response = None
-            if user:
-                user_response = UserResponse.model_validate(user)
-
-            member_response = PigMemberResponse(
-                id=member.id,
-                ig_id=member.ig_id,
-                user_id=member.user_id,
-                created_at=member.created_at,
-                user=user_response,
-            )
-            res.append(member_response)
-
-        return res
+    def get_websites(self, pig_id: int) -> list[PigWebsiteResponse]:
+        websites = self.pig_website_repository.get_by_pig_id(pig_id)
+        return PigWebsiteResponse.model_validate_list(websites)
 
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
+        if pig.status == SCSCStatus.inactive:
+            raise HTTPException(400, detail="해당 시그/피그는 비활성 상태입니다")
 
-        if pig.is_rolling_admission == RollingAdmission.NEVER:
-            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
-        elif pig.is_rolling_admission == RollingAdmission.ALWAYS:
-            allowed = ctrl_status_available.join_sigpig_rolling_admission
-        elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
-            allowed = ctrl_status_available.join_sigpig
-        else:
-            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
-
-        if pig.status not in allowed:
-            raise HTTPException(
-                400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
-            )
-
-        pig_member = PIGMember(ig_id=id, user_id=current_user.id)
+        pig_member = PIGMember(ig_id=pig.id, user_id=current_user.id)
         try:
             self.pig_member_repository.create(pig_member)
         except IntegrityError:
-            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+            raise HTTPException(409, detail="이미 가입된 시그/피그입니다")
 
         if current_user.discord_id:
             await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": current_user.discord_id, "role_name": pig.title},
+                action_code=4003,
+                body={
+                    "pig_name": pig.title,
+                    "user_id_list": [current_user.discord_id],
+                    "pig_description": pig.description,
+                },
             )
 
-        logger.info(
-            f"info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}"
-        )
+    async def leave_pig(self, id: int, current_user: User) -> None:
+        pig = self.get_by_id(id)
+        if pig.status == SCSCStatus.inactive:
+            raise HTTPException(400, detail="해당 시그/피그는 비활성 상태입니다")
+
+        if pig.owner == current_user.id:
+            raise HTTPException(400, detail="시그/피그장은 탈퇴할 수 없습니다")
+
+        self.pig_member_repository.delete_member(pig.id, current_user.id)
+
+        if current_user.discord_id:
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4004,
+                body={
+                    "pig_name": pig.title,
+                    "user_id_list": [current_user.discord_id],
+                },
+            )
 
     async def executive_join_pig(
-        self,
-        id: int,
-        current_user: User,
-        body: BodyExecutiveJoinPIG,
+        self, id: int, current_user: User, body: BodyExecutiveJoinPIG
     ) -> None:
+        if get_user_role_level(current_user.role) < get_user_role_level("executive"):
+            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
+
         pig = self.get_by_id(id)
         user = self.user_repository.get_by_id(body.user_id)
         if not user:
             raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
 
-        pig_member = PIGMember(ig_id=id, user_id=body.user_id)
+        pig_member = PIGMember(ig_id=pig.id, user_id=user.id)
         try:
             self.pig_member_repository.create(pig_member)
         except IntegrityError:
-            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
-
-        if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": user.discord_id, "role_name": pig.title},
-            )
-
-        logger.info(
-            f"info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
-        )
-
-    async def leave_pig(self, id: int, current_user: User) -> None:
-        pig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
-        if pig.status not in allowed:
-            raise HTTPException(
-                400,
-                f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다",
-            )
-        if pig.owner == current_user.id:
-            raise HTTPException(
-                409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
-            )
-
-        member = self.pig_member_repository.get_by_pig_and_user_id(id, current_user.id)
-        if not member:
-            raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-
-        self.pig_member_repository.delete(member)
-
-        if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": current_user.discord_id, "role_name": pig.title},
-            )
-
-        logger.info(
-            f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}"
-        )
+            raise HTTPException(409, detail="이미 가입된 시그/피그입니다")
 
     async def executive_leave_pig(
-        self,
-        id: int,
-        current_user: User,
-        body: BodyExecutiveLeavePIG,
+        self, id: int, current_user: User, body: BodyExecutiveLeavePIG
     ) -> None:
+        if get_user_role_level(current_user.role) < get_user_role_level("executive"):
+            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
+
         pig = self.get_by_id(id)
         user = self.user_repository.get_by_id(body.user_id)
         if not user:
             raise HTTPException(404, detail="해당 id의 사용자가 없습니다")
 
         if pig.owner == user.id:
-            raise HTTPException(
-                409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
-            )
+            raise HTTPException(400, detail="시그/피그장은 탈퇴시킬 수 없습니다")
 
-        member = self.pig_member_repository.get_by_pig_and_user_id(id, body.user_id)
-        if not member:
-            raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
-
-        self.pig_member_repository.delete(member)
-
-        if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": user.discord_id, "role_name": pig.title},
-            )
-
-        logger.info(
-            f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
-        )
-
-    def get_pig_response(self, pig: PIG) -> PigResponse:
-        websites = []
-        if pig.id is not None:
-            websites = self.pig_website_repository.get_by_pig_id(pig.id)
-        website_responses = PigWebsiteResponse.model_validate_list(websites)
-        pig_response = PigResponse.model_validate(pig)
-        return pig_response.model_copy(update={"websites": website_responses})
-
-    def _replace_websites(
-        self, pig_id: int, websites: Optional[Sequence[BodyPigWebsite]]
-    ) -> None:
-        if websites is None:
-            return
-        website_models = self._prepare_website_models(pig_id, websites)
-        self.pig_website_repository.replace_for_pig(pig_id, website_models)
-
-    def _prepare_website_models(
-        self, pig_id: int, websites: Sequence[BodyPigWebsite]
-    ) -> list[PIGWebsite]:
-        if not websites:
-            return []
-        if len(websites) > 10:
-            raise HTTPException(
-                400, detail="웹사이트는 최대 10개까지 등록할 수 있습니다"
-            )
-
-        prepared: list[PIGWebsite] = []
-        for idx, website in enumerate(websites):
-            label = (website.label or "").strip()
-            url = (website.url or "").strip()
-            if not url:
-                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
-            if not label:
-                label = url
-            sort_order = website.sort_order if website.sort_order is not None else idx
-            prepared.append(
-                PIGWebsite(
-                    pig_id=pig_id,
-                    label=label,
-                    url=url,
-                    sort_order=sort_order,
-                )
-            )
-        return prepared
+        self.pig_member_repository.delete_member(pig.id, user.id)
 
 
-PigServiceDep = Annotated[PigService, Depends()]
+PigServiceDep = Annotated[PigService, Depends(PigService)]
