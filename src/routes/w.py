@@ -44,7 +44,7 @@ async def update_w_by_name(
     return WHTMLMetadataResponse.model_validate(w_meta)
 
 
-@w_router.post("/executive/w/{name}/delete", status_code=204)
+@w_router.post("/executive/w/{name}/deletetest", status_code=204)
 async def delete_w_by_name(
     name: str,
     current_user: UserDep,
