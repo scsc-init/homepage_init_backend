@@ -17,7 +17,7 @@ class RabbitMQClient:
         self.futures: dict[str, asyncio.Future[Any]] = {}
         self._lock = asyncio.Lock()
 
-    async def connect(self, retries: int = 5, delay: int = 3):
+    async def connect(self, retries: int = 5, delay: int = 5):
         """Initializes connection, channel, and the callback consumer."""
         async with self._lock:
             if self.connection and not self.connection.is_closed:
