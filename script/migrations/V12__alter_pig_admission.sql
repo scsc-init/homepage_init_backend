@@ -25,7 +25,7 @@ CREATE TABLE pig (
 );
 
 INSERT INTO pig (id, title, description, content_id, status, year, semester, should_extend, is_rolling_admission, created_at, updated_at, owner)
-SELECT id, title, description, content_id, status, year, semester, should_extend, CASE WHEN is_rolling_admission = true THEN 'always' ELSE 'never' END, created_at, CURRENT_TIMESTAMP, owner
+SELECT id, title, description, content_id, status, year, semester, should_extend, CASE WHEN is_rolling_admission = true THEN 'always' ELSE 'during_recruiting' END, created_at, CURRENT_TIMESTAMP, owner
 FROM pig_old;
 
 ALTER TABLE pig_website RENAME TO pig_website_old;
