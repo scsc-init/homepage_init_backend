@@ -21,6 +21,8 @@ class SigResponse(BaseResponse):
     description: str
     content_id: int
     status: SCSCStatus
+    created_year: int
+    created_semester: int
     year: int
     semester: int
     owner: str

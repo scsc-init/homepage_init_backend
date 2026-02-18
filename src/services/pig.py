@@ -9,6 +9,7 @@ from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
 from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
+from src.model.pig import RollingAdmission
 from src.repositories import (
     PigMemberRepositoryDep,
     PigRepositoryDep,
@@ -34,7 +35,7 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: bool = False
+    is_rolling_admission: RollingAdmission = "during_recruiting"
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -44,7 +45,7 @@ class BodyUpdatePIG(BaseModel):
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
-    is_rolling_admission: Optional[bool] = None
+    is_rolling_admission: Optional[RollingAdmission] = None
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -97,6 +98,8 @@ class PigService:
             title=body.title,
             description=body.description,
             content_id=pig_article.id,
+            created_year=scsc_global_status.year,
+            created_semester=scsc_global_status.semester,
             year=scsc_global_status.year,
             semester=scsc_global_status.semester,
             owner=current_user.id,
@@ -107,7 +110,7 @@ class PigService:
         try:
             pig = self.pig_repository.create(pig)
         except IntegrityError:
-            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+            raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다.")
 
         if pig.id is None:
             raise HTTPException(503, detail="pig primary key does not exist")
@@ -327,11 +330,16 @@ class PigService:
 
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+
+        if pig.is_rolling_admission == RollingAdmission.NEVER:
+            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
+        elif pig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
+
         if pig.status not in allowed:
             raise HTTPException(
                 400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"

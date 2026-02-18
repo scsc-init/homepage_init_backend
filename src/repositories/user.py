@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from src.db import get_user_role_level
 from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole, UserStatus
@@ -47,6 +47,17 @@ class UserRepository(CRUDRepository[User, str]):
         return self.session.scalars(
             select(User).where(User.role >= get_user_role_level("executive"))
         ).all()
+
+    def delete_all_except_student_ids(self, excluded_student_ids: list[str]) -> None:
+        if not excluded_student_ids:
+            raise ValueError("예외 없이 모든 유저 삭제 불가")
+
+        stmt = delete(self.model).where(
+            ~self.model.student_id.in_(excluded_student_ids)
+        )
+
+        with self.transaction:
+            self.session.execute(stmt)
 
 
 class UserRoleRepository(CRUDRepository[UserRole, int]):

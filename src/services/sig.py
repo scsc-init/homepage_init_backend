@@ -81,6 +81,8 @@ class SigService:
             title=body.title,
             description=body.description,
             content_id=sig_article.id,
+            created_year=scsc_global_status.year,
+            created_semester=scsc_global_status.semester,
             year=scsc_global_status.year,
             semester=scsc_global_status.semester,
             owner=current_user.id,

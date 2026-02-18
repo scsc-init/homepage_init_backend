@@ -1,5 +1,5 @@
 # SIG/PIG 관련 DB, API 명세서
-**최신개정일:** 2025-09-19
+**최신개정일:** 2026-02-12
 
 # DB 구조
 
@@ -13,6 +13,8 @@ CREATE TABLE sig (
     status TEXT NOT NULL CHECK (status IN ('surveying', 'recruiting', 'active', 'inactive')),
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
+    created_year INTEGER NOT NULL CHECK (created_year >= 2025),
+    created_semester INTEGER NOT NULL CHECK (created_semester IN (1, 2, 3, 4)),
 
     should_extend BOOLEAN NOT NULL DEFAULT FALSE,
     is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
@@ -21,18 +23,26 @@ CREATE TABLE sig (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     owner TEXT NOT NULL,
+    UNIQUE(created_year, created_semester, title),
     UNIQUE (title, year, semester),
     FOREIGN KEY (owner) REFERENCES user(id) ON DELETE RESTRICT,
     FOREIGN KEY (content_id) REFERENCES article(id) ON DELETE RESTRICT
 );
 ```
 - status 중 'surveying'은 더 이상 사용하지 않습니다. 기존 'surveying'은 모두 'recruiting'으로 변경됩니다. 
+- `created_year`, `created_semester`: SIG가 **처음 생성된 학기**. 이후 변경되지 않습니다.  
+- `year`, `semester`: SIG가 **현재 속한 학기(운영/종료 학기)**. 학기 이월 시 이 값만 업데이트됩니다.  
+
 
 ```sql
 CREATE TABLE pig (
     ... -- same as sig
+    is_rolling_admission TEXT DEFAULT 'during_recruiting' NOT NULL CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
+    ... -- same as sig
 );
 ```
+
+- `is_rolling_admission` 기본값은 `"during_recruiting"`입니다.
 
 ## SIG/PIG MEMBER DB
 ```sql
@@ -125,13 +135,16 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
   "status": "recruiting",
+  "created_year": 2025,
+  "created_semester": 1,
   "year": 2025,
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
   "owner": "hash_of_owner_user",
-  "is_rolling_admission": false,
+  "is_rolling_admission": false
 }
+
 ```
 
 * **Status Codes**:
@@ -157,6 +170,8 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
   "status": "active",
+  "created_year": 2025,
+  "created_semester": 1,
   "year": 2025,
   "semester": 1,
   "created_at": "2025-03-01T10:00:00Z",
@@ -194,6 +209,8 @@ END;
     "description": "인공지능을 연구하는 소모임입니다.",
     "content_id": 1,
     "status": "active",
+    "created_year": 2025,
+    "created_semester": 1,
     "year": 2025,
     "semester": 1,
     "created_at": "2025-03-01T10:00:00Z",
@@ -204,6 +221,7 @@ END;
   },
   ...
 ]
+
 ```
 
 * **Status Codes**:
@@ -458,3 +476,209 @@ END;
 
 ## PIG 관련 API(/api/pig)
 `/api/sig`에서 `sig`를 `pig`로 바꾼다
+
+### 예외 사항
+
+* 시그와 구조가 다른 피그만의 API 예외 사항은 아래와 같다.
+* 피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다는 차이가 있다.
+
+---
+
+## Create PIG
+
+* **Method**: `POST`
+* **URL**: `/api/pig/create`
+* 로그인한 사용자가 owner가 됨
+* **Request Body** (JSON):
+
+```json
+{
+  "title": "AI PIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content": "## 안녕하세요",
+  "is_rolling_admission": "during_recruiting",
+}
+```
+
+* **Response**:
+
+```json
+{
+  "id": 1,
+  "title": "AI PIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_id": 1,
+  "status": "recruiting",
+  "created_year": 2025,
+  "created_semester": 1,
+  "year": 2025,
+  "semester": 1,
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "owner": "hash_of_owner_user",
+  "is_rolling_admission": "during_recruiting",
+}
+
+```
+
+* **Status Codes**:
+
+  * `201 Created`
+  * `400 Bad Request`: pig global status가 recruiting이 아닐 때
+  * `401 Unauthorized`: 로그인 하지 않음
+  * `409 Conflict`: `title`, `year`, `semester` 중복
+  * `422 Unprocessable Content`: 필드 누락 또는 유효하지 않은 값
+
+---
+
+## Get PIG by ID
+
+* **Method**: `GET`
+* **URL**: `/api/pig/:id`
+* **Response**:
+
+```json
+{
+  "id": 1,
+  "title": "AI PIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_id": 1,
+  "status": "active",
+  "created_year": 2025,
+  "created_semester": 1,
+  "year": 2025,
+  "semester": 1,
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "owner": "hash_of_owner_user",
+  "should_extend": true,
+  "is_rolling_admission": "during_recruiting",
+}
+
+```
+
+* **Status Codes**:
+
+  * `200 OK`
+  * `404 Not Found`: 해당 PIG가 존재하지 않음
+
+---
+
+## Get All PIGs
+
+* **Method**: `GET`
+* **URL**: `/api/pigs`
+* **Query Parameters**: all optional
+  * `year`: `int`
+  * `semester`: `int`
+  * `status` `str`
+* **Example Request**:
+  * `/api/pigs?year=2025&semester=3&status=active`
+* **Response**:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "AI PIG",
+    "description": "인공지능을 연구하는 소모임입니다.",
+    "content_id": 1,
+    "status": "active",
+    "created_year": 2025,
+    "created_semester": 1,
+    "year": 2025,
+    "semester": 1,
+    "created_at": "2025-03-01T10:00:00Z",
+    "updated_at": "2025-04-01T12:00:00Z",
+    "owner": "hash_of_owner_user",
+    "should_extend": true,
+    "is_rolling_admission": "during_recruiting",
+  },
+  ...
+]
+
+```
+
+* **Status Codes**:
+
+  * `200 OK`
+
+
+---
+
+## Update PIG (Owner Only)
+
+* **Method**: `POST`
+* **URL**: `/api/pig/:id/update`
+* **Request Body** (JSON):
+
+```json
+{
+  "title": "AI PIG",
+  "description": "업데이트된 설명입니다.",
+  "content": "### 안녕하세요",
+  "should_extend": true,
+  "is_rolling_admission": "during_recruiting",
+}
+```
+
+- 일부만 포함하여 요청을 보내도 된다
+- content가 포함된다면, 새로운 article을 생성하여 content_id가 바뀐다
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`: 권한 없음
+  * `404 Not Found`
+  * `409 Conflict`: `title`, `year`, `semester` 중복
+  * `422 Unprocessable Content`
+
+---
+
+## Update PIG (Executive)
+
+* **Method**: `POST`
+* **URL**: `/api/executive/pig/:id/update`
+* **Request Body**: 
+
+```json
+{
+  "title": "AI PIG",
+  "description": "업데이트된 설명입니다.",
+  "content": "### 안녕하세요",
+  "status": "recruiting",
+  "should_extend": true,
+  "is_rolling_admission": "during_recruiting",
+}
+```
+
+- 일부만 포함하여 요청을 보내도 된다
+- content가 포함된다면, 새로운 article을 생성하여 content_id가 바뀐다
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `404 Not Found`
+  * `409 Conflict`: `title`, `year`, `semester` 중복
+
+---
+
+## Join PIG (Current User)
+
+* **Method**: `POST`
+* **URL**: `/api/pig/:id/member/join`
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `400 Bad Request`: pig 상태가 가입 가능한 상태가 아닐 때
+    * pig의 `is_rolling_admission`이 `always`이면 `recruiting`, `active`일 때 가입 가능
+    * pig의 `is_rolling_admission`이 `during_recruiting`이면 `recruiting`일 때 가입 가능
+    * pig의 `is_rolling_admission`이 `never`이면 가입 불가능
+  * `401 Unauthorized`
+  * `409 Conflict`: 이미 가입됨
+
+---

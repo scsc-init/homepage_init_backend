@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum as PythonEnum
 
 from sqlalchemy import (
     Boolean,
@@ -18,12 +19,34 @@ from .base import Base
 from .scsc_global_status import SCSCStatus
 
 
+class RollingAdmission(str, PythonEnum):
+    ALWAYS = "always"
+    NEVER = "never"
+    DURING_RECRUITING = "during_recruiting"
+
+
 class PIG(Base):
     __tablename__ = "pig"
     __table_args__ = (
-        UniqueConstraint("title", "year", "semester", name="uq_title_year_semester"),
-        CheckConstraint("year >= 2025", name="ck_year_min"),
-        CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_semester_valid"),
+        UniqueConstraint(
+            "created_year",
+            "created_semester",
+            "title",
+            name="uq_pig_created_year_created_semester_title",
+        ),
+        UniqueConstraint(
+            "year",
+            "semester",
+            "title",
+            name="uq_pig_title_year_semester",
+        ),
+        CheckConstraint("year >= 2025", name="ck_pig_year_min"),
+        CheckConstraint("semester IN (1, 2, 3, 4)", name="ck_pig_semester_valid"),
+        CheckConstraint("created_year >= 2025", name="ck_pig_created_year_min"),
+        CheckConstraint(
+            "created_semester IN (1, 2, 3, 4)",
+            name="ck_pig_created_semester_valid",
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -35,12 +58,21 @@ class PIG(Base):
         Integer, ForeignKey("article.id"), nullable=False, unique=True
     )
     status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    created_year: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_semester: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     owner: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     should_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    is_rolling_admission: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
+    is_rolling_admission: Mapped[RollingAdmission] = mapped_column(
+        Enum(
+            RollingAdmission,
+            name="rolling_admission_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        default=RollingAdmission.DURING_RECRUITING,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),

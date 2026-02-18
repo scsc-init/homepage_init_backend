@@ -19,6 +19,7 @@ from src.repositories import (
     UserRepositoryDep,
 )
 from src.util import (
+    backup_db_before_semester_change,
     get_new_year_semester,
     map_semester_name,
     utcnow,
@@ -183,6 +184,20 @@ class SCSCService:
 
         # end of active
         if scsc_global_status.status == SCSCStatus.active:
+            try:
+                backup_db_before_semester_change(
+                    scsc_global_status.year, scsc_global_status.semester
+                )
+            except Exception as exc:
+                logger.error(
+                    "err_type=db_backup ; msg=failed to back up database before semester change",
+                    exc_info=True,
+                )
+                raise HTTPException(
+                    status_code=500,
+                    detail="failed to back up database before semester change",
+                ) from exc
+
             await mq_client.send_discord_bot_request_no_reply(
                 action_code=3008,
                 body={
