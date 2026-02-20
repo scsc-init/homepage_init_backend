@@ -1,20 +1,12 @@
 from datetime import datetime
-from enum import Enum as enum
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.util import utcnow
 
 from .base import Base
-
-
-class UserStatus(str, enum):
-    active = "active"
-    pending = "pending"
-    standby = "standby"
-    banned = "banned"
 
 
 class UserRole(Base):
@@ -40,9 +32,8 @@ class User(Base):
         Integer, ForeignKey("user_role.level"), nullable=False
     )
     major_id: Mapped[int] = mapped_column(ForeignKey("major.id"), nullable=False)
-    status: Mapped[UserStatus] = mapped_column(
-        Enum(UserStatus), default=UserStatus.standby, nullable=False
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_banned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     discord_id: Mapped[Optional[int]] = mapped_column(
         default=None, nullable=True, unique=True

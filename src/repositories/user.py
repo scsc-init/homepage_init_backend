@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlalchemy import delete, func, select
 
 from src.db import get_user_role_level
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole, UserStatus
+from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole
 
 from .crud_repository import CRUDRepository
 
@@ -14,9 +14,15 @@ class UserRepository(CRUDRepository[User, str]):
     def model(self) -> type[User]:
         return User
 
-    def get_by_status_and_role(self, status: UserStatus, role: int) -> Sequence[User]:
+    def get_by_status_and_role(
+        self, role: int, is_active: bool, is_banned: bool
+    ) -> Sequence[User]:
         return self.session.scalars(
-            select(User).where(User.status == status, User.role == role)
+            select(User).where(
+                User.role == role,
+                User.is_active == is_active,
+                User.is_banned == is_banned,
+            )
         ).all()
 
     def get_by_filters(self, filters: dict[str, Any]) -> Sequence[User]:

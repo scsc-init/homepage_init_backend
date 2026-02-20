@@ -14,6 +14,9 @@ async def check_user_status(
     current_user: NullableUserDep,
     check_user_status_rule_repository: CheckUserStatusRuleRepositoryDep,
 ):
+    if current_user and current_user.is_active:
+        return
+
     blacklist_rules = check_user_status_rule_repository.get_blacklist_rules_by_request(
         request
     )
@@ -21,18 +24,17 @@ async def check_user_status(
     if blacklist_rules:
         if current_user is None:
             raise HTTPException(status_code=401, detail="Not authenticated")
-        for rule in blacklist_rules:
-            if rule.user_status == current_user.status:
-                logger.info(
-                    "info_type=CheckUserStatusMiddleware ; user_id=%s ; status=%s ; method=%s ; path=%s",
-                    current_user.id,
-                    current_user.status,
-                    request.method,
-                    request.url.path,
-                )
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"cannot access path={request.url.path} with user status={current_user.status}",
-                )
+
+        logger.info(
+            "info_type=CheckUserStatusMiddleware ; user_id=%s ; status=%s ; method=%s ; path=%s",
+            current_user.id,
+            "banned" if current_user.is_banned else "inactive",
+            request.method,
+            request.url.path,
+        )
+        raise HTTPException(
+            status_code=403,
+            detail=f"inactive user cannot access path={request.url.path}",
+        )
 
     return

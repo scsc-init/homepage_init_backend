@@ -10,7 +10,7 @@ from src.amqp import mq_client
 from src.core import logger
 from src.db import SessionDep, get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import PIG, SIG, SCSCGlobalStatus, SCSCStatus, User, UserStatus
+from src.model import PIG, SIG, SCSCGlobalStatus, SCSCStatus, User
 from src.repositories import (
     OldboyApplicantRepositoryDep,
     PigRepositoryDep,
@@ -133,19 +133,21 @@ class SCSCService:
 
         # end of inactive
         if scsc_global_status.status == SCSCStatus.inactive:
-            newcomers = self.user_repository.get_by_status_and_role(
-                UserStatus.pending, get_user_role_level("newcomer")
+            inactive_newcomers = self.user_repository.get_by_status_and_role(
+                get_user_role_level("newcomer"), is_active=False, is_banned=False
             )
-            for user in newcomers:
-                user.status = UserStatus.banned
+            for user in inactive_newcomers:
+                user.is_active = False
+                user.is_banned = True
                 self.session.add(user)
 
-            members = self.user_repository.get_by_status_and_role(
-                UserStatus.pending, get_user_role_level("member")
+            inactive_members = self.user_repository.get_by_status_and_role(
+                get_user_role_level("member"), is_active=False, is_banned=False
             )
-            for user in members:
+            for user in inactive_members:
                 if utcnow() - user.created_at > timedelta(weeks=52 * 2):
-                    user.status = UserStatus.banned
+                    user.is_active = False
+                    user.is_banned = True
                     self.session.add(user)
                 else:
                     user.role = get_user_role_level("dormant")
@@ -243,7 +245,7 @@ class SCSCService:
             )
             self.session.add(scsc_global_status)
 
-        # start of inactive
+        # start of inactive (regular semester starts)
         if new_status == SCSCStatus.inactive:
             standbys = self.standby_repository.list_all()
             for standby in standbys:
@@ -254,20 +256,20 @@ class SCSCService:
             self.session.execute(
                 update(User)
                 .where(
-                    User.status == UserStatus.active,
+                    User.is_active,
                     User.role == get_user_role_level("newcomer"),
                     User.created_at <= seasonal_starting_time,
                 )
-                .values(status=UserStatus.pending, role=get_user_role_level("member"))
+                .values(is_active=False, role=get_user_role_level("member"))
             )
 
             self.session.execute(
                 update(User)
                 .where(
-                    User.status == UserStatus.active,
+                    User.is_active,
                     User.role == get_user_role_level("member"),
                 )
-                .values(status=UserStatus.pending)
+                .values(is_active=False)
             )
 
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()

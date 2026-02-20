@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
+from src.model import OldboyApplicant, StandbyReqTbl, User
 from src.repositories import (
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
@@ -60,7 +60,8 @@ class BodyUpdateUser(BaseModel):
     student_id: Optional[str] = None
     major_id: Optional[int] = None
     role: Optional[str] = None
-    status: Optional[UserStatus] = None
+    is_active: Optional[bool] = None
+    is_banned: Optional[bool] = None
     discord_id: Optional[int] = None
     discord_name: Optional[str] = None
 
@@ -150,14 +151,10 @@ class UserService:
         if not user:
             raise HTTPException(404, detail="user not found")
 
-        if user.status not in (UserStatus.pending, UserStatus.standby):
+        if not user.is_active and not user.is_banned:
             raise HTTPException(
-                400, detail="Only user with pending or standby status can enroll"
+                400, detail="Only not active and not banned user can enroll"
             )
-
-        if user.status == UserStatus.pending:
-            user.status = UserStatus.standby
-            self.user_repository.update(user)
 
         stby_req_tbl = StandbyReqTbl(
             standby_user_id=user.id,
@@ -365,12 +362,20 @@ class UserService:
                 raise HTTPException(422, detail="invalid student_id")
             user.student_id = body.student_id
 
+        if body.is_active and body.is_banned:
+            raise HTTPException(
+                422,
+                detail="invalid status: is_active and is_banned cannot be true at the same time",
+            )
+
         if body.name:
             user.name = body.name
         if body.major_id:
             user.major_id = body.major_id
-        if body.status:
-            user.status = body.status
+        if body.is_active:
+            user.is_active = body.is_active
+        if body.is_banned:
+            user.is_banned = body.is_banned
         if body.discord_id:
             user.discord_id = body.discord_id
         if body.discord_name:
@@ -491,7 +496,8 @@ class OldboyService:
             raise HTTPException(400, detail="you are not oldboy")
 
         current_user.role = get_user_role_level("member")
-        current_user.status = UserStatus.pending
+        current_user.is_active = False
+        current_user.is_banned = False
         self.user_repository.update(current_user)
 
         oldboy_applicant = self.oldboy_repository.get_by_id(current_user.id)
@@ -525,10 +531,11 @@ class StandbyService:
         user = self.user_repository.get_by_id(body.id)
         if not user:
             raise HTTPException(404, detail="user not found")
-        if user.status == UserStatus.active:
+        if user.is_active:
             raise HTTPException(409, detail="the user is already active")
 
-        user.status = UserStatus.active
+        user.is_active = True
+        user.is_banned = False
         self.user_repository.update(user)
 
         standbyreq = self.standby_repository.get_by_user_id(body.id)
@@ -667,19 +674,16 @@ class StandbyService:
                     )
 
                 user = matching_users_error[0]
-                if user.status not in (UserStatus.pending, UserStatus.standby):
+                if user.is_active or user.is_banned:
                     logger.error(
-                        f"err_type=deposit ; err_code=412 ; msg=user is not in pending or standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                        f"err_type=deposit ; err_code=412 ; msg=user must be neither active nor banned but {"active" if user.is_active else "banned"} ; deposit={deposit} ; users={matching_users}"
                     )
                     return ProcessDepositResult(
                         result_code=412,
-                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 또는 standby 상태가 아닙니다",
+                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {"active" if user.is_active else "banned"}로 비활성 상태가 아닙니다",
                         record=deposit,
                         users=matching_users,
                     )
-                if user.status == UserStatus.pending:
-                    user.status = UserStatus.standby
-                    self.user_repository.update(user)
 
                 new_req = StandbyReqTbl(
                     standby_user_id=user.id,
@@ -724,13 +728,13 @@ class StandbyService:
                     record=deposit,
                     users=matching_users,
                 )
-            if user.status != UserStatus.standby:
+            if user.is_active or user.is_banned:
                 logger.error(
-                    f"err_type=deposit ; err_code=412 ; msg=user is not in standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                    f"err_type=deposit ; err_code=412 ; msg=user must be neither active nor banned but {"active" if user.is_active else "banned"} ; deposit={deposit} ; users={matching_users}"
                 )
                 return ProcessDepositResult(
                     result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다",
+                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {"active" if user.is_active else "banned"}로 비활성 상태가 아닙니다",
                     record=deposit,
                     users=matching_users,
                 )
@@ -755,7 +759,8 @@ class StandbyService:
     def _verify_enroll_user_ctrl(
         self, user: User, stby_req: StandbyReqTbl, deposit: DepositDTO
     ) -> None:
-        user.status = UserStatus.active
+        user.is_active = True
+        user.is_banned = False
         self.user_repository.update(user)
         stby_req.deposit_time = deposit.deposit_time
         stby_req.deposit_name = deposit.deposit_name

@@ -1,4 +1,4 @@
-from tests.types import HTTPMethod, UserStatus
+from tests.types import HTTPMethod
 
 
 def test_api_secret_required_for_public_request(api_client):
@@ -30,10 +30,8 @@ def test_user_status_rule_blocks_matching_status(
     api_client, build_headers, create_status_rule, create_user
 ):
     """차단 대상 상태의 사용자가 접근하면 규칙에 의해 거절되는지 검증한다."""
-    create_status_rule(
-        user_status=UserStatus.standby, method=HTTPMethod.GET, path="/api/majors"
-    )
-    _, token = create_user(status=UserStatus.standby)
+    create_status_rule(method=HTTPMethod.GET, path="/api/majors")
+    _, token = create_user(is_active=False)
 
     response = api_client.get("/api/majors", headers=build_headers(token))
 
@@ -44,10 +42,8 @@ def test_user_status_rule_allows_other_statuses(
     api_client, build_headers, create_status_rule, create_user
 ):
     """허용된 상태의 사용자는 정상적으로 목록을 열람할 수 있는지 확인한다."""
-    create_status_rule(
-        user_status=UserStatus.standby, method=HTTPMethod.GET, path="/api/majors"
-    )
-    _, token = create_user(status=UserStatus.active)
+    create_status_rule(method=HTTPMethod.GET, path="/api/majors")
+    _, token = create_user(is_active=True)
 
     response = api_client.get("/api/majors", headers=build_headers(token))
 
