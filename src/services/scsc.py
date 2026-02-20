@@ -1,16 +1,15 @@
 from dataclasses import dataclass
-from datetime import timedelta
 from typing import Annotated, Type
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import update
+from sqlalchemy import case, exists, select, update
 
 from src.amqp import mq_client
 from src.core import logger
 from src.db import SessionDep, get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import PIG, SIG, SCSCGlobalStatus, SCSCStatus, User
+from src.model import PIG, SIG, Enrollment, SCSCGlobalStatus, SCSCStatus, User
 from src.repositories import (
     OldboyApplicantRepositoryDep,
     PigRepositoryDep,
@@ -19,10 +18,9 @@ from src.repositories import (
     UserRepositoryDep,
 )
 from src.util import (
-    backup_db_before_semester_change,
+    backup_db_before_status_change,
     get_new_year_semester,
     map_semester_name,
-    utcnow,
 )
 
 from .user import OldboyServiceDep, UserServiceDep
@@ -131,34 +129,21 @@ class SCSCService:
         ) not in _valid_scsc_global_status_update:
             raise HTTPException(400, "invalid sig global status update")
 
-        # end of inactive
-        if scsc_global_status.status == SCSCStatus.inactive:
-            inactive_newcomers = self.user_repository.get_by_status_and_role(
-                get_user_role_level("newcomer"), is_active=False, is_banned=False
+        try:
+            backup_db_before_status_change(scsc_global_status)
+        except Exception as exc:
+            logger.error(
+                "err_type=db_backup ; msg=failed to back up database before status change",
+                exc_info=True,
             )
-            for user in inactive_newcomers:
-                user.is_active = False
-                user.is_banned = True
-                self.session.add(user)
-
-            inactive_members = self.user_repository.get_by_status_and_role(
-                get_user_role_level("member"), is_active=False, is_banned=False
-            )
-            for user in inactive_members:
-                if utcnow() - user.created_at > timedelta(weeks=52 * 2):
-                    user.is_active = False
-                    user.is_banned = True
-                    self.session.add(user)
-                else:
-                    user.role = get_user_role_level("dormant")
-                    self.session.add(user)
-                    if user.discord_id:
-                        await self.user_service.change_discord_role(
-                            user.discord_id, "dormant"
-                        )
+            raise HTTPException(
+                status_code=500,
+                detail="failed to back up database before status change",
+            ) from exc
 
         # start of recruiting
         if new_status == SCSCStatus.recruiting:
+            # archive category update
             await mq_client.send_discord_bot_request_no_reply(
                 action_code=3002,
                 body={
@@ -186,20 +171,6 @@ class SCSCService:
 
         # end of active
         if scsc_global_status.status == SCSCStatus.active:
-            try:
-                backup_db_before_semester_change(
-                    scsc_global_status.year, scsc_global_status.semester
-                )
-            except Exception as exc:
-                logger.error(
-                    "err_type=db_backup ; msg=failed to back up database before semester change",
-                    exc_info=True,
-                )
-                raise HTTPException(
-                    status_code=500,
-                    detail="failed to back up database before semester change",
-                ) from exc
-
             await mq_client.send_discord_bot_request_no_reply(
                 action_code=3008,
                 body={
@@ -238,44 +209,45 @@ class SCSCService:
             await self._process_igs_change_semester(SIG, scsc_global_status)
             await self._process_igs_change_semester(PIG, scsc_global_status)
 
+            next_year, next_semester = get_new_year_semester(
+                scsc_global_status.year, scsc_global_status.semester
+            )
+
+            enrolled_exists = exists(
+                select(Enrollment.id).where(
+                    Enrollment.year == next_year,
+                    Enrollment.semester == next_semester,
+                    Enrollment.user_id == User.id,
+                )
+            ).scalar_subquery()
+            self.session.execute(
+                update(User)
+                .where(~User.is_banned, User.role <= get_user_role_level("member"))
+                .values(is_active=case((enrolled_exists, True), else_=False))
+                .execution_options(synchronize_session=False)
+            )
+
+        # start of inactive (regular semester starts)
+        if new_status == SCSCStatus.inactive:
+            self.standby_repository.delete_all()
+            unprocessed_applicants = self.oldboy_repository.get_unprocessed()
+            for applicant in unprocessed_applicants:
+                await self.oldboy_service.process_applicant(applicant.id)
+
+            self.session.execute(
+                update(User)
+                .where(User.is_active, User.role < get_user_role_level("member"))
+                .values(role=get_user_role_level("dormant"))
+            )
+
+        # lastly, update the scsc global status
+        if scsc_global_status.status == SCSCStatus.active:
             scsc_global_status.year, scsc_global_status.semester = (
                 get_new_year_semester(
                     scsc_global_status.year, scsc_global_status.semester
                 )
             )
             self.session.add(scsc_global_status)
-
-        # start of inactive (regular semester starts)
-        if new_status == SCSCStatus.inactive:
-            standbys = self.standby_repository.list_all()
-            for standby in standbys:
-                self.session.delete(standby)
-
-            seasonal_starting_time = utcnow() - timedelta(weeks=16)
-
-            self.session.execute(
-                update(User)
-                .where(
-                    User.is_active,
-                    User.role == get_user_role_level("newcomer"),
-                    User.created_at <= seasonal_starting_time,
-                )
-                .values(is_active=False, role=get_user_role_level("member"))
-            )
-
-            self.session.execute(
-                update(User)
-                .where(
-                    User.is_active,
-                    User.role == get_user_role_level("member"),
-                )
-                .values(is_active=False)
-            )
-
-            unprocessed_applicants = self.oldboy_repository.get_unprocessed()
-            for applicant in unprocessed_applicants:
-                await self.oldboy_service.process_applicant(applicant.id)
-
         old_status = scsc_global_status.status
         scsc_global_status.status = new_status
         self.session.add(scsc_global_status)

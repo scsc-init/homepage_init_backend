@@ -13,8 +13,10 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
-from src.model import OldboyApplicant, StandbyReqTbl, User
+from src.dependencies import SCSCGlobalStatusDep
+from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User
 from src.repositories import (
+    EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
     UserRepositoryDep,
@@ -24,6 +26,7 @@ from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
+    get_new_year_semester,
     is_valid_img_url,
     is_valid_phone,
     is_valid_student_id,
@@ -32,6 +35,8 @@ from src.util import (
     utcnow,
     validate_and_read_file,
 )
+
+from .key_value import KvServiceDep
 
 
 class BodyCreateUser(BaseModel):
@@ -518,9 +523,15 @@ class StandbyService:
         self,
         standby_repository: StandbyReqTblRepositoryDep,
         user_repository: UserRepositoryDep,
+        enrollment_repository: EnrollmentRepositoryDep,
+        scsc_global_status: SCSCGlobalStatusDep,
+        kv_service: KvServiceDep,
     ):
         self.standby_repository = standby_repository
         self.user_repository = user_repository
+        self.enrollment_repository = enrollment_repository
+        self.scsc_global_status = scsc_global_status
+        self.kv_service = kv_service
 
     def get_standby_list(self) -> Sequence[StandbyReqTbl]:
         return self.standby_repository.list_all()
@@ -761,6 +772,21 @@ class StandbyService:
     ) -> None:
         user.is_active = True
         user.is_banned = False
+        if user.role == get_user_role_level("newcomer"):
+            if self.enrollment_repository.exists_by_user_id(user.id):
+                user.role = get_user_role_level("member")
+        year = self.scsc_global_status.year
+        semester = self.scsc_global_status.semester
+        grant_count = self.kv_service.get_kv_value(
+            f"grant_semester_count_{semester}"
+        ).value
+        if grant_count is None:
+            raise HTTPException(500, detail=f"grant_semester_count_{semester} is null")
+        for _ in range(int(grant_count)):
+            self.enrollment_repository.create(
+                Enrollment(year=year, semester=semester, user_id=user.id)
+            )
+            year, semester = get_new_year_semester(year, semester)
         self.user_repository.update(user)
         stby_req.deposit_time = deposit.deposit_time
         stby_req.deposit_name = deposit.deposit_name

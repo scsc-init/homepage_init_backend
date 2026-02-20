@@ -10,6 +10,7 @@ from .pig import PigMemberRepositoryDep, PigRepositoryDep, PigWebsiteRepositoryD
 from .scsc import SCSCGlobalStatusRepositoryDep
 from .sig import SigMemberRepositoryDep, SigRepositoryDep
 from .user import (
+    EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
     UserRepositoryDep,

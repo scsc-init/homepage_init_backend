@@ -32,9 +32,13 @@ END;
 
 | key | value | description |
 |-----|-------|-------------|
-| footer-message | `서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com` | 푸터에 들어가는 문자열 |
+| footer-message | `서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com` | 푸터에 들어가는 문자열 |
 | president | `<hash-of-main-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
-| vice-president | `<hash-of-vice-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
+| vice-president | `<hash-of-vice-president>;<hash> \|\| null` | 부회장에 해당하는 유저의 해쉬값을 세미콜론으로 concat한 값(유저는 반드시 president 권한이어야 함) |
+| grant_semester_count_1 | `integer` | 1번 학기(1학기)에 등록 시 부여할 등록 학기 수. 2이면 1, 2번 학기가 등록됨. |
+| grant_semester_count_2 | `integer` | 2번 학기(여름학기)에 등록 시 부여할 등록 학기 수. 3이면 2, 3, 4번 학기가 등록됨. |
+| grant_semester_count_3 | `integer` | 3번 학기(2학기)에 등록 시 부여할 등록 학기 수. 2이면 3, 4번 학기가 등록됨. |
+| grant_semester_count_4 | `integer` | 4번 학기(겨울학기)에 등록 시 부여할 등록 학기 수. 3이면 4, 1, 2번 학기가 등록됨. |
 
 ## API 구조
 

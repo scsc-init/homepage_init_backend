@@ -1,10 +1,10 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, exists, func, select
 
 from src.db import get_user_role_level
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole
+from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserRole
 
 from .crud_repository import CRUDRepository
 
@@ -120,7 +120,21 @@ class OldboyApplicantRepository(CRUDRepository[OldboyApplicant, str]):
         return self.session.scalars(stmt).all()
 
 
+class EnrollmentRepository(CRUDRepository[Enrollment, str]):
+    @property
+    def model(self) -> type[Enrollment]:
+        return Enrollment
+
+    def exists_by_user_id(self, user_id: str) -> bool:
+        return bool(
+            self.session.scalar(
+                select(exists(select(1).where(Enrollment.user_id == user_id)))
+            )
+        )
+
+
 UserRepositoryDep = Annotated[UserRepository, Depends()]
 UserRoleRepositoryDep = Annotated[UserRoleRepository, Depends()]
 StandbyReqTblRepositoryDep = Annotated[StandbyReqTblRepository, Depends()]
 OldboyApplicantRepositoryDep = Annotated[OldboyApplicantRepository, Depends()]
+EnrollmentRepositoryDep = Annotated[EnrollmentRepository, Depends()]

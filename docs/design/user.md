@@ -1,9 +1,9 @@
 # 회원 구조 문서
 
 > 최초작성일: 2025-11-19  
-> 최신개정일: 2025-11-24  
-> 최신개정자: [강명석](mailto:tomskang@naver.com)  
-> 작성자: 이한경  
+> 최신개정일: 2026-02-20  
+> 최신개정자: 이한경  
+> 작성자: 이한경, [강명석](mailto:tomskang@naver.com)  
 
 # 회원의 상태(`status`)
 
@@ -36,32 +36,19 @@
 # 회원의 상태 및 권한 변경
 
 - 회원 가입 시
-    * 상태: inactive
-    * 권한: newcomer
+  * 상태: inactive
+  * 권한: newcomer
 - 입금 확인 시
-    * 상태: inactive -> active
+  * 상태: inactive -> active
+  * 정해진 학기 수만큼 등록 기록을 생성
 - 임원의 회원 졸업생 전환 신청 승인 시
-    * 권한: member -> oldboy
-    * 졸업생 전환 신청은 가입 후 156주(3년)이 지난 정회원이 할 수 있다
+  * 권한: member -> oldboy
+  * 졸업생 전환 신청은 가입 후 156주(3년)이 지난 정회원이 할 수 있다
 - 졸업생이 정회원 전환 시
-    * (oldboy, *) -> (member, inactive)
-- SCSC 전역 상태가 inactive -> recruiting 변경 시(정규학기 시작 시)
-    * (inactive, newcomer) -> (banned, newcomer)
-    * (inactive, member) & 가입 후 104주(2년) 경과 -> (banned, newcomer)
-    * (inactive, member) & 가입 후 104주(2년) 경과하지 않음 -> (inactive, dormant)
-- SCSC 전역 상태가 active -> inactive(계절학기 종료 시)
-    * (active, newcomer) & 가입 후 16주 경과 -> (inactive, member)
-    * (active, member) -> (inactive, member)
-    * 모든 졸업생 전환 신청 승인
- 
-# 회원의 상태 및 권한 변경 개편안
-
-#### 최초 회원 가입 시
-- (inactive, newcomer)   
-#### 입금 확인 된 모든 inactive 유저
-- (inactive, *) -> (active, *)
-#### SCSC 전역 상태 active -> inactive (계절학기 종료 시)
-- (active, *<president) -> (inactive, *) (president 는 그냥 놔둠)
-#### SCSC 전역 상태 inactive -> recruiting
-- (inactive, *) -> (inactive, *)
-- (inactive, *) & (104주 경과) -> (banned, *)
+  * (oldboy, *) -> (member, inactive)
+- SCSC 전역 상태가 active -> inactive/recruiting 변경 시(학기 변경 시)
+  * (active, <member) -> (active/inactive, *)
+  * 다음 학기 등록 기록이 있으면 active, 그렇지 않으면 inactive로 변경
+- SCSC 전역 상태가 active -> inactive(정규학기로 변경 시)
+  * (inactive, <member) -> (inactive, dormant)
+  * 모든 졸업생 전환 신청 승인

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.util import utcnow
@@ -89,3 +89,22 @@ class OldboyApplicant(Base):
         default_factory=utcnow,
         onupdate=utcnow,
     )
+
+
+class Enrollment(Base):
+    __tablename__ = "enrollment"
+    __table_args__ = (
+        UniqueConstraint(
+            "year",
+            "semester",
+            "user_id",
+            name="uq_enrollment_year_semester_user_id",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    semester: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
