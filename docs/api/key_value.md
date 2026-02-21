@@ -1,5 +1,5 @@
 # Key-Value 설정 DB & API 가이드
-**최신개정일:** 2025-10-07
+**최신개정일:** 2026-02-21
 
 ## DB 구조
 
@@ -68,7 +68,7 @@ END;
 - **Response 예시**:
   ```json
   {
-    "footer-message": "서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com",
+    "footer-message": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com",
     "president": "<hash-of-main-president>",
     "vice-president": "<hash-of-vice-president>"
   }

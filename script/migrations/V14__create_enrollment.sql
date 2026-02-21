@@ -5,6 +5,7 @@ CREATE TABLE enrollment (
     year INTEGER NOT NULL CHECK (year >= 2025),
     semester INTEGER NOT NULL CHECK (semester IN (1, 2, 3, 4)),
     user_id TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
     UNIQUE(year, semester, user_id),
     FOREIGN KEY (user_id) REFERENCES user(id)
 );

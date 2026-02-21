@@ -9,12 +9,6 @@ import jwt
 import pytest
 from fastapi.testclient import TestClient
 
-from main import app
-from src.core import get_settings
-from src.db import DBSessionFactory, get_user_role_level
-from src.db.engine import engine
-from src.model import Base, CheckUserStatusRule, HTTPMethod, Major, User, UserRole
-
 # Configure SQLite path for tests before importing FastAPI app
 TEST_DB_PATH = Path(__file__).resolve().parent / "test.sqlite3"
 TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -30,6 +24,12 @@ def run_script(script_path: Path, *args: str) -> None:
     cmd = ["bash", str(script_path), *[str(arg) for arg in args]]
     subprocess.run(cmd, check=True)
 
+
+from main import app
+from src.core import get_settings
+from src.db import DBSessionFactory, get_user_role_level
+from src.db.engine import engine
+from src.model import Base, CheckUserStatusRule, HTTPMethod, Major, User, UserRole
 
 ROLE_DATA = [
     (0, "lowest", "lowest_kor"),
