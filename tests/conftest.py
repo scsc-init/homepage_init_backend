@@ -25,20 +25,11 @@ def run_script(script_path: Path, *args: str) -> None:
     subprocess.run(cmd, check=True)
 
 
-import src.model
 from main import app
 from src.core import get_settings
-from src.db import Base, DBSessionFactory
+from src.db import DBSessionFactory, get_user_role_level
 from src.db.engine import engine
-from src.model import (
-    CheckUserStatusRule,
-    HTTPMethod,
-    Major,
-    User,
-    UserRole,
-    UserStatus,
-)
-from src.util.get_from_db import get_user_role_level
+from src.model import Base, CheckUserStatusRule, HTTPMethod, Major, User, UserRole
 
 ROLE_DATA = [
     (0, "lowest", "lowest_kor"),
@@ -115,7 +106,8 @@ def create_user(
     def _create_user(
         *,
         role_level: int = 300,
-        status: UserStatus = UserStatus.active,
+        is_active: bool = True,
+        is_banned: bool = False,
         major: Optional[Major] = None,
     ) -> tuple[User, str]:
         assigned_major = major or create_major()
@@ -128,7 +120,8 @@ def create_user(
             student_id=f"2020{uuid.uuid4().int % 100000:05d}",
             role=role_level,
             major_id=assigned_major.id,
-            status=status,
+            is_active=is_active,
+            is_banned=is_banned,
         )
         db_session.add(user)
         db_session.commit()
@@ -143,11 +136,10 @@ def create_user(
 def create_status_rule(db_session) -> Callable[..., CheckUserStatusRule]:
     def _create_rule(
         *,
-        user_status: UserStatus,
         method: HTTPMethod = HTTPMethod.GET,
         path: str = "/api/majors",
     ) -> CheckUserStatusRule:
-        rule = CheckUserStatusRule(user_status=user_status, method=method, path=path)
+        rule = CheckUserStatusRule(method=method, path=path)
         db_session.add(rule)
         db_session.commit()
         db_session.refresh(rule)

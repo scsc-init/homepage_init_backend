@@ -13,8 +13,10 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
+from src.dependencies import SCSCGlobalStatusDep
+from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User
 from src.repositories import (
+    EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
     UserRepositoryDep,
@@ -24,6 +26,7 @@ from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
+    get_new_year_semester,
     is_valid_img_url,
     is_valid_phone,
     is_valid_student_id,
@@ -32,6 +35,8 @@ from src.util import (
     utcnow,
     validate_and_read_file,
 )
+
+from .key_value import KvServiceDep
 
 
 class BodyCreateUser(BaseModel):
@@ -60,7 +65,8 @@ class BodyUpdateUser(BaseModel):
     student_id: Optional[str] = None
     major_id: Optional[int] = None
     role: Optional[str] = None
-    status: Optional[UserStatus] = None
+    is_active: Optional[bool] = None
+    is_banned: Optional[bool] = None
     discord_id: Optional[int] = None
     discord_name: Optional[str] = None
 
@@ -150,14 +156,10 @@ class UserService:
         if not user:
             raise HTTPException(404, detail="user not found")
 
-        if user.status not in (UserStatus.pending, UserStatus.standby):
+        if user.is_active or user.is_banned:
             raise HTTPException(
-                400, detail="Only user with pending or standby status can enroll"
+                400, detail="Only not active and not banned user can enroll"
             )
-
-        if user.status == UserStatus.pending:
-            user.status = UserStatus.standby
-            self.user_repository.update(user)
 
         stby_req_tbl = StandbyReqTbl(
             standby_user_id=user.id,
@@ -182,7 +184,8 @@ class UserService:
         phone: Optional[str] = None,
         student_id: Optional[str] = None,
         user_role: Optional[str] = None,
-        status: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        is_banned: Optional[bool] = None,
         discord_id: Optional[str] = None,
         discord_name: Optional[str] = None,
         major_id: Optional[int] = None,
@@ -198,8 +201,10 @@ class UserService:
             filters["student_id"] = student_id
         if user_role:
             filters["role"] = get_user_role_level(user_role)
-        if status:
-            filters["status"] = status
+        if is_active is not None:
+            filters["is_active"] = is_active
+        if is_banned is not None:
+            filters["is_banned"] = is_banned
         if major_id:
             filters["major_id"] = major_id
 
@@ -365,12 +370,23 @@ class UserService:
                 raise HTTPException(422, detail="invalid student_id")
             user.student_id = body.student_id
 
+        if (body.is_active is None) + (body.is_banned is None) == 1:
+            raise HTTPException(
+                422, detail="both is_active and is_banned should be set"
+            )
+        if body.is_active and body.is_banned:
+            raise HTTPException(
+                422,
+                detail="is_active and is_banned cannot be true at the same time",
+            )
+
         if body.name:
             user.name = body.name
         if body.major_id:
             user.major_id = body.major_id
-        if body.status:
-            user.status = body.status
+        if body.is_active is not None and body.is_banned is not None:
+            user.is_active = body.is_active
+            user.is_banned = body.is_banned
         if body.discord_id:
             user.discord_id = body.discord_id
         if body.discord_name:
@@ -491,7 +507,8 @@ class OldboyService:
             raise HTTPException(400, detail="you are not oldboy")
 
         current_user.role = get_user_role_level("member")
-        current_user.status = UserStatus.pending
+        current_user.is_active = False
+        current_user.is_banned = False
         self.user_repository.update(current_user)
 
         oldboy_applicant = self.oldboy_repository.get_by_id(current_user.id)
@@ -512,9 +529,15 @@ class StandbyService:
         self,
         standby_repository: StandbyReqTblRepositoryDep,
         user_repository: UserRepositoryDep,
+        enrollment_repository: EnrollmentRepositoryDep,
+        scsc_global_status: SCSCGlobalStatusDep,
+        kv_service: KvServiceDep,
     ):
         self.standby_repository = standby_repository
         self.user_repository = user_repository
+        self.enrollment_repository = enrollment_repository
+        self.scsc_global_status = scsc_global_status
+        self.kv_service = kv_service
 
     def get_standby_list(self) -> Sequence[StandbyReqTbl]:
         return self.standby_repository.list_all()
@@ -525,14 +548,12 @@ class StandbyService:
         user = self.user_repository.get_by_id(body.id)
         if not user:
             raise HTTPException(404, detail="user not found")
-        if user.status == UserStatus.active:
+        if not user.is_banned and user.is_active:
             raise HTTPException(409, detail="the user is already active")
 
-        user.status = UserStatus.active
-        self.user_repository.update(user)
+        self._activate_and_enroll_user(user)
 
         standbyreq = self.standby_repository.get_by_user_id(body.id)
-
         if standbyreq:
             standbyreq.is_checked = True
             standbyreq.deposit_name = f"Manually by {current_user.name}"
@@ -667,19 +688,16 @@ class StandbyService:
                     )
 
                 user = matching_users_error[0]
-                if user.status not in (UserStatus.pending, UserStatus.standby):
+                if user.is_active or user.is_banned:
                     logger.error(
-                        f"err_type=deposit ; err_code=412 ; msg=user is not in pending or standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                        f"err_type=deposit ; err_code=412 ; msg=user must be neither active nor banned but {"active" if user.is_active else "banned"} ; deposit={deposit} ; users={matching_users}"
                     )
                     return ProcessDepositResult(
                         result_code=412,
-                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 또는 standby 상태가 아닙니다",
+                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {"active" if user.is_active else "banned"}로 비활성 상태가 아닙니다",
                         record=deposit,
                         users=matching_users,
                     )
-                if user.status == UserStatus.pending:
-                    user.status = UserStatus.standby
-                    self.user_repository.update(user)
 
                 new_req = StandbyReqTbl(
                     standby_user_id=user.id,
@@ -724,17 +742,21 @@ class StandbyService:
                     record=deposit,
                     users=matching_users,
                 )
-            if user.status != UserStatus.standby:
+            if user.is_active or user.is_banned:
                 logger.error(
-                    f"err_type=deposit ; err_code=412 ; msg=user is not in standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                    f"err_type=deposit ; err_code=412 ; msg=user must be neither active nor banned but {"active" if user.is_active else "banned"} ; deposit={deposit} ; users={matching_users}"
                 )
                 return ProcessDepositResult(
                     result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다",
+                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {"active" if user.is_active else "banned"}로 비활성 상태가 아닙니다",
                     record=deposit,
                     users=matching_users,
                 )
-            self._verify_enroll_user_ctrl(user, stby_user, deposit)
+            self._activate_and_enroll_user(user)
+            stby_user.deposit_time = deposit.deposit_time
+            stby_user.deposit_name = deposit.deposit_name
+            stby_user.is_checked = True
+            self.standby_repository.update(stby_user)
             logger.info(
                 f"info_type=deposit ; deposit={deposit} ; users={matching_users}"
             )
@@ -752,15 +774,32 @@ class StandbyService:
                 users=[],
             )
 
-    def _verify_enroll_user_ctrl(
-        self, user: User, stby_req: StandbyReqTbl, deposit: DepositDTO
-    ) -> None:
-        user.status = UserStatus.active
+    def _activate_and_enroll_user(self, user: User):
+        user.is_active = True
+        user.is_banned = False
+        if user.role < get_user_role_level("member"):
+            if self.enrollment_repository.exists_by_user_id(user.id):
+                user.role = get_user_role_level("member")
+            else:
+                user.role = get_user_role_level("newcomer")
+        year = self.scsc_global_status.year
+        semester = self.scsc_global_status.semester
+        grant_cnt_str = self.kv_service.get_kv_value(
+            f"grant_semester_count_{semester}"
+        ).value
+        if grant_cnt_str is None:
+            raise HTTPException(500, detail=f"grant_semester_count_{semester} is null")
+        grant_cnt = int(grant_cnt_str) if grant_cnt_str.isdigit() else 0
+        if grant_cnt <= 0:
+            raise HTTPException(
+                500, detail=f"grant_semester_count_{semester} is not a positive integer"
+            )
+        for _ in range(grant_cnt):
+            self.enrollment_repository.create(
+                Enrollment(year=year, semester=semester, user_id=user.id)
+            )
+            year, semester = get_new_year_semester(year, semester)
         self.user_repository.update(user)
-        stby_req.deposit_time = deposit.deposit_time
-        stby_req.deposit_name = deposit.deposit_name
-        stby_req.is_checked = True
-        self.standby_repository.update(stby_req)
 
 
 StandbyServiceDep = Annotated[StandbyService, Depends()]

@@ -43,5 +43,6 @@ trap cleanup EXIT
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V11__create_pig_website.sql")
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V12__alter_pig_admission.sql")
 (cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V13__create_sigpig_createdyear.sql")
+(cd "$SCRIPT_DIR" && sqlite3 "$DB_FILE" < "V14__create_enrollment.sql")
 
 echo "Database initialization and inserts completed successfully."

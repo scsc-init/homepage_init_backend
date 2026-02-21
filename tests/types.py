@@ -1,7 +1,6 @@
-from src.model import HTTPMethod, Major, User, UserRole, UserStatus
+from src.model import HTTPMethod, Major, User, UserRole
 
 __all__ = [
-    "UserStatus",
     "HTTPMethod",
     "UserRole",
     "Major",

@@ -1,6 +1,6 @@
 # 신규 회원 가입 및 회비 납부 절차
 
-> 최신개정일: 2025-11-18  
+> 최신개정일: 2026-02-20  
 
 ## 1. 개요
 
@@ -17,14 +17,9 @@
 
 ## 2. 용어 및 상태 정의
 
-### 2.1 UserStatus
+### 2.1 회원 상태
 
-백엔드 `src/model/user.py` 기준, 회원 상태는 다음 Enum으로 관리된다.
-
-- `active` – 회비 납부 완료된 정상 회원  
-- `standby` – 회비 납부 대기 상태이지만 회원으로 취급  
-- `pending` – 과거 플로우에서 사용하던 중간 상태  
-- `banned` – 차단된 사용자
+[design/user.md](../design/user.md) 참고. is_active, is_banned에 따라 active, inactive, banned 상태로 구분됨.
 
 ### 2.2 UserRole
 
@@ -36,7 +31,7 @@
 
 신규 가입 시 기본값:
 - `role = newcomer`
-- `status = standby`
+- `status: inactive`
 
 ## 3. 회원가입 플로우
 
@@ -56,7 +51,7 @@ Google OAuth로 로그인하여 session 확보.
 
 ### 3.4 /api/user/create
 프론트에서 제출 → 백엔드가 신규 사용자 생성:
-- status = standby
+- status: inactive
 - role = newcomer
 
 ### 3.5 /api/auth/login
@@ -70,6 +65,9 @@ Google OAuth로 로그인하여 session 확보.
 
 ## 5. 입금 확인 및 처리 (임원진)
 
+### 5.0 입금 확인 자동 처리
+deposit app을 회비 수납 담당자의 휴대전화에 설치하면 앱이 자동으로 알림을 읽어 백엔드 서버로 입금 기록을 전송한다. CSV 업로드 시 처리되는 방식과 동일하게 처리된다. 앱이 입금 기록을 자동으로 전송하기 위해서는 회비 수납 담당자가 국민은행 앱을 사용하고, 해당 계좌로 회비가 입금되어야 한다. 
+
 ### 5.1 CSV 준비
 은행 사이트에서 거래내역 다운로드 → CSV 저장.
 
@@ -78,24 +76,24 @@ CSV 업로드 시:
 - StandbyReqTbl 기반 매칭  
 - user 기반 2차 매칭  
 - 금액 검증  
-- 성공 시 user.status = active로 자동 전환됨
+- 성공 시 `active`로 자동 전환됨
 
 ### 5.3 수동 처리
-StandbyReqTbl 또는 user 기반으로 active로 승급.
+StandbyReqTbl 또는 user 기반으로 `active`로 승급.
 
 ## 6. 접근 제어
-standby 또는 active 유저는 SIG/PIG 가입, 게시판 이용이 가능해짐
+`active` 유저는 SIG/PIG 가입, 게시판 이용이 가능해짐
 
-## 7. 기존 회원 처리
-임원진이 OB로 전환한 사용자는 `oldboy` 역할을 부여받고, `active` 상태로 유지됨.
-그 외의 기존 유저는 모두 `pending`으로 전환, 입금 확인 후에 `active` 상태로 전환됨.
+## 7. 정규 학기 시작 시 기존 회원 처리
+OB로 전환을 신청한 사용자는 `oldboy` 역할을 부여받고, `active` 상태로 유지됨.
+그 외의 기존 유저는 모두 `inactive`로 전환, 입금 확인 후에 `active` 상태로 전환됨.
 
 ## 8. 전체 흐름 요약
 
 1. Google 로그인  
 2. 백엔드 가입 여부 확인  
 3. 신규는 AuthClient에서 정보 입력  
-4. create_user → standby 상태로 가입  
+4. create_user → inactive 상태로 가입  
 5. 자동 로그인  
 6. 입금은 나중에 임원진이 처리  
 7. 입금 확인 후 active로 승격

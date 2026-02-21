@@ -1,20 +1,12 @@
 from datetime import datetime
-from enum import Enum as enum
 from typing import Optional
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.util import utcnow
 
 from .base import Base
-
-
-class UserStatus(str, enum):
-    active = "active"
-    pending = "pending"
-    standby = "standby"
-    banned = "banned"
 
 
 class UserRole(Base):
@@ -40,9 +32,8 @@ class User(Base):
         Integer, ForeignKey("user_role.level"), nullable=False
     )
     major_id: Mapped[int] = mapped_column(ForeignKey("major.id"), nullable=False)
-    status: Mapped[UserStatus] = mapped_column(
-        Enum(UserStatus), default=UserStatus.standby, nullable=False
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_banned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     discord_id: Mapped[Optional[int]] = mapped_column(
         default=None, nullable=True, unique=True
@@ -97,4 +88,26 @@ class OldboyApplicant(Base):
         DateTime(timezone=False),
         default_factory=utcnow,
         onupdate=utcnow,
+    )
+
+
+class Enrollment(Base):
+    __tablename__ = "enrollment"
+    __table_args__ = (
+        UniqueConstraint(
+            "year",
+            "semester",
+            "user_id",
+            name="uq_enrollment_year_semester_user_id",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    year: Mapped[int] = mapped_column(Integer, nullable=False)
+    semester: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), default_factory=utcnow
     )

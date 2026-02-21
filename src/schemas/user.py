@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import Optional
 
-from src.model import UserStatus
-
 from .base import BaseResponse
 
 
@@ -14,7 +12,8 @@ class UserResponse(BaseResponse):
     student_id: str
     role: int
     major_id: int
-    status: UserStatus
+    is_active: bool
+    is_banned: bool
     discord_id: Optional[int] = None
     discord_name: Optional[str] = None
     profile_picture: Optional[str] = None
@@ -29,6 +28,8 @@ class PublicUserResponse(BaseResponse):
     email: str
     name: str
     role: int
+    is_active: bool
+    is_banned: bool
     profile_picture: Optional[str] = None
     profile_picture_is_url: bool
 

@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 
 from src.core import logger
 from src.db import get_user_role_level
-from src.model import User, UserStatus
+from src.model import User
 from src.repositories import (
     MajorRepositoryDep,
     OldboyApplicantRepositoryDep,
@@ -24,7 +24,8 @@ class BodyCreateTestUser(BaseModel):
     student_id: str
     major_id: int
     role_name: str = "executive"
-    status: UserStatus = UserStatus.active
+    is_active: bool = True
+    is_banned: bool = False
     profile_picture: Optional[str] = None
     profile_picture_is_url: bool = False
     discord_id: Optional[int] = None
@@ -65,6 +66,11 @@ class TestUserService:
                 422,
                 detail="profile_picture is required when profile_picture_is_url is true",
             )
+        if body.is_active and body.is_banned:
+            raise HTTPException(
+                422,
+                detail="invalid status: is_active and is_banned cannot be true at the same time",
+            )
 
         major = self.major_repository.get_by_id(body.major_id)
         if not major:
@@ -80,7 +86,8 @@ class TestUserService:
             student_id=body.student_id,
             role=role_level,
             major_id=body.major_id,
-            status=body.status,
+            is_active=body.is_active,
+            is_banned=body.is_banned,
             profile_picture=body.profile_picture,
             profile_picture_is_url=body.profile_picture_is_url,
             discord_id=body.discord_id,

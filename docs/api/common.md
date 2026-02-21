@@ -35,20 +35,17 @@ x-jwt: USER_JWT
 
 ### 접속 차단 관련
 
-- `check_user_status_rule`에 등록된 `user_status`, `method`, `path` 조합에 대해 해당 `status`의 사용자가 해당 경로로 요청을 보내는 것을 차단한다. `path`는 SQL LIKE 패턴을 사용한다(예: `/api/sig/%`).
+- `check_user_status_rule`에 등록된 `method`, `path` 조합에 대해 비활성/제명 사용자가 해당 경로로 요청을 보내는 것을 차단한다. `path`는 SQL LIKE 패턴을 사용한다(예: `/api/sig/%`).
 - `CheckUserStatusMiddleware`가 이를 처리한다. 이 미들웨어는 사용자 컨텍스트 설정(UserAuth) 이후에 실행된다.
 - 로그인하지 않은 상태에서 규칙이 적용되는 경로로 요청하면 401, 규칙에 의해 요청이 차단되면 403을 반환한다.
 
 ```sql
 CREATE TABLE check_user_status_rule (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_status TEXT NOT NULL CHECK (user_status IN ('active', 'pending', 'standby', 'banned')),
     method TEXT NOT NULL CHECK (method IN ('GET', 'POST')),
     path TEXT NOT NULL,
-    UNIQUE (user_status, method, path)
+    UNIQUE (method, path)
 );
-
-CREATE INDEX idx_check_user_status_rule_method ON check_user_status_rule(method);
 ```
 
 ## 코딩 스타일
