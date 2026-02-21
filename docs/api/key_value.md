@@ -70,7 +70,8 @@ END;
   {
     "footer-message": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com",
     "president": "<hash-of-main-president>",
-    "vice-president": "<hash-of-vice-president>"
+    "vice-president": "<hash-of-vice-president>",
+    ...
   }
   ```
 

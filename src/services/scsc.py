@@ -7,7 +7,7 @@ from sqlalchemy import case, exists, select, update
 
 from src.amqp import mq_client
 from src.core import logger
-from src.db import SessionDep, get_user_role_level
+from src.db import SessionDep, backup_db_before_status_change, get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
 from src.model import PIG, SIG, Enrollment, SCSCGlobalStatus, SCSCStatus, User
 from src.repositories import (
@@ -18,7 +18,6 @@ from src.repositories import (
     UserRepositoryDep,
 )
 from src.util import (
-    backup_db_before_status_change,
     get_new_year_semester,
     map_semester_name,
 )
@@ -219,7 +218,7 @@ class SCSCService:
                     Enrollment.semester == next_semester,
                     Enrollment.user_id == User.id,
                 )
-            ).scalar_subquery()
+            )
             self.session.execute(
                 update(User)
                 .where(~User.is_banned, User.role <= get_user_role_level("member"))

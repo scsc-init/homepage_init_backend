@@ -7,8 +7,7 @@ from pathlib import Path
 
 from src.core import get_settings, logger
 from src.model import SCSCGlobalStatus
-
-from .helper import map_semester_name
+from src.util import map_semester_name
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 

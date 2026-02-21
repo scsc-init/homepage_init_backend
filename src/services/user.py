@@ -184,7 +184,8 @@ class UserService:
         phone: Optional[str] = None,
         student_id: Optional[str] = None,
         user_role: Optional[str] = None,
-        status: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        is_banned: Optional[bool] = None,
         discord_id: Optional[str] = None,
         discord_name: Optional[str] = None,
         major_id: Optional[int] = None,
@@ -200,8 +201,10 @@ class UserService:
             filters["student_id"] = student_id
         if user_role:
             filters["role"] = get_user_role_level(user_role)
-        if status:
-            filters["status"] = status
+        if is_active:
+            filters["is_active"] = is_active
+        if is_banned:
+            filters["is_banned"] = is_banned
         if major_id:
             filters["major_id"] = major_id
 
@@ -548,12 +551,9 @@ class StandbyService:
         if not user.is_banned and user.is_active:
             raise HTTPException(409, detail="the user is already active")
 
-        user.is_active = True
-        user.is_banned = False
-        self.user_repository.update(user)
+        self._activate_and_enroll_user(user)
 
         standbyreq = self.standby_repository.get_by_user_id(body.id)
-
         if standbyreq:
             standbyreq.is_checked = True
             standbyreq.deposit_name = f"Manually by {current_user.name}"
@@ -752,7 +752,11 @@ class StandbyService:
                     record=deposit,
                     users=matching_users,
                 )
-            self._verify_enroll_user_ctrl(user, stby_user, deposit)
+            self._activate_and_enroll_user(user)
+            stby_user.deposit_time = deposit.deposit_time
+            stby_user.deposit_name = deposit.deposit_name
+            stby_user.is_checked = True
+            self.standby_repository.update(stby_user)
             logger.info(
                 f"info_type=deposit ; deposit={deposit} ; users={matching_users}"
             )
@@ -770,14 +774,14 @@ class StandbyService:
                 users=[],
             )
 
-    def _verify_enroll_user_ctrl(
-        self, user: User, stby_req: StandbyReqTbl, deposit: DepositDTO
-    ) -> None:
+    def _activate_and_enroll_user(self, user: User):
         user.is_active = True
         user.is_banned = False
-        if user.role == get_user_role_level("newcomer"):
+        if user.role < get_user_role_level("member"):
             if self.enrollment_repository.exists_by_user_id(user.id):
                 user.role = get_user_role_level("member")
+            else:
+                user.role = get_user_role_level("newcomer")
         year = self.scsc_global_status.year
         semester = self.scsc_global_status.semester
         grant_cnt_str = self.kv_service.get_kv_value(
@@ -796,10 +800,6 @@ class StandbyService:
             )
             year, semester = get_new_year_semester(year, semester)
         self.user_repository.update(user)
-        stby_req.deposit_time = deposit.deposit_time
-        stby_req.deposit_name = deposit.deposit_name
-        stby_req.is_checked = True
-        self.standby_repository.update(stby_req)
 
 
 StandbyServiceDep = Annotated[StandbyService, Depends()]

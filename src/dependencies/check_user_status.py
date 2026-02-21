@@ -34,7 +34,7 @@ async def check_user_status(
         )
         raise HTTPException(
             status_code=403,
-            detail=f"inactive user cannot access path={request.url.path}",
+            detail=f"inactive/banned user cannot access path={request.url.path}",
         )
 
     return

@@ -48,8 +48,8 @@
 - 졸업생이 정회원 전환 시
   * (oldboy, *) -> (member, inactive)
 - SCSC 전역 상태가 active -> inactive/recruiting 변경 시(학기 변경 시)
-  * (active, <member) -> (active/inactive, *)
+  * (active, <=member) -> (active/inactive, *)
   * 다음 학기 등록 기록이 있으면 active, 그렇지 않으면 inactive로 변경
 - SCSC 전역 상태가 active -> inactive(정규학기로 변경 시)
-  * (inactive, <member) -> (inactive, dormant)
+  * (inactive, <=member) -> (inactive, dormant)
   * 모든 졸업생 전환 신청 승인

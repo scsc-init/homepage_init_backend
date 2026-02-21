@@ -34,8 +34,8 @@ WHEN
     OLD.role != NEW.role OR
     OLD.is_active != NEW.is_active OR
     OLD.is_banned != NEW.is_banned OR
-    OLD.discord_id != NEW.discord_id OR
-    OLD.discord_name != NEW.discord_name OR
+    OLD.discord_id IS NOT NEW.discord_id OR
+    OLD.discord_name IS NOT NEW.discord_name OR
     OLD.major_id != NEW.major_id
 BEGIN
     UPDATE user

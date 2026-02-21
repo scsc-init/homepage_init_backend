@@ -1,6 +1,5 @@
 from typing import Final
 
-from .db_backup import backup_db_before_status_change
 from .helper import (
     DepositDTO,
     generate_user_hash,

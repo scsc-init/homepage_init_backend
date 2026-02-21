@@ -19,7 +19,7 @@
 
 ### 2.1 회원 상태
 
-[design/user.md](../design/user.md) 참고
+[design/user.md](../design/user.md) 참고. is_active, is_banned에 따라 active, inactive, banned 상태로 구분됨.
 
 ### 2.2 UserRole
 
