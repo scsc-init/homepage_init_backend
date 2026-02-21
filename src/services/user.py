@@ -201,9 +201,9 @@ class UserService:
             filters["student_id"] = student_id
         if user_role:
             filters["role"] = get_user_role_level(user_role)
-        if is_active:
+        if is_active is not None:
             filters["is_active"] = is_active
-        if is_banned:
+        if is_banned is not None:
             filters["is_banned"] = is_banned
         if major_id:
             filters["major_id"] = major_id

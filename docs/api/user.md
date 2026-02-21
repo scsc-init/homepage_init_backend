@@ -50,8 +50,8 @@ WHEN
     OLD.role != NEW.role OR
     OLD.is_active != NEW.is_active OR
     OLD.is_banned != NEW.is_banned OR
-    OLD.discord_id != NEW.discord_id OR
-    OLD.discord_name != NEW.discord_name OR
+    OLD.discord_id IS NOT NEW.discord_id OR
+    OLD.discord_name IS NOT NEW.discord_name OR
     OLD.major_id != NEW.major_id
 BEGIN
     UPDATE user
@@ -794,15 +794,15 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - `result_msg`: "해당 입금 기록에 대응하는 사용자가 사용자 테이블에 존재하지 않습니다"
 - `users`: `[]`
 
-##### `user` 테이블의 사용자 상태가 pending이 아님
-- `user` 테이블에 입금자명에 대응하는 것이 있지만, `status`가 `pending`이 아닌 경우
+##### 사용자 상태가 inactive가 아님
+- `user` 테이블에 입금자명에 대응하는 것이 있지만, `is_active or is_banned`인 경우
 - `result_code`: 412
-- `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 pending 상태가 아닙니다"
+- `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 비활성 상태가 아닙니다"
 - `users`: 해당 입금 기록에 대응하는 사용자 리스트
 
 ##### `standby_req_tbl` 데이터 추가 관련
 - 이 단계까지 도달한다면 `user` 테이블에 입금자명에 대응하는 사용자가 `standby_req_tbl` 테이블에 없을 경우 해당 사용자를 enroll(`/api/user/enroll`과 동일한 효과)합니다.
-- 따라서 `standby_req_tbl`에 데이터가 생성되고 사용자의 상태가 `standby`로 변경됩니다. 
+- 따라서 `standby_req_tbl`에 데이터가 생성됩니다. 
 
 ##### 입금액 부족
 - 입금액이 기준보다 적은 경우
@@ -814,12 +814,6 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - 입금액이 기준보다 많은 경우
 - `result_code`: 413
 - `result_msg`: "입금액이 {get_settings().enrollment_fee}원보다 많습니다"
-- `users`: 해당 입금 기록에 대응하는 사용자 리스트
-
-##### 사용자 상태가 standby가 아님
-- 사용자의 `status`가 `standby`이 아닌 경우
-- `result_code`: 412
-- `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 standby 상태가 아닙니다"
 - `users`: 해당 입금 기록에 대응하는 사용자 리스트
 
 ##### 성공

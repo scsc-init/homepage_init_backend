@@ -241,6 +241,7 @@ class SCSCService:
                     User.role <= get_user_role_level("member"),
                 )
                 .values(role=get_user_role_level("dormant"))
+                .execution_options(synchronize_session=False)
             )
 
         # lastly, update the scsc global status

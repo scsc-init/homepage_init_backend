@@ -33,7 +33,7 @@ def backup_db_before_status_change(scsc_global_status: SCSCGlobalStatus) -> Path
     semester_label = map_semester_name.get(semester, str(semester))
     suffix = sqlite_path.suffix or ".db"
     backup_name = (
-        f"{sqlite_path.stem}_{year}_{semester_label}_{status}_{timestamp}_before_status_change"
+        f"{sqlite_path.stem}_{year}_{semester_label}_{status.value}_{timestamp}_before_status_change"
         f"{suffix}"
     )
     backup_path = backup_dir / backup_name

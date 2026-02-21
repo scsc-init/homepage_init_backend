@@ -56,7 +56,7 @@ END;
   ```json
   {
     "key": "footer-message",
-    "value": "서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com"
+    "value": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com"
   }
   ```
 - **Status Codes**:
