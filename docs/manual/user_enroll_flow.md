@@ -86,7 +86,7 @@ StandbyReqTbl 또는 user 기반으로 `active`로 승급.
 
 ## 7. 정규 학기 시작 시 기존 회원 처리
 OB로 전환을 신청한 사용자는 `oldboy` 역할을 부여받고, `active` 상태로 유지됨.
-그 외의 기존 유저는 모두 `inactive`으로 전환, 입금 확인 후에 `active` 상태로 전환됨.
+그 외의 기존 유저는 모두 `inactive`로 전환, 입금 확인 후에 `active` 상태로 전환됨.
 
 ## 8. 전체 흐름 요약
 

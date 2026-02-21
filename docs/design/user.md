@@ -10,9 +10,10 @@
 회원 상태는 `user` 테이블의 두 플래그 변수로 관리된다.
 
 - `is_active`: 활성 여부
-- `is_banned`: 차단 여부
+- `is_banned`: 제명 여부
 
 편의상 두 변수에 따른 상태를 다음 용어로 명명한다.
+
 |is_active|is_banned|상태|
 |---|---|---|
 |0|0|inactive|

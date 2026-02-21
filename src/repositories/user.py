@@ -120,7 +120,7 @@ class OldboyApplicantRepository(CRUDRepository[OldboyApplicant, str]):
         return self.session.scalars(stmt).all()
 
 
-class EnrollmentRepository(CRUDRepository[Enrollment, str]):
+class EnrollmentRepository(CRUDRepository[Enrollment, int]):
     @property
     def model(self) -> type[Enrollment]:
         return Enrollment

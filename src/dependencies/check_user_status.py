@@ -14,7 +14,7 @@ async def check_user_status(
     current_user: NullableUserDep,
     check_user_status_rule_repository: CheckUserStatusRuleRepositoryDep,
 ):
-    if current_user and current_user.is_active:
+    if current_user and current_user.is_active and not current_user.is_banned:
         return
 
     blacklist_rules = check_user_status_rule_repository.get_blacklist_rules_by_request(

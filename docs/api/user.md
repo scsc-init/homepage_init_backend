@@ -16,7 +16,8 @@ CREATE TABLE user (
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
     role INTEGER NOT NULL,
-    status TEXT DEFAULT 'standby' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
+    is_active BOOLEAN NOT NULL DEFAULT 0,
+    is_banned BOOLEAN NOT NULL DEFAULT 0,
     discord_id INTEGER UNIQUE DEFAULT NULL,
     discord_name TEXT UNIQUE DEFAULT NULL,
     profile_picture TEXT,
@@ -48,7 +49,8 @@ WHEN
     OLD.phone != NEW.phone OR
     OLD.student_id != NEW.student_id OR
     OLD.role != NEW.role OR
-    OLD.status != NEW.status OR
+    OLD.is_active != NEW.is_active OR
+    OLD.is_banned != NEW.is_banned OR
     OLD.discord_id != NEW.discord_id OR
     OLD.discord_name != NEW.discord_name OR
     OLD.major_id != NEW.major_id

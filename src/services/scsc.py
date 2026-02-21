@@ -236,7 +236,11 @@ class SCSCService:
 
             self.session.execute(
                 update(User)
-                .where(User.is_active, User.role < get_user_role_level("member"))
+                .where(
+                    ~User.is_active,
+                    ~User.is_banned,
+                    User.role <= get_user_role_level("member"),
+                )
                 .values(role=get_user_role_level("dormant"))
             )
 

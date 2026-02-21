@@ -156,7 +156,7 @@ class UserService:
         if not user:
             raise HTTPException(404, detail="user not found")
 
-        if not user.is_active and not user.is_banned:
+        if user.is_active or user.is_banned:
             raise HTTPException(
                 400, detail="Only not active and not banned user can enroll"
             )
@@ -367,19 +367,22 @@ class UserService:
                 raise HTTPException(422, detail="invalid student_id")
             user.student_id = body.student_id
 
+        if (body.is_active is None) + (body.is_banned is None) == 1:
+            raise HTTPException(
+                422, detail="both is_active and is_banned should be set"
+            )
         if body.is_active and body.is_banned:
             raise HTTPException(
                 422,
-                detail="invalid status: is_active and is_banned cannot be true at the same time",
+                detail="is_active and is_banned cannot be true at the same time",
             )
 
         if body.name:
             user.name = body.name
         if body.major_id:
             user.major_id = body.major_id
-        if body.is_active:
+        if body.is_active is not None and body.is_banned is not None:
             user.is_active = body.is_active
-        if body.is_banned:
             user.is_banned = body.is_banned
         if body.discord_id:
             user.discord_id = body.discord_id
@@ -542,7 +545,7 @@ class StandbyService:
         user = self.user_repository.get_by_id(body.id)
         if not user:
             raise HTTPException(404, detail="user not found")
-        if user.is_active:
+        if not user.is_banned and user.is_active:
             raise HTTPException(409, detail="the user is already active")
 
         user.is_active = True
@@ -777,12 +780,17 @@ class StandbyService:
                 user.role = get_user_role_level("member")
         year = self.scsc_global_status.year
         semester = self.scsc_global_status.semester
-        grant_count = self.kv_service.get_kv_value(
+        grant_cnt_str = self.kv_service.get_kv_value(
             f"grant_semester_count_{semester}"
         ).value
-        if grant_count is None:
+        if grant_cnt_str is None:
             raise HTTPException(500, detail=f"grant_semester_count_{semester} is null")
-        for _ in range(int(grant_count)):
+        grant_cnt = int(grant_cnt_str) if grant_cnt_str.isdigit() else 0
+        if grant_cnt <= 0:
+            raise HTTPException(
+                500, detail=f"grant_semester_count_{semester} is not a positive integer"
+            )
+        for _ in range(grant_cnt):
             self.enrollment_repository.create(
                 Enrollment(year=year, semester=semester, user_id=user.id)
             )
