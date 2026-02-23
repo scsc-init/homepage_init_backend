@@ -48,5 +48,12 @@ class KvService:
 
         return updated_entry
 
+    def get_enrollment_grant_until(self) -> tuple[int, int]:
+        grant_until_str = self.get_kv_value("enrollment_grant_until").value
+        if grant_until_str is None:
+            raise HTTPException(500, detail="enrollment_grant_until is null")
+        until_year, until_semester = map(int, grant_until_str.split("-"))
+        return until_year, until_semester
+
 
 KvServiceDep = Annotated[KvService, Depends()]

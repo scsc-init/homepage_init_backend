@@ -18,10 +18,11 @@ from src.repositories import (
     UserRepositoryDep,
 )
 from src.util import (
-    get_new_year_semester,
+    get_next_year_semester,
     map_semester_name,
 )
 
+from .key_value import KvServiceDep
 from .user import OldboyServiceDep, UserServiceDep
 
 _valid_scsc_global_status_update = (
@@ -62,6 +63,7 @@ class SCSCService:
         user_repository: UserRepositoryDep,
         standby_repository: StandbyReqTblRepositoryDep,
         oldboy_repository: OldboyApplicantRepositoryDep,
+        kv_service: KvServiceDep,
     ):
         self.session = session
         self.scsc_global_status = scsc_global_status
@@ -72,6 +74,7 @@ class SCSCService:
         self.user_repository = user_repository
         self.standby_repository = standby_repository
         self.oldboy_repository = oldboy_repository
+        self.kv_service = kv_service
 
     def get_global_status(self) -> SCSCGlobalStatus:
         return self.scsc_global_status
@@ -94,7 +97,7 @@ class SCSCService:
         for ig in igs:
             try:
                 if ig.should_extend:
-                    ig.year, ig.semester = get_new_year_semester(
+                    ig.year, ig.semester = get_next_year_semester(
                         scsc_global_status.year, scsc_global_status.semester
                     )
                     ig.status = SCSCStatus.recruiting
@@ -128,6 +131,16 @@ class SCSCService:
         ) not in _valid_scsc_global_status_update:
             raise HTTPException(400, "invalid sig global status update")
 
+        enrollment_grant_until = self.kv_service.get_enrollment_grant_until()
+        if scsc_global_status.status == SCSCStatus.active:
+            if (
+                scsc_global_status.year,
+                scsc_global_status.semester,
+            ) >= enrollment_grant_until:
+                raise HTTPException(
+                    412, "set valid enrollment grant policy before change semester"
+                )
+
         try:
             backup_db_before_status_change(scsc_global_status)
         except Exception as exc:
@@ -142,7 +155,6 @@ class SCSCService:
 
         # start of recruiting
         if new_status == SCSCStatus.recruiting:
-            # archive category update
             await mq_client.send_discord_bot_request_no_reply(
                 action_code=3002,
                 body={
@@ -208,7 +220,7 @@ class SCSCService:
             await self._process_igs_change_semester(SIG, scsc_global_status)
             await self._process_igs_change_semester(PIG, scsc_global_status)
 
-            next_year, next_semester = get_new_year_semester(
+            next_year, next_semester = get_next_year_semester(
                 scsc_global_status.year, scsc_global_status.semester
             )
 
@@ -225,10 +237,10 @@ class SCSCService:
                 .values(is_active=case((enrolled_exists, True), else_=False))
                 .execution_options(synchronize_session=False)
             )
+            self.standby_repository.delete_all()
 
         # start of inactive (regular semester starts)
         if new_status == SCSCStatus.inactive:
-            self.standby_repository.delete_all()
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 await self.oldboy_service.process_applicant(applicant.id)
@@ -244,10 +256,10 @@ class SCSCService:
                 .execution_options(synchronize_session=False)
             )
 
-        # lastly, update the scsc global status
+        # update the scsc global status
         if scsc_global_status.status == SCSCStatus.active:
             scsc_global_status.year, scsc_global_status.semester = (
-                get_new_year_semester(
+                get_next_year_semester(
                     scsc_global_status.year, scsc_global_status.semester
                 )
             )

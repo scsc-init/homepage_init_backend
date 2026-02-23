@@ -3,7 +3,7 @@ from typing import Final
 from .helper import (
     DepositDTO,
     generate_user_hash,
-    get_new_year_semester,
+    get_next_year_semester,
     map_semester_name,
     process_standby_user,
     split_filename,

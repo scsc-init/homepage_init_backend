@@ -56,10 +56,6 @@ WHERE user_status = 'banned';
 DROP TABLE check_user_status_rule;
 ALTER TABLE check_user_status_rule_new RENAME TO check_user_status_rule;
 
-INSERT INTO key_value (key, value) VALUES 
-    ('grant_semester_count_1', '2'),
-    ('grant_semester_count_2', '3'),
-    ('grant_semester_count_3', '2'),
-    ('grant_semester_count_4', '3');
+INSERT INTO key_value (key, value) VALUES ('enrollment_grant_until', '2026-2');
 
 COMMIT;

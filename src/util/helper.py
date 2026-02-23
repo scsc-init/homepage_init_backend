@@ -64,7 +64,7 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
-def get_new_year_semester(old_year: int, old_semester: int) -> tuple[int, int]:
+def get_next_year_semester(old_year: int, old_semester: int) -> tuple[int, int]:
     return old_year + old_semester // 4, old_semester % 4 + 1
 
 

@@ -38,14 +38,6 @@ async def login(
     return await user_service.login(body)
 
 
-@user_router.post("/user/enroll", status_code=204)
-async def enroll_user(
-    current_user: UserDep,
-    user_service: UserServiceDep,
-) -> None:
-    await user_service.enroll_user(current_user.id)
-
-
 @user_router.get("/user/profile")
 async def get_my_profile(current_user: UserDep) -> UserResponse:
     return UserResponse.model_validate(current_user)

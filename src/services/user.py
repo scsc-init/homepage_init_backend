@@ -26,7 +26,7 @@ from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
-    get_new_year_semester,
+    get_next_year_semester,
     is_valid_img_url,
     is_valid_phone,
     is_valid_student_id,
@@ -150,26 +150,6 @@ class UserService:
 
         logger.info(f"info_type=user_created ; user_id={user.id}")
         return UserResponse.model_validate(user)
-
-    async def enroll_user(self, user_id: str) -> None:
-        user = self.user_repository.get_by_id(user_id)
-        if not user:
-            raise HTTPException(404, detail="user not found")
-
-        if user.is_active or user.is_banned:
-            raise HTTPException(
-                400, detail="Only not active and not banned user can enroll"
-            )
-
-        stby_req_tbl = StandbyReqTbl(
-            standby_user_id=user.id,
-            user_name=user.name,
-            deposit_name=f"{user.name}{user.phone[-2:]}",
-            is_checked=False,
-        )
-        self.standby_repository.create(stby_req_tbl)
-
-        logger.info(f"info_type=user_enrolled ; user_id={user_id}")
 
     def get_user_by_id(self, id: str) -> UserResponse:
         user = self.user_repository.get_by_id(id)
@@ -548,8 +528,10 @@ class StandbyService:
         user = self.user_repository.get_by_id(body.id)
         if not user:
             raise HTTPException(404, detail="user not found")
-        if not user.is_banned and user.is_active:
-            raise HTTPException(409, detail="the user is already active")
+        if not self._is_enrollable(user):
+            raise HTTPException(
+                409, detail="the user is already enrolled until the target semester"
+            )
 
         self._activate_and_enroll_user(user)
 
@@ -688,13 +670,13 @@ class StandbyService:
                     )
 
                 user = matching_users_error[0]
-                if user.is_active or user.is_banned:
+                if not self._is_enrollable(user):
                     logger.error(
-                        f"err_type=deposit ; err_code=412 ; msg=user must be neither active nor banned but {"active" if user.is_active else "banned"} ; deposit={deposit} ; users={matching_users}"
+                        f"err_type=deposit ; err_code=412 ; msg=user is not enrollable ; deposit={deposit} ; users={matching_users}"
                     )
                     return ProcessDepositResult(
                         result_code=412,
-                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {"active" if user.is_active else "banned"}로 비활성 상태가 아닙니다",
+                        result_msg="해당 입금 기록에 대응하는 사용자는 더 등록할 수 없습니다.",
                         record=deposit,
                         users=matching_users,
                     )
@@ -742,13 +724,13 @@ class StandbyService:
                     record=deposit,
                     users=matching_users,
                 )
-            if user.is_active or user.is_banned:
+            if not self._is_enrollable(user):
                 logger.error(
-                    f"err_type=deposit ; err_code=412 ; msg=user must be neither active nor banned but {"active" if user.is_active else "banned"} ; deposit={deposit} ; users={matching_users}"
+                    f"err_type=deposit ; err_code=412 ; msg=user is not enrollable ; deposit={deposit} ; users={matching_users}"
                 )
                 return ProcessDepositResult(
                     result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {"active" if user.is_active else "banned"}로 비활성 상태가 아닙니다",
+                    result_msg="해당 입금 기록에 대응하는 사용자는 더 등록할 수 없습니다.",
                     record=deposit,
                     users=matching_users,
                 )
@@ -782,24 +764,52 @@ class StandbyService:
                 user.role = get_user_role_level("member")
             else:
                 user.role = get_user_role_level("newcomer")
-        year = self.scsc_global_status.year
-        semester = self.scsc_global_status.semester
-        grant_cnt_str = self.kv_service.get_kv_value(
-            f"grant_semester_count_{semester}"
-        ).value
-        if grant_cnt_str is None:
-            raise HTTPException(500, detail=f"grant_semester_count_{semester} is null")
-        grant_cnt = int(grant_cnt_str) if grant_cnt_str.isdigit() else 0
-        if grant_cnt <= 0:
-            raise HTTPException(
-                500, detail=f"grant_semester_count_{semester} is not a positive integer"
+        last_enrollment = self.enrollment_repository.get_last_by_user_id(user.id)
+        if last_enrollment is not None:
+            year, semester = get_next_year_semester(
+                last_enrollment.year, last_enrollment.semester
             )
-        for _ in range(grant_cnt):
+        else:
+            year = self.scsc_global_status.year
+            semester = self.scsc_global_status.semester
+        until_year, until_semester = self._get_enrollment_grant_until()
+        while (year, semester) <= (until_year, until_semester):
             self.enrollment_repository.create(
                 Enrollment(year=year, semester=semester, user_id=user.id)
             )
-            year, semester = get_new_year_semester(year, semester)
+            year, semester = get_next_year_semester(year, semester)
         self.user_repository.update(user)
+
+    def _get_enrollment_grant_until(self):
+        year = self.scsc_global_status.year
+        semester = self.scsc_global_status.semester
+        until_year, until_semester = self.kv_service.get_enrollment_grant_until()
+        if until_year > year + 5:
+            raise HTTPException(
+                500,
+                detail="year of enrollment_grant_until is greater than (current year + 5)",
+            )
+        if semester not in (1, 2, 3, 4):
+            raise HTTPException(
+                500, detail="semester of enrollment_grant_until is not in (1,2,3,4)"
+            )
+        if (year, semester) > (until_year, until_semester):
+            raise HTTPException(
+                500,
+                detail="enrollment_grant_until is less than the current (year, semester)",
+            )
+        return until_year, until_semester
+
+    def _is_enrollable(self, user: User) -> bool:
+        if user.is_banned:
+            return False
+        last_enrollment = self.enrollment_repository.get_last_by_user_id(user.id)
+        if last_enrollment is None:
+            return True
+        return (
+            last_enrollment.year,
+            last_enrollment.semester,
+        ) < self._get_enrollment_grant_until()
 
 
 StandbyServiceDep = Annotated[StandbyService, Depends()]

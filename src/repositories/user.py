@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import delete, exists, func, select
+from sqlalchemy import delete, desc, exists, func, select
 
 from src.db import get_user_role_level
 from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserRole
@@ -130,6 +130,14 @@ class EnrollmentRepository(CRUDRepository[Enrollment, int]):
             self.session.scalar(
                 select(exists(select(1).where(Enrollment.user_id == user_id)))
             )
+        )
+
+    def get_last_by_user_id(self, user_id: str) -> Enrollment | None:
+        return self.session.scalar(
+            select(Enrollment)
+            .where(Enrollment.user_id == user_id)
+            .order_by(desc(Enrollment.year), desc(Enrollment.semester))
+            .limit(1)
         )
 
 

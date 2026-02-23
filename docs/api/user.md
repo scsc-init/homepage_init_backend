@@ -161,19 +161,6 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
-## Enroll User (사용자 등록)
-
-* **Method**: `POST`
-* **URL**: `/api/user/enroll`
-* **설명**: `inactive` 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
-* **Status Codes**:
-  * `204 No Content`: 사용자가 성공적으로 `standby_req_tbl` 대기열에 등록되었습니다.
-  * `400 Bad Request`: 현재 로그인된 사용자의 상태가 `inactive`가 아닌 경우
-  * `401 Unauthorized`: 로그인하지 않았거나 유효한 인증 정보가 없습니다.
-  * `404 Not Found`: (이 경우는 내부적으로 발생할 가능성이 매우 낮지만, 만약 `current_user.id`에 해당하는 사용자를 데이터베이스에서 찾을 수 없을 때 반환될 수 있습니다.)
-
----
-
 ## Get My Profile (내 정보 조회)
 
 - **Method**: `GET`  
@@ -469,7 +456,7 @@ def generate_user_hash(email: str) -> str:
     - `id` (string, required): 변경할 사용자 계정의 고유 ID.
 - **Request Body**:
     * 모든 필드는 선택 사항입니다. 제공된 필드만 업데이트됩니다.
-    * `is_active`, `is_banned`를 설정하려면 반드시 두 값 모두 제공되어야 하며, 동시에 true가 아니어야 합니다.  
+    * `is_active`, `is_banned`를 변경하려면 반드시 두 값 모두 제공되어야 하며, 동시에 true가 아니어야 합니다.  
 
 ```json
 {
