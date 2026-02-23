@@ -131,8 +131,8 @@ class SCSCService:
         ) not in _valid_scsc_global_status_update:
             raise HTTPException(400, "invalid sig global status update")
 
-        enrollment_grant_until = self.kv_service.get_enrollment_grant_until()
         if scsc_global_status.status == SCSCStatus.active:
+            enrollment_grant_until = self.kv_service.get_enrollment_grant_until()
             if (
                 scsc_global_status.year,
                 scsc_global_status.semester,
@@ -267,7 +267,6 @@ class SCSCService:
                     scsc_global_status.year, scsc_global_status.semester
                 )
             )
-            self.session.add(scsc_global_status)
         old_status = scsc_global_status.status
         scsc_global_status.status = new_status
         self.session.add(scsc_global_status)

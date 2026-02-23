@@ -611,7 +611,7 @@ def generate_user_hash(email: str) -> str:
 
 - **Method**: `POST`
 - **URL**: `/api/user/oldboy/reactivate`
-- **Description**: 로그인한 사용자의 권한이 `oldboy`이면 권한을 `member`로 바꾸고 상태를 `pending`으로 변경합니다. 기존 `oldboy_applicant` 기록이 삭제됩니다. 
+- **Description**: 로그인한 사용자의 권한이 `oldboy`이면 권한을 `member`로 바꾸고 상태를 `inactive`으로 변경합니다. 기존 `oldboy_applicant` 기록이 삭제됩니다. 
 - **Status Codes**:
   - `204 No Content`
   - `400 Bad Request`: 사용자의 권한이 `oldboy`가 아님
@@ -670,7 +670,7 @@ def generate_user_hash(email: str) -> str:
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
   - `404 Not Found` (사용자가 없음)
-  - `409 Conflict` (이미 active인 사용자에 대해 요청함)
+  - `409 Conflict` (이미 등록할 수 없는 사용자에 대해 요청함)
 
 ---
 
@@ -783,7 +783,7 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 
 ##### 사용자가 등록 가능한 상황이 아님
 - `user` 테이블에 입금자명에 대응하는 것이 있지만, 해당 사용자가 등록 가능한 상황이 아닌 경우
-  - 등록 가능한 상황이란 지금 등록 시 등록 정책에 따라 추가로 부여되는 등록 학기가 있으며 제명되지 않은 상황를 말한다. 
+  - 등록 가능한 상황이란 지금 등록 시 등록 정책에 따라 추가로 부여되는 등록 학기가 있으며 제명되지 않은 상황을 말한다. 
 - `result_code`: 412
 - `result_msg`: "해당 입금 기록에 대응하는 사용자는 더 등록할 수 없습니다."
 - `users`: 해당 입금 기록에 대응하는 사용자 리스트

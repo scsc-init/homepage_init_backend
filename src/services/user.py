@@ -350,7 +350,7 @@ class UserService:
                 raise HTTPException(422, detail="invalid student_id")
             user.student_id = body.student_id
 
-        if (body.is_active is None) + (body.is_banned is None) == 1:
+        if (body.is_active is None) ^ (body.is_banned is None):
             raise HTTPException(
                 422, detail="both is_active and is_banned should be set"
             )
