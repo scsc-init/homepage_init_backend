@@ -39,12 +39,11 @@ class FileService:
     async def upload_file(
         self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
-        settings = get_settings()
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_ext=frozenset({"pdf", "docx", "pptx"})
         )
         uuid = create_uuid()
-        with open(path.join(settings.file_dir, f"{uuid}.{ext}"), "wb") as fp:
+        with open(path.join(get_settings().file_dir, f"{uuid}.{ext}"), "wb") as fp:
             fp.write(content)
 
         file_meta = FileMetadata(
@@ -59,7 +58,7 @@ class FileService:
             file_meta = self.file_metadata_repository.create(file_meta)
         except Exception:
             try:
-                os.remove(path.join(settings.file_dir, f"{uuid}.{ext}"))
+                os.remove(path.join(get_settings().file_dir, f"{uuid}.{ext}"))
             except OSError:
                 logger.warning(
                     "warn_type=file_upload_cleanup_failed ; %s",
@@ -81,7 +80,6 @@ class FileService:
     async def upload_image(
         self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
-        settings = get_settings()
         content, basename, ext, mime_type = await validate_and_read_file(
             file,
             valid_mime_type="image/",
@@ -89,7 +87,7 @@ class FileService:
         )
 
         uuid = create_uuid()
-        with open(path.join(settings.image_dir, f"{uuid}.{ext}"), "wb") as fp:
+        with open(path.join(get_settings().image_dir, f"{uuid}.{ext}"), "wb") as fp:
             fp.write(content)
 
         image = FileMetadata(
@@ -103,7 +101,7 @@ class FileService:
             image = self.file_metadata_repository.create(image)
         except Exception:
             try:
-                os.remove(path.join(settings.image_dir, f"{uuid}.{ext}"))
+                os.remove(path.join(get_settings().image_dir, f"{uuid}.{ext}"))
             except OSError:
                 logger.warning(
                     "warn_type=image_upload_cleanup_failed ; %s",
