@@ -10,3 +10,4 @@ class FileMetadataResponse(BaseResponse):
     mime_type: str
     owner: str | None = None
     created_at: datetime
+    url: str | None = None

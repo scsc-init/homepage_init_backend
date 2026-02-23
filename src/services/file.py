@@ -18,14 +18,33 @@ class FileService:
     ) -> None:
         self.file_metadata_repository = file_metadata_repository
 
+    def _attach_public_url(
+        self, metadata: FileMetadata, *, is_image: bool | None = None
+    ) -> None:
+        base_url = get_settings().public_base_url.rstrip("/")
+        if not base_url:
+            return
+
+        if is_image is None:
+            mime_type = (metadata.mime_type or "").lower()
+            is_image = mime_type.startswith("image/")
+
+        endpoint = (
+            f"/file/image/download/{metadata.id}"
+            if is_image
+            else f"/file/docs/download/{metadata.id}"
+        )
+        setattr(metadata, "url", f"{base_url}{endpoint}")
+
     async def upload_file(
         self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
+        settings = get_settings()
         content, basename, ext, mime_type = await validate_and_read_file(
             file, valid_ext=frozenset({"pdf", "docx", "pptx"})
         )
         uuid = create_uuid()
-        with open(path.join(get_settings().file_dir, f"{uuid}.{ext}"), "wb") as fp:
+        with open(path.join(settings.file_dir, f"{uuid}.{ext}"), "wb") as fp:
             fp.write(content)
 
         file_meta = FileMetadata(
@@ -40,7 +59,7 @@ class FileService:
             file_meta = self.file_metadata_repository.create(file_meta)
         except Exception:
             try:
-                os.remove(path.join(get_settings().file_dir, f"{uuid}.{ext}"))
+                os.remove(path.join(settings.file_dir, f"{uuid}.{ext}"))
             except OSError:
                 logger.warning(
                     "warn_type=file_upload_cleanup_failed ; %s",
@@ -49,6 +68,7 @@ class FileService:
                 )
             raise
 
+        self._attach_public_url(file_meta, is_image=False)
         return file_meta
 
     def get_docs_by_id(self, id: str) -> FileResponse:
@@ -61,6 +81,7 @@ class FileService:
     async def upload_image(
         self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
+        settings = get_settings()
         content, basename, ext, mime_type = await validate_and_read_file(
             file,
             valid_mime_type="image/",
@@ -68,7 +89,7 @@ class FileService:
         )
 
         uuid = create_uuid()
-        with open(path.join(get_settings().image_dir, f"{uuid}.{ext}"), "wb") as fp:
+        with open(path.join(settings.image_dir, f"{uuid}.{ext}"), "wb") as fp:
             fp.write(content)
 
         image = FileMetadata(
@@ -82,7 +103,7 @@ class FileService:
             image = self.file_metadata_repository.create(image)
         except Exception:
             try:
-                os.remove(path.join(get_settings().image_dir, f"{uuid}.{ext}"))
+                os.remove(path.join(settings.image_dir, f"{uuid}.{ext}"))
             except OSError:
                 logger.warning(
                     "warn_type=image_upload_cleanup_failed ; %s",
@@ -91,6 +112,7 @@ class FileService:
                 )
             raise
 
+        self._attach_public_url(image, is_image=True)
         return image
 
     def get_image_by_id(self, id: str) -> FileResponse:
@@ -107,6 +129,8 @@ class FileService:
         if not normalized:
             return []
         records = self.file_metadata_repository.get_by_ids(normalized)
+        for record in records:
+            self._attach_public_url(record)
         record_map = {record.id: record for record in records}
         return [record_map[i] for i in normalized if i in record_map]
 

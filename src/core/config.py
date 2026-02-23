@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     file_dir: str = "static/download/"
     file_max_size: int = 10000000
     article_dir: str = "static/article/"
+    public_base_url: str = ""
     user_check: bool = True
     enrollment_fee: int = 25000
     cors_all_accept: bool = False
