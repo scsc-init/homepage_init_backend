@@ -243,8 +243,12 @@ class SCSCService:
         if new_status == SCSCStatus.inactive:
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
-                await self.oldboy_service.process_applicant(applicant.id)
-
+                try:
+                    await self.oldboy_service.process_applicant(applicant.id)
+                except Exception as e:
+                    logger.error(
+                        f"err_type=process_applicant_during_scsc_global_status_update ; applicant.id={applicant.id} ; executor={current_user_id} ; msg={e}"
+                    )
             self.session.execute(
                 update(User)
                 .where(

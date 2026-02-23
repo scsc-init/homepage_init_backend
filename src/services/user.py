@@ -789,7 +789,7 @@ class StandbyService:
                 500,
                 detail="year of enrollment_grant_until is greater than (current year + 5)",
             )
-        if semester not in (1, 2, 3, 4):
+        if until_semester not in (1, 2, 3, 4):
             raise HTTPException(
                 500, detail="semester of enrollment_grant_until is not in (1,2,3,4)"
             )
