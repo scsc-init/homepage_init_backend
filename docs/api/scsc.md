@@ -80,5 +80,6 @@ status는 ('recruiting', 'active', 'inactive') 중 하나
   * `400 Bad Request` - 유효하지 않은 `status` 변경
   * `401 Unauthorized` - 인증 실패
   * `403 Forbidden` - 권한 없음 (임원이 아닌 경우)
+  * `412 Precondition Failed` - 등록 정책이 유효하지 않게 될 예정인 경우
 
 ---

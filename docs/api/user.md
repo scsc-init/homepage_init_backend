@@ -1,7 +1,7 @@
 # 회원 관련 DB, API 명세서
 
 > 최초작성일: 2025-05-01  
-> 최신개정일: 2025-09-05  
+> 최신개정일: 2026-02-21  
 > 최신개정자: 이한경  
 > 작성자: 이한경, 윤영우  
 
@@ -16,7 +16,8 @@ CREATE TABLE user (
     phone TEXT NOT NULL UNIQUE,
     student_id TEXT NOT NULL UNIQUE,
     role INTEGER NOT NULL,
-    status TEXT DEFAULT 'standby' NOT NULL CHECK (status IN ('active', 'pending', 'standby', 'banned')),
+    is_active BOOLEAN NOT NULL DEFAULT 0,
+    is_banned BOOLEAN NOT NULL DEFAULT 0,
     discord_id INTEGER UNIQUE DEFAULT NULL,
     discord_name TEXT UNIQUE DEFAULT NULL,
     profile_picture TEXT,
@@ -35,7 +36,6 @@ CREATE TABLE user (
 - phone은 `01012345678`처럼 대시 없는 숫자 문자열 형식. (`/^010\d{8}$/`)
 - student_id는 `202512345`처럼 대시 없는 숫자 문자열 형식. (`/^(\d{4})\d{5}$/`, group 1 should be valid year)
 - profile_picture에는 파일 위치(ex. `static/image/pfps/asdf.png`) 또는 이미지 URL이 들어가며, 전자의 경우 profile_picture_is_url이 false, 후자의 경우 true이다. 단, default값은 null이며 이 경우 프론트엔드에서 default 이미지로 처리한다.
-- status는 [`check_user_status_rule`](./common.md) 테이블에서도 사용한다. 
 
 ### SQL 관련
 ```sql
@@ -48,9 +48,10 @@ WHEN
     OLD.phone != NEW.phone OR
     OLD.student_id != NEW.student_id OR
     OLD.role != NEW.role OR
-    OLD.status != NEW.status OR
-    OLD.discord_id != NEW.discord_id OR
-    OLD.discord_name != NEW.discord_name OR
+    OLD.is_active != NEW.is_active OR
+    OLD.is_banned != NEW.is_banned OR
+    OLD.discord_id IS NOT NEW.discord_id OR
+    OLD.discord_name IS NOT NEW.discord_name OR
     OLD.major_id != NEW.major_id
 BEGIN
     UPDATE user
@@ -139,7 +140,8 @@ CREATE TABLE standby_req_tbl (
   "phone": "01012345678",
   "student_id": "202312345",
   "role": 200,
-  "status": "standby",
+  "is_active": false,
+  "is_banned": false,
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
@@ -159,19 +161,6 @@ CREATE TABLE standby_req_tbl (
 
 ---
 
-## Enroll User (사용자 등록)
-
-* **Method**: `POST`
-* **URL**: `/api/user/enroll`
-* **설명**: `pending` 또는 `standby` 상태의 사용자를 `active` 상태로 등록(활성화)하기 위한 `standby_req_tbl` 대기열에 등록하고 상태를 `standby`로 변경합니다. 이 엔드포인트는 로그인된 사용자의 현재 상태를 변경하는 데 사용됩니다.
-* **Status Codes**:
-  * `204 No Content`: 사용자가 성공적으로 `standby_req_tbl` 대기열에 등록되었습니다.
-  * `400 Bad Request`: 현재 로그인된 사용자의 상태가 `pending`이 아닌 경우
-  * `401 Unauthorized`: 로그인하지 않았거나 유효한 인증 정보가 없습니다.
-  * `404 Not Found`: (이 경우는 내부적으로 발생할 가능성이 매우 낮지만, 만약 `current_user.id`에 해당하는 사용자를 데이터베이스에서 찾을 수 없을 때 반환될 수 있습니다.)
-
----
-
 ## Get My Profile (내 정보 조회)
 
 - **Method**: `GET`  
@@ -186,7 +175,8 @@ CREATE TABLE standby_req_tbl (
   "phone": "01012345678",
   "student_id": "202312345",
   "role": 200,
-  "status": "active",
+  "is_active": true,
+  "is_banned": false,
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
@@ -239,7 +229,8 @@ CREATE TABLE standby_req_tbl (
   * `phone`: `str`
   * `student_id`: `str`
   * `user_role`: `str`
-  * `status`: `str`
+  * `is_active`: `bool`
+  * `is_banned`: `bool`
   * `discord_id`: `int`: 빈 문자열을 입력하면 null을 검색한다. 
   * `discord_name`: `str`: 빈 문자열을 입력하면 null을 검색한다. 
   * `major_id`: `int`
@@ -259,7 +250,8 @@ CREATE TABLE standby_req_tbl (
     "phone": "01012345678",
     "student_id": "202512345",
     "role": 500,
-    "status": "active",
+    "is_active": true,
+    "is_banned": false,
     "discord_id": null,
     "discord_name": null,
     "major_id": 1,
@@ -293,7 +285,8 @@ CREATE TABLE standby_req_tbl (
   "phone": "01012345678",
   "student_id": "202312345",
   "role": 200,
-  "status": "active",
+  "is_active": true,
+  "is_banned": false,
   "discord_id": null,
   "discord_name": null,
   "major_id": 1,
@@ -463,7 +456,7 @@ def generate_user_hash(email: str) -> str:
     - `id` (string, required): 변경할 사용자 계정의 고유 ID.
 - **Request Body**:
     * 모든 필드는 선택 사항입니다. 제공된 필드만 업데이트됩니다.
-    * `status` 필드의 가능한 값은 `active`, `pending`, `banned` 등 User 테이블 정의에서 `status`의 check 부분에 있는 값입니다. 
+    * `is_active`, `is_banned`를 변경하려면 반드시 두 값 모두 제공되어야 하며, 동시에 true가 아니어야 합니다.  
 
 ```json
 {
@@ -472,7 +465,8 @@ def generate_user_hash(email: str) -> str:
   "student_id": "202654321",
   "major_id": 3,
   "role": "executive",
-  "status": "active"
+  "is_active": true,
+  "is_banned": false
 }
 ```
 
@@ -617,7 +611,7 @@ def generate_user_hash(email: str) -> str:
 
 - **Method**: `POST`
 - **URL**: `/api/user/oldboy/reactivate`
-- **Description**: 로그인한 사용자의 권한이 `oldboy`이면 권한을 `member`로 바꾸고 상태를 `pending`으로 변경합니다. 기존 `oldboy_applicant` 기록이 삭제됩니다. 
+- **Description**: 로그인한 사용자의 권한이 `oldboy`이면 권한을 `member`로 바꾸고 상태를 `inactive`으로 변경합니다. 기존 `oldboy_applicant` 기록이 삭제됩니다. 
 - **Status Codes**:
   - `204 No Content`
   - `400 Bad Request`: 사용자의 권한이 `oldboy`가 아님
@@ -676,7 +670,7 @@ def generate_user_hash(email: str) -> str:
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (관리자(executive) 권한 없음)
   - `404 Not Found` (사용자가 없음)
-  - `409 Conflict` (이미 active인 사용자에 대해 요청함)
+  - `409 Conflict` (이미 등록할 수 없는 사용자에 대해 요청함)
 
 ---
 
@@ -787,15 +781,15 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - `result_msg`: "해당 입금 기록에 대응하는 사용자가 사용자 테이블에 존재하지 않습니다"
 - `users`: `[]`
 
-##### `user` 테이블의 사용자 상태가 pending이 아님
-- `user` 테이블에 입금자명에 대응하는 것이 있지만, `status`가 `pending`이 아닌 경우
+##### 사용자가 등록 가능한 상황이 아님
+- `user` 테이블에 입금자명에 대응하는 것이 있지만, 해당 사용자가 등록 가능한 상황이 아닌 경우
+  - 등록 가능한 상황이란 지금 등록 시 등록 정책에 따라 추가로 부여되는 등록 학기가 있으며 제명되지 않은 상황을 말한다. 
 - `result_code`: 412
-- `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 pending 상태가 아닙니다"
+- `result_msg`: "해당 입금 기록에 대응하는 사용자는 더 등록할 수 없습니다."
 - `users`: 해당 입금 기록에 대응하는 사용자 리스트
 
 ##### `standby_req_tbl` 데이터 추가 관련
-- 이 단계까지 도달한다면 `user` 테이블에 입금자명에 대응하는 사용자가 `standby_req_tbl` 테이블에 없을 경우 해당 사용자를 enroll(`/api/user/enroll`과 동일한 효과)합니다.
-- 따라서 `standby_req_tbl`에 데이터가 생성되고 사용자의 상태가 `standby`로 변경됩니다. 
+- 이 단계까지 도달한다면 `user` 테이블에 입금자명에 대응하는 사용자가 `standby_req_tbl` 테이블에 없을 경우 해당 사용자에 대한 `standby_req_tbl` 데이터를 생성됩니다. 
 
 ##### 입금액 부족
 - 입금액이 기준보다 적은 경우
@@ -807,12 +801,6 @@ response body는 각 입금 기록의 처리 결과를 포함하며 자세한 �
 - 입금액이 기준보다 많은 경우
 - `result_code`: 413
 - `result_msg`: "입금액이 {get_settings().enrollment_fee}원보다 많습니다"
-- `users`: 해당 입금 기록에 대응하는 사용자 리스트
-
-##### 사용자 상태가 standby가 아님
-- 사용자의 `status`가 `standby`이 아닌 경우
-- `result_code`: 412
-- `result_msg`: "해당 입금 기록에 대응하는 사용자의 상태는 ?로 standby 상태가 아닙니다"
 - `users`: 해당 입금 기록에 대응하는 사용자 리스트
 
 ##### 성공

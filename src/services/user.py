@@ -13,8 +13,10 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserStatus
+from src.dependencies import SCSCGlobalStatusDep
+from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User
 from src.repositories import (
+    EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
     UserRepositoryDep,
@@ -24,6 +26,7 @@ from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
+    get_next_year_semester,
     is_valid_img_url,
     is_valid_phone,
     is_valid_student_id,
@@ -32,6 +35,8 @@ from src.util import (
     utcnow,
     validate_and_read_file,
 )
+
+from .key_value import KvServiceDep
 
 
 class BodyCreateUser(BaseModel):
@@ -60,7 +65,8 @@ class BodyUpdateUser(BaseModel):
     student_id: Optional[str] = None
     major_id: Optional[int] = None
     role: Optional[str] = None
-    status: Optional[UserStatus] = None
+    is_active: Optional[bool] = None
+    is_banned: Optional[bool] = None
     discord_id: Optional[int] = None
     discord_name: Optional[str] = None
 
@@ -145,30 +151,6 @@ class UserService:
         logger.info(f"info_type=user_created ; user_id={user.id}")
         return UserResponse.model_validate(user)
 
-    async def enroll_user(self, user_id: str) -> None:
-        user = self.user_repository.get_by_id(user_id)
-        if not user:
-            raise HTTPException(404, detail="user not found")
-
-        if user.status not in (UserStatus.pending, UserStatus.standby):
-            raise HTTPException(
-                400, detail="Only user with pending or standby status can enroll"
-            )
-
-        if user.status == UserStatus.pending:
-            user.status = UserStatus.standby
-            self.user_repository.update(user)
-
-        stby_req_tbl = StandbyReqTbl(
-            standby_user_id=user.id,
-            user_name=user.name,
-            deposit_name=f"{user.name}{user.phone[-2:]}",
-            is_checked=False,
-        )
-        self.standby_repository.create(stby_req_tbl)
-
-        logger.info(f"info_type=user_enrolled ; user_id={user_id}")
-
     def get_user_by_id(self, id: str) -> UserResponse:
         user = self.user_repository.get_by_id(id)
         if not user:
@@ -182,7 +164,8 @@ class UserService:
         phone: Optional[str] = None,
         student_id: Optional[str] = None,
         user_role: Optional[str] = None,
-        status: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        is_banned: Optional[bool] = None,
         discord_id: Optional[str] = None,
         discord_name: Optional[str] = None,
         major_id: Optional[int] = None,
@@ -198,8 +181,10 @@ class UserService:
             filters["student_id"] = student_id
         if user_role:
             filters["role"] = get_user_role_level(user_role)
-        if status:
-            filters["status"] = status
+        if is_active is not None:
+            filters["is_active"] = is_active
+        if is_banned is not None:
+            filters["is_banned"] = is_banned
         if major_id:
             filters["major_id"] = major_id
 
@@ -365,12 +350,23 @@ class UserService:
                 raise HTTPException(422, detail="invalid student_id")
             user.student_id = body.student_id
 
+        if (body.is_active is None) ^ (body.is_banned is None):
+            raise HTTPException(
+                422, detail="both is_active and is_banned should be set"
+            )
+        if body.is_active and body.is_banned:
+            raise HTTPException(
+                422,
+                detail="is_active and is_banned cannot be true at the same time",
+            )
+
         if body.name:
             user.name = body.name
         if body.major_id:
             user.major_id = body.major_id
-        if body.status:
-            user.status = body.status
+        if body.is_active is not None and body.is_banned is not None:
+            user.is_active = body.is_active
+            user.is_banned = body.is_banned
         if body.discord_id:
             user.discord_id = body.discord_id
         if body.discord_name:
@@ -491,7 +487,8 @@ class OldboyService:
             raise HTTPException(400, detail="you are not oldboy")
 
         current_user.role = get_user_role_level("member")
-        current_user.status = UserStatus.pending
+        current_user.is_active = False
+        current_user.is_banned = False
         self.user_repository.update(current_user)
 
         oldboy_applicant = self.oldboy_repository.get_by_id(current_user.id)
@@ -512,9 +509,15 @@ class StandbyService:
         self,
         standby_repository: StandbyReqTblRepositoryDep,
         user_repository: UserRepositoryDep,
+        enrollment_repository: EnrollmentRepositoryDep,
+        scsc_global_status: SCSCGlobalStatusDep,
+        kv_service: KvServiceDep,
     ):
         self.standby_repository = standby_repository
         self.user_repository = user_repository
+        self.enrollment_repository = enrollment_repository
+        self.scsc_global_status = scsc_global_status
+        self.kv_service = kv_service
 
     def get_standby_list(self) -> Sequence[StandbyReqTbl]:
         return self.standby_repository.list_all()
@@ -525,14 +528,14 @@ class StandbyService:
         user = self.user_repository.get_by_id(body.id)
         if not user:
             raise HTTPException(404, detail="user not found")
-        if user.status == UserStatus.active:
-            raise HTTPException(409, detail="the user is already active")
+        if not self._is_enrollable(user):
+            raise HTTPException(
+                409, detail="the user is already enrolled until the target semester"
+            )
 
-        user.status = UserStatus.active
-        self.user_repository.update(user)
+        self._activate_and_enroll_user(user)
 
         standbyreq = self.standby_repository.get_by_user_id(body.id)
-
         if standbyreq:
             standbyreq.is_checked = True
             standbyreq.deposit_name = f"Manually by {current_user.name}"
@@ -667,19 +670,16 @@ class StandbyService:
                     )
 
                 user = matching_users_error[0]
-                if user.status not in (UserStatus.pending, UserStatus.standby):
+                if not self._is_enrollable(user):
                     logger.error(
-                        f"err_type=deposit ; err_code=412 ; msg=user is not in pending or standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                        f"err_type=deposit ; err_code=412 ; msg=user is not enrollable ; deposit={deposit} ; users={matching_users}"
                     )
                     return ProcessDepositResult(
                         result_code=412,
-                        result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 pending 또는 standby 상태가 아닙니다",
+                        result_msg="해당 입금 기록에 대응하는 사용자는 더 등록할 수 없습니다.",
                         record=deposit,
                         users=matching_users,
                     )
-                if user.status == UserStatus.pending:
-                    user.status = UserStatus.standby
-                    self.user_repository.update(user)
 
                 new_req = StandbyReqTbl(
                     standby_user_id=user.id,
@@ -724,17 +724,21 @@ class StandbyService:
                     record=deposit,
                     users=matching_users,
                 )
-            if user.status != UserStatus.standby:
+            if not self._is_enrollable(user):
                 logger.error(
-                    f"err_type=deposit ; err_code=412 ; msg=user is not in standby status but in {user.status} status ; deposit={deposit} ; users={matching_users}"
+                    f"err_type=deposit ; err_code=412 ; msg=user is not enrollable ; deposit={deposit} ; users={matching_users}"
                 )
                 return ProcessDepositResult(
                     result_code=412,
-                    result_msg=f"해당 입금 기록에 대응하는 사용자의 상태는 {user.status}로 standby 상태가 아닙니다",
+                    result_msg="해당 입금 기록에 대응하는 사용자는 더 등록할 수 없습니다.",
                     record=deposit,
                     users=matching_users,
                 )
-            self._verify_enroll_user_ctrl(user, stby_user, deposit)
+            self._activate_and_enroll_user(user)
+            stby_user.deposit_time = deposit.deposit_time
+            stby_user.deposit_name = deposit.deposit_name
+            stby_user.is_checked = True
+            self.standby_repository.update(stby_user)
             logger.info(
                 f"info_type=deposit ; deposit={deposit} ; users={matching_users}"
             )
@@ -752,15 +756,60 @@ class StandbyService:
                 users=[],
             )
 
-    def _verify_enroll_user_ctrl(
-        self, user: User, stby_req: StandbyReqTbl, deposit: DepositDTO
-    ) -> None:
-        user.status = UserStatus.active
+    def _activate_and_enroll_user(self, user: User):
+        user.is_active = True
+        user.is_banned = False
+        if user.role < get_user_role_level("member"):
+            if self.enrollment_repository.exists_by_user_id(user.id):
+                user.role = get_user_role_level("member")
+            else:
+                user.role = get_user_role_level("newcomer")
+        last_enrollment = self.enrollment_repository.get_last_by_user_id(user.id)
+        if last_enrollment is not None:
+            year, semester = get_next_year_semester(
+                last_enrollment.year, last_enrollment.semester
+            )
+        else:
+            year = self.scsc_global_status.year
+            semester = self.scsc_global_status.semester
+        until_year, until_semester = self._get_enrollment_grant_until()
+        while (year, semester) <= (until_year, until_semester):
+            self.enrollment_repository.create(
+                Enrollment(year=year, semester=semester, user_id=user.id)
+            )
+            year, semester = get_next_year_semester(year, semester)
         self.user_repository.update(user)
-        stby_req.deposit_time = deposit.deposit_time
-        stby_req.deposit_name = deposit.deposit_name
-        stby_req.is_checked = True
-        self.standby_repository.update(stby_req)
+
+    def _get_enrollment_grant_until(self):
+        year = self.scsc_global_status.year
+        semester = self.scsc_global_status.semester
+        until_year, until_semester = self.kv_service.get_enrollment_grant_until()
+        if until_year > year + 5:
+            raise HTTPException(
+                500,
+                detail="year of enrollment_grant_until is greater than (current year + 5)",
+            )
+        if until_semester not in (1, 2, 3, 4):
+            raise HTTPException(
+                500, detail="semester of enrollment_grant_until is not in (1,2,3,4)"
+            )
+        if (year, semester) > (until_year, until_semester):
+            raise HTTPException(
+                500,
+                detail="enrollment_grant_until is less than the current (year, semester)",
+            )
+        return until_year, until_semester
+
+    def _is_enrollable(self, user: User) -> bool:
+        if user.is_banned:
+            return False
+        last_enrollment = self.enrollment_repository.get_last_by_user_id(user.id)
+        if last_enrollment is None:
+            return True
+        return (
+            last_enrollment.year,
+            last_enrollment.semester,
+        ) < self._get_enrollment_grant_until()
 
 
 StandbyServiceDep = Annotated[StandbyService, Depends()]
