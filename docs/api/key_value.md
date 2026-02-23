@@ -1,5 +1,5 @@
 # Key-Value 설정 DB & API 가이드
-**최신개정일:** 2025-10-07
+**최신개정일:** 2026-02-21
 
 ## DB 구조
 
@@ -32,9 +32,10 @@ END;
 
 | key | value | description |
 |-----|-------|-------------|
-| footer-message | `서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com` | 푸터에 들어가는 문자열 |
+| footer-message | `서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com` | 푸터에 들어가는 문자열 |
 | president | `<hash-of-main-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
-| vice-president | `<hash-of-vice-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
+| vice-president | `<hash-of-vice-president>;<hash> \|\| null` | 부회장에 해당하는 유저의 해쉬값을 세미콜론으로 concat한 값(유저는 반드시 president 권한이어야 함) |
+| enrollment_grant_until | `year-semester` | 지금 등록 시 부여할 마지막 등록 학기. 예를 들어, 2026 여름학기로 설정하려면 `2026-2`로 설정한다.  |
 
 ## API 구조
 
@@ -52,7 +53,7 @@ END;
   ```json
   {
     "key": "footer-message",
-    "value": "서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com"
+    "value": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com"
   }
   ```
 - **Status Codes**:
@@ -64,9 +65,10 @@ END;
 - **Response 예시**:
   ```json
   {
-    "footer-message": "서울대학교 컴퓨터 연구회\n회장 한성재 010-5583-1811\nscsc.snu@gmail.com",
+    "footer-message": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com",
     "president": "<hash-of-main-president>",
-    "vice-president": "<hash-of-vice-president>"
+    "vice-president": "<hash-of-vice-president>",
+    ...
   }
   ```
 

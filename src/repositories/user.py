@@ -1,10 +1,10 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, desc, exists, func, select
 
 from src.db import get_user_role_level
-from src.model import OldboyApplicant, StandbyReqTbl, User, UserRole, UserStatus
+from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserRole
 
 from .crud_repository import CRUDRepository
 
@@ -14,9 +14,15 @@ class UserRepository(CRUDRepository[User, str]):
     def model(self) -> type[User]:
         return User
 
-    def get_by_status_and_role(self, status: UserStatus, role: int) -> Sequence[User]:
+    def get_by_status_and_role(
+        self, role: int, is_active: bool, is_banned: bool
+    ) -> Sequence[User]:
         return self.session.scalars(
-            select(User).where(User.status == status, User.role == role)
+            select(User).where(
+                User.role == role,
+                User.is_active == is_active,
+                User.is_banned == is_banned,
+            )
         ).all()
 
     def get_by_filters(self, filters: dict[str, Any]) -> Sequence[User]:
@@ -114,7 +120,29 @@ class OldboyApplicantRepository(CRUDRepository[OldboyApplicant, str]):
         return self.session.scalars(stmt).all()
 
 
+class EnrollmentRepository(CRUDRepository[Enrollment, int]):
+    @property
+    def model(self) -> type[Enrollment]:
+        return Enrollment
+
+    def exists_by_user_id(self, user_id: str) -> bool:
+        return bool(
+            self.session.scalar(
+                select(exists(select(1).where(Enrollment.user_id == user_id)))
+            )
+        )
+
+    def get_last_by_user_id(self, user_id: str) -> Enrollment | None:
+        return self.session.scalar(
+            select(Enrollment)
+            .where(Enrollment.user_id == user_id)
+            .order_by(desc(Enrollment.year), desc(Enrollment.semester))
+            .limit(1)
+        )
+
+
 UserRepositoryDep = Annotated[UserRepository, Depends()]
 UserRoleRepositoryDep = Annotated[UserRoleRepository, Depends()]
 StandbyReqTblRepositoryDep = Annotated[StandbyReqTblRepository, Depends()]
 OldboyApplicantRepositoryDep = Annotated[OldboyApplicantRepository, Depends()]
+EnrollmentRepositoryDep = Annotated[EnrollmentRepository, Depends()]

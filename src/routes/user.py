@@ -38,14 +38,6 @@ async def login(
     return await user_service.login(body)
 
 
-@user_router.post("/user/enroll", status_code=204)
-async def enroll_user(
-    current_user: UserDep,
-    user_service: UserServiceDep,
-) -> None:
-    await user_service.enroll_user(current_user.id)
-
-
 @user_router.get("/user/profile")
 async def get_my_profile(current_user: UserDep) -> UserResponse:
     return UserResponse.model_validate(current_user)
@@ -66,7 +58,8 @@ async def get_users(
     phone: Optional[str] = None,
     student_id: Optional[str] = None,
     user_role: Optional[str] = None,
-    status: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    is_banned: Optional[bool] = None,
     discord_id: Optional[str] = None,
     discord_name: Optional[str] = None,
     major_id: Optional[int] = None,
@@ -77,7 +70,8 @@ async def get_users(
         phone,
         student_id,
         user_role,
-        status,
+        is_active,
+        is_banned,
         discord_id,
         discord_name,
         major_id,
