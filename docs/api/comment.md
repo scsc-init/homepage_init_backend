@@ -11,7 +11,7 @@ CREATE TABLE "comment" (
     "author_id" TEXT NOT NULL,
     "article_id" INTEGER NOT NULL,
     "parent_id" INTEGER,
-    "is_deleted" INTEGER NOT NULL DEFAULT 0,
+    "is_deleted" BOOLEAN NOT NULL DEFAULT false,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" DATETIME,
@@ -53,7 +53,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
   "author_id": "",
   "article_id": 1,
   "parent_id": null,
-  "is_deleted": 0,
+  "is_deleted": false,
   "created_at": "2025-07-01T12:00:00",
   "updated_at": "2025-07-01T12:00:00",
   "deleted_at": null
@@ -82,7 +82,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
   "author_id": "",
   "article_id": 1,
   "parent_id": null,
-  "is_deleted": 0,
+  "is_deleted": false,
   "created_at": "2025-07-01T12:00:00",
   "updated_at": "2025-07-01T12:00:00",
   "deleted_at": null
@@ -108,7 +108,7 @@ CREATE INDEX idx_parent_id ON comment(parent_id);
   "author_id": "",
   "article_id": 1,
   "parent_id": null,
-  "is_deleted": 0,
+  "is_deleted": false,
   "created_at": "2025-07-01T12:00:00",
   "updated_at": "2025-07-01T12:00:00",
   "deleted_at": null

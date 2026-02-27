@@ -7,7 +7,6 @@ class Settings(BaseSettings):
     api_secret: str
     jwt_secret: str
     jwt_valid_seconds: int
-    sqlite_filename: str = "db/YOUR_DB_FILENAME.db"
     image_dir: str = "static/image/photo/"
     file_dir: str = "static/download/"
     file_max_size: int = 10000000
@@ -23,8 +22,11 @@ class Settings(BaseSettings):
     notice_channel_id: int
     grant_channel_id: int
     w_html_dir: str = "static/w/"
+    db_name: str = "main_db"
+    db_user: str
+    db_password: str
 
-    model_config = SettingsConfigDict(env_file=".env", frozen=True)
+    model_config = SettingsConfigDict(env_file=".env", frozen=True, extra="ignore")
 
 
 @lru_cache

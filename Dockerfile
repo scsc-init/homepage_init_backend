@@ -24,15 +24,19 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sqlite3 bash curl \
- && rm -rf /var/lib/apt/lists/*
+    curl ca-certificates gnupg2 lsb-release \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/postgresql-keyring.gpg] http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-17 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Setup a non-root user
 RUN groupadd --system --gid 999 nonroot \
- && useradd --system --gid 999 --uid 999 --create-home nonroot
+    && useradd --system --gid 999 --uid 999 --create-home nonroot
 
 # Copy the Python version
-COPY --from=builder --chown=python:python /python /python
+COPY --from=builder --chown=nonroot:nonroot /python /python
 
 # Copy the application from the builder
 COPY --from=builder --chown=nonroot:nonroot /app /app
@@ -44,5 +48,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 WORKDIR /app
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD curl -fsS http://localhost:8080/health || exit 1
+    CMD curl -fsS http://localhost:8080/health || exit 1
 

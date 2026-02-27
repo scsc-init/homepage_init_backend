@@ -1,11 +1,10 @@
 *.db
+data/
 *.env
 *.pem
 
 # user uploaded files
 static/
-
-presidents.csv
 
 # private files
 ignoredir/

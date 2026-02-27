@@ -64,6 +64,7 @@ dependencies = [
     "websockets==15.0.1",
     "wheel==0.45.1",
     "yarl==1.20.1",
+    "psycopg2-binary>=2.9.11",
 ]
 
 [dependency-groups]

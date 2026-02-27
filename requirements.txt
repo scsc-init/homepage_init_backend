@@ -66,6 +66,8 @@ pamqp==3.3.0
     # via homepage-init-backend (pyproject.toml)
 propcache==0.3.2
     # via homepage-init-backend (pyproject.toml)
+psycopg2-binary==2.9.11
+    # via homepage-init-backend (pyproject.toml)
 pydantic==2.11.4
     # via homepage-init-backend (pyproject.toml)
 pydantic-core==2.33.2
