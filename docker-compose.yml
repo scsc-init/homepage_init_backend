@@ -8,6 +8,11 @@ services:
     volumes:
       - ./static/:/app/static/
       - ./logs/:/app/logs/
+    depends_on:
+      db:
+        condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
     networks:
       - app-net
     entrypoint: bash

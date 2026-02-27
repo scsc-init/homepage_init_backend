@@ -60,7 +60,7 @@ DB_PASSWORD=app_password
 
 - flyway 설정을 위해 다음을 작성합니다. 관리자 계정의 비밀번호를 `.db_admin_password` 에서 설정한 값으로 작성합니다. 
 
-```
+```properties
 flyway.url=jdbc:postgresql://db/main_db
 flyway.user=postgres
 flyway.password=admin_password
