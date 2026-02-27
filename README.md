@@ -24,6 +24,7 @@ NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
 DB_USER=app_user
 DB_PASSWORD=app_password
+DB_ADMIN_PASSWORD=admin_password
 ```
 
 | Key Name             | Description                                                      |
