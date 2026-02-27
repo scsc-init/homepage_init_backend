@@ -1,4 +1,7 @@
 *.db
+data/
+.db_admin_password
+flyway.conf
 *.env
 *.pem
 

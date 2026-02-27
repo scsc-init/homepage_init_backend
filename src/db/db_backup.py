@@ -1,7 +1,5 @@
-from __future__ import annotations
-
-import sqlite3
-from contextlib import closing
+import os
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,42 +11,55 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def backup_db_before_status_change(scsc_global_status: SCSCGlobalStatus) -> Path:
-    """Create a timestamped SQLite backup before status roll-over."""
+    """Create a timestamped PostgreSQL backup using pg_dump before status roll-over."""
+    settings = get_settings()
+
+    # 1. Setup naming and directory
     year = scsc_global_status.year
     semester = scsc_global_status.semester
     status = scsc_global_status.status
-
-    settings = get_settings()
-    sqlite_path = Path(settings.sqlite_filename)
-    if not sqlite_path.is_absolute():
-        sqlite_path = _PROJECT_ROOT / sqlite_path
-
-    if not sqlite_path.exists():
-        raise FileNotFoundError(f"database file '{sqlite_path}' does not exist")
+    semester_label = map_semester_name.get(semester, str(semester))
 
     backup_dir = _PROJECT_ROOT / "logs" / "db_backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    semester_label = map_semester_name.get(semester, str(semester))
-    suffix = sqlite_path.suffix or ".db"
     backup_name = (
-        f"{sqlite_path.stem}_{year}_{semester_label}_{status.value}_{timestamp}_before_status_change"
-        f"{suffix}"
+        f"{settings.db_name}_{year}_{semester_label}_{status.value}_"
+        f"{timestamp}_before_status_change.sql"
     )
     backup_path = backup_dir / backup_name
 
-    with (
-        closing(sqlite3.connect(str(sqlite_path))) as src_conn,
-        closing(sqlite3.connect(str(backup_path))) as dst_conn,
-    ):
-        with dst_conn:
-            src_conn.backup(dst_conn)
+    # 2. Prepare pg_dump command
+    # Assuming your settings object has these attributes
+    env = os.environ.copy()
+    env["PGPASSWORD"] = settings.db_password  # Avoids interactive prompt
 
-    logger.info(
-        "info_type=db_backup ; action=before_status_change ; source=%s ; backup=%s",
-        sqlite_path,
-        backup_path,
-    )
+    command = [
+        "pg_dump",
+        "-h",
+        "db",
+        "-U",
+        settings.db_user,
+        # "-p", str(settings.db_port),
+        "-d",
+        settings.db_name,
+        "-f",
+        str(backup_path),
+        "--no-owner",  # Makes restores to different users easier
+        "--clean",  # Includes DROP commands for easier restoration
+    ]
+
+    # 3. Execute the backup
+    try:
+        subprocess.run(command, env=env, check=True, capture_output=True, text=True)
+        logger.info(
+            "info_type=db_backup ; action=before_status_change ; database=%s ; backup=%s",
+            settings.db_name,
+            backup_path,
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error("Database backup failed: %s", e.stderr)
+        raise RuntimeError(f"PostgreSQL backup failed: {e.stderr}")
 
     return backup_path

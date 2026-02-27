@@ -2,9 +2,8 @@ from typing import Annotated, Iterator
 
 import sqlalchemy
 from fastapi import Depends
-from sqlalchemy import event, orm
+from sqlalchemy import orm
 from sqlalchemy.orm.session import Session
-from sqlalchemy.pool import NullPool
 
 from src.core import get_settings
 from src.util import SingletonMeta
@@ -12,11 +11,18 @@ from src.util import SingletonMeta
 
 class DBSessionFactory(metaclass=SingletonMeta):
     def __init__(self):
-        self._sqlite_url = f"sqlite:///{get_settings().sqlite_filename}"
+        settings = get_settings()
+        # 1. PostgreSQL 연결 URL 구성 (psycopg2 드라이버 권장)
+        self._psql_url = (
+            f"postgresql://{settings.db_user}:{settings.db_password}@"
+            f"db/{settings.db_name}"
+        )
+
         self._engine: sqlalchemy.Engine = sqlalchemy.create_engine(
-            self._sqlite_url,
-            poolclass=NullPool,
-            connect_args={"check_same_thread": False},
+            self._psql_url,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
         )
 
         self._session_maker = orm.sessionmaker(
@@ -27,23 +33,13 @@ class DBSessionFactory(metaclass=SingletonMeta):
         return self._engine
 
     def make_session(self) -> Session:
-        session = self._session_maker()
-        return session
+        return self._session_maker()
 
     def teardown(self):
-        orm.close_all_sessions()
         self._engine.dispose()
 
 
 engine = DBSessionFactory().get_engine()
-
-
-@event.listens_for(engine, "connect")
-def enable_sqlite_foreign_keys(dbapi_connection, connection_record):
-    "Enable foreign keys in SQLite"
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys=ON")
-    cursor.close()
 
 
 def get_session() -> Iterator[Session]:

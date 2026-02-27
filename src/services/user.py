@@ -760,7 +760,9 @@ class StandbyService:
         user.is_active = True
         user.is_banned = False
         if user.role < get_user_role_level("member"):
-            if self.enrollment_repository.exists_by_user_id(user.id):
+            if user.role == get_user_role_level(
+                "dormant"
+            ) or self.enrollment_repository.exists_by_user_id(user.id):
                 user.role = get_user_role_level("member")
             else:
                 user.role = get_user_role_level("newcomer")

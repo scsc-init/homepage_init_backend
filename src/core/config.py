@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     notice_channel_id: int
     grant_channel_id: int
     w_html_dir: str = "static/w/"
+    db_name: str = "main_db"
+    db_user: str
+    db_password: str
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True)
 

@@ -11,7 +11,7 @@ CREATE TABLE "comment" (
     "author_id" TEXT NOT NULL,
     "article_id" INTEGER NOT NULL,
     "parent_id" INTEGER,
-    "is_deleted" INTEGER NOT NULL DEFAULT 0,
+    "is_deleted" BOOLEAN NOT NULL DEFAULT false,
     "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "deleted_at" DATETIME,

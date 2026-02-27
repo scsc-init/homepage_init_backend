@@ -22,6 +22,8 @@ JWT_SECRET="some-session-secret"
 JWT_VALID_SECONDS=3600
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
+DB_USER=app_user
+DB_PASSWORD=app_password
 ```
 
 | Key Name             | Description                                                      |
@@ -45,8 +47,15 @@ GRANT_CHANNEL_ID=0
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 | `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
+| `DB_NAME`                | postgresql db 이름 |
+| `DB_USER`                | postgresql 백엔드용 계정 이름 |
+| `DB_PASSWORD`            | postgresql 백엔드용 계정 비밀번호 |
 
 ## 기타 설정 파일
+
+### `.db_admin_password`
+
+- postgresql의 관리자 계정(ID:postgres)과 pgadmin의 관리자 계정(ID:admin@example.com)의 비밀번호를 설정합니다.
 
 ### `script/insert_sample_data/president.csv`(Optional)
 
@@ -61,58 +70,7 @@ linux, docker가 요구됩니다. docker compose>=2.25.0가 요구됩니다.
 
 docker container를 빌드하고 실행합니다.
 ```bash
-docker-compose up --build
-```
-
-
-## 실행 방법(without docker)
-
-루트에 다음 명령어로 필요한 폴더를 추가합니다.
-
-```bash
-mkdir -p \
-  ./db \
-  ./logs \
-  ./static/download \
-  ./static/article \
-  ./static/image/photo \
-  ./static/image/pfps \
-  ./static/w
-```
-
-db 파일을 생성합니다.
-```bash
-./script/migrations/index.sh ./db/YOUR_DB_FILENAME.db
-```
-
-(선택) 예시 데이터를 db에 추가합니다. 
-```bash
-./script/insert_sample_data/index.sh ./db/YOUR_DB_FILENAME.db
-```
-
-(선택) 예시 데이터가 잘 추가되었는지 확인합니다. 
-```bash
-sqlite3 ./YOUR_DB_FILENAME.db "select * from major;"
-sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
-```
-
-실행합니다. `uv`를 요구합니다. `uv` 설정에 관련된 내용은 하단의 `developer tips` 절에 설명됩니다.  
-```bash
-uv run python main.py --host 0.0.0.0 --port 8080
-```
-
-### 기타
-
-- 실행 명령어 상세 설명
-
-```bash
-fastapi run --help
-```
-
-- 개발 중 실행 명령어
-
-```bash
-fastapi dev main.py
+docker compose up --build
 ```
 
 ## developer tips

@@ -1,1 +1,0 @@
-UPDATE key_value SET value='서울대학교 컴퓨터 연구회' || CHAR(10) || '회장 한성재 010-5583-1811' || CHAR(10) || 'scsc.snu@gmail.com' WHERE key='footer-message';
