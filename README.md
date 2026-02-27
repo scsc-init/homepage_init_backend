@@ -154,7 +154,7 @@ uv run env PYTHONPATH=. pytest
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
 | ├── `controller/`   | 여러 테이블을 조작하는 중요 로직 |
 | ├── `core/`         | 환경 변수 등 프로젝트 전역 설정 로직 |
-| ├── `db/`           | SQLite3 DB 연결 및 설정 관련 코드 |
+| ├── `db/`           | DB 연결 및 설정 관련 코드 |
 | ├── `middleware/`   | 미들웨어 정의 및 처리 |
 | ├── `model/`        | DB 테이블 정의 및 ORM 모델 |
 | ├── `routes/`       | API 라우터 모음 |

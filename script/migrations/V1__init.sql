@@ -2,8 +2,6 @@
 -- PostgreSQL database dump
 --
 
--- \restrict X3wE36NbJb0SfRbzWuhlDQeNv8PWMier5MZSYf7gX7ad1rVGz9VmT2apMIOVeKC
-
 -- Dumped from database version 17.8
 -- Dumped by pg_dump version 17.9 (Debian 17.9-1.pgdg12+1)
 
@@ -163,12 +161,31 @@ CREATE TABLE public.comment (
     content text NOT NULL,
     author_id text NOT NULL,
     article_id bigint NOT NULL,
-    parent_id bigint NOT NULL,
+    parent_id bigint,
     is_deleted boolean NOT NULL DEFAULT false,
     created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at timestamp without time zone
 );
+
+
+--
+-- Name: comment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.comment_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: comment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.comment_id_seq OWNED BY public.comment.id;
 
 
 --
@@ -550,6 +567,13 @@ ALTER TABLE ONLY public.board ALTER COLUMN id SET DEFAULT nextval('public.board_
 --
 
 ALTER TABLE ONLY public.check_user_status_rule ALTER COLUMN id SET DEFAULT nextval('public.check_user_status_rule_id_seq'::regclass);
+
+
+--
+-- Name: comment id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.comment ALTER COLUMN id SET DEFAULT nextval('public.comment_id_seq'::regclass);
 
 
 --
@@ -1361,6 +1385,4 @@ COMMIT;
 --
 -- PostgreSQL database dump complete
 --
-
--- \unrestrict X3wE36NbJb0SfRbzWuhlDQeNv8PWMier5MZSYf7gX7ad1rVGz9VmT2apMIOVeKC
 

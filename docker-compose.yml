@@ -8,6 +8,8 @@ services:
     volumes:
       - ./static/:/app/static/
       - ./logs/:/app/logs/
+    networks:
+      - app-net
     entrypoint: bash
     command: >
       -c '

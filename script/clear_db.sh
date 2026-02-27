@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-DB_DIR="$(realpath "$DB_DIR")"
+DB_DIR="$(realpath -m "$DB_DIR")"
 
 prompt_confirm() {
   local prompt="$1"

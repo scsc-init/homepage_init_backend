@@ -1,3 +1,4 @@
+import urllib.parse
 from typing import Annotated, Iterator
 
 import sqlalchemy
@@ -14,8 +15,8 @@ class DBSessionFactory(metaclass=SingletonMeta):
         settings = get_settings()
         # 1. PostgreSQL 연결 URL 구성 (psycopg2 드라이버 권장)
         self._psql_url = (
-            f"postgresql://{settings.db_user}:{settings.db_password}@"
-            f"db/{settings.db_name}"
+            f"postgresql://{settings.db_user}:{urllib.parse.quote(settings.db_password)}@"
+            f"db/{settings.db_name}"  # docker service name (in the same network)
         )
 
         self._engine: sqlalchemy.Engine = sqlalchemy.create_engine(

@@ -38,7 +38,7 @@ def backup_db_before_status_change(scsc_global_status: SCSCGlobalStatus) -> Path
     command = [
         "pg_dump",
         "-h",
-        "db",
+        "db",  # docker service name (in the same network)
         "-U",
         settings.db_user,
         # "-p", str(settings.db_port),
@@ -60,6 +60,6 @@ def backup_db_before_status_change(scsc_global_status: SCSCGlobalStatus) -> Path
         )
     except subprocess.CalledProcessError as e:
         logger.error("Database backup failed: %s", e.stderr)
-        raise RuntimeError(f"PostgreSQL backup failed: {e.stderr}")
+        raise RuntimeError(f"PostgreSQL backup failed: {e.stderr}") from e
 
     return backup_path

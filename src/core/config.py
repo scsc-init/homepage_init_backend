@@ -7,7 +7,6 @@ class Settings(BaseSettings):
     api_secret: str
     jwt_secret: str
     jwt_valid_seconds: int
-    sqlite_filename: str = "db/YOUR_DB_FILENAME.db"
     image_dir: str = "static/image/photo/"
     file_dir: str = "static/download/"
     file_max_size: int = 10000000
