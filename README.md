@@ -3,8 +3,8 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2025-01-05  
-> 최신개정자: [최정원](jwchoi915@snu.ac.kr)  
+> 최신개정일: 2026-02-27  
+> 최신개정자: 이한경  
 > 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com)  
 
 ## 브랜치
@@ -31,7 +31,6 @@ DB_PASSWORD=app_password
 | `API_SECRET`             | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
 | `JWT_SECRET`             | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
 | `JWT_VALID_SECONDS`      | 로그인 관련 JWT 유효 시간(초)          |
-| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름. MSA가 아닌 단독으로 실행할 때는 생략할 수 없음.    |
 | `IMAGE_DIR`              | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_DIR`               | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`          | 파일 최대 용량(바이트) |
@@ -56,6 +55,18 @@ DB_PASSWORD=app_password
 ### `.db_admin_password`
 
 - postgresql의 관리자 계정(ID:postgres)과 pgadmin의 관리자 계정(ID:admin@example.com)의 비밀번호를 설정합니다.
+
+### `flyway.conf`
+
+- flyway 설정을 위해 다음을 작성합니다. 관리자 계정의 비밀번호를 `.db_admin_password` 에서 설정한 값으로 작성합니다. 
+
+```
+flyway.url=jdbc:postgresql://db/main_db
+flyway.user=postgres
+flyway.password=admin_password
+flyway.locations=filesystem:/flyway/sql
+flyway.driver=org.postgresql.Driver
+```
 
 ### `script/insert_sample_data/president.csv`(Optional)
 
