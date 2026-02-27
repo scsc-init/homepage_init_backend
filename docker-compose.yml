@@ -77,6 +77,8 @@ services:
     volumes:
       - ./script/migrations:/flyway/sql
       - ./flyway.conf:/flyway/conf/flyway.conf
+    environment:
+      DB_ADMIN_PASSWORD: ${DB_ADMIN_PASSWORD}
     command: -configFiles=/flyway/conf/flyway.conf migrate
     depends_on:
       db:

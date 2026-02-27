@@ -1,14 +1,10 @@
 *.db
 data/
-.db_admin_password
-flyway.conf
 *.env
 *.pem
 
 # user uploaded files
 static/
-
-presidents.csv
 
 # private files
 ignoredir/

@@ -49,30 +49,7 @@ DB_PASSWORD=app_password
 | `DB_NAME`                | postgresql db 이름 |
 | `DB_USER`                | postgresql 백엔드용 계정 이름 |
 | `DB_PASSWORD`            | postgresql 백엔드용 계정 비밀번호 |
-
-## 기타 설정 파일
-
-### `.db_admin_password`
-
-- postgresql의 관리자 계정(ID:postgres)과 pgadmin의 관리자 계정(ID:admin@example.com)의 비밀번호를 설정합니다.
-
-### `flyway.conf`
-
-- flyway 설정을 위해 다음을 작성합니다. 관리자 계정의 비밀번호를 `.db_admin_password` 에서 설정한 값으로 작성합니다. 
-
-```properties
-flyway.url=jdbc:postgresql://db/main_db
-flyway.user=postgres
-flyway.password=admin_password
-flyway.locations=filesystem:/flyway/sql
-flyway.driver=org.postgresql.Driver
-```
-
-### `script/insert_sample_data/president.csv`(Optional)
-
-- DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
-- `script/insert_sample_data/president.example.csv`의 형식을 참고하여 작성합니다
-- 예시 파일에 포함된 값은 마이그래이션 파일에 의해 이미 추가된 값으로 `presidents.csv` 파일에 포함할 필요가 없습니다. 포함하면 오류 없이 무시됩니다. 
+| `DB_ADMIN_PASSWORD`      | postgresql 관리자용 계정 및 pgadmin 관리자용 계정 비밀번호 |
 
 
 ## 실행 방법(with docker)
