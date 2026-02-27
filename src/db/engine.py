@@ -13,10 +13,9 @@ from src.util import SingletonMeta
 class DBSessionFactory(metaclass=SingletonMeta):
     def __init__(self):
         settings = get_settings()
-        # 1. PostgreSQL 연결 URL 구성 (psycopg2 드라이버 권장)
         self._psql_url = (
-            f"postgresql://{settings.db_user}:{urllib.parse.quote_plus(settings.db_password)}@"
-            f"db/{settings.db_name}"  # docker service name (in the same network)
+            f"postgresql://{urllib.parse.quote_plus(settings.db_user)}:{urllib.parse.quote_plus(settings.db_password)}@"
+            f"db/{urllib.parse.quote_plus(settings.db_name)}"
         )
 
         self._engine: sqlalchemy.Engine = sqlalchemy.create_engine(

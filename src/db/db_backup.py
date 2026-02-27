@@ -14,7 +14,6 @@ def backup_db_before_status_change(scsc_global_status: SCSCGlobalStatus) -> Path
     """Create a timestamped PostgreSQL backup using pg_dump before status roll-over."""
     settings = get_settings()
 
-    # 1. Setup naming and directory
     year = scsc_global_status.year
     semester = scsc_global_status.semester
     status = scsc_global_status.status
@@ -30,27 +29,23 @@ def backup_db_before_status_change(scsc_global_status: SCSCGlobalStatus) -> Path
     )
     backup_path = backup_dir / backup_name
 
-    # 2. Prepare pg_dump command
-    # Assuming your settings object has these attributes
     env = os.environ.copy()
-    env["PGPASSWORD"] = settings.db_password  # Avoids interactive prompt
+    env["PGPASSWORD"] = settings.db_password
 
     command = [
         "pg_dump",
         "-h",
-        "db",  # docker service name (in the same network)
+        "db",
         "-U",
         settings.db_user,
-        # "-p", str(settings.db_port),
         "-d",
         settings.db_name,
         "-f",
         str(backup_path),
-        "--no-owner",  # Makes restores to different users easier
-        "--clean",  # Includes DROP commands for easier restoration
+        "--no-owner",
+        "--clean",
     ]
 
-    # 3. Execute the backup
     try:
         subprocess.run(command, env=env, check=True, capture_output=True, text=True)
         logger.info(

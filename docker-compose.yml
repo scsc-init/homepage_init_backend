@@ -48,7 +48,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-main_db}
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD}
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
     ports:
@@ -57,8 +57,6 @@ services:
       - ./data:/var/lib/postgresql/data
     networks:
       - app-net
-    secrets:
-      - db_admin_password
 
   pgadmin:
     image: dpage/pgadmin4
@@ -66,18 +64,16 @@ services:
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/db_admin_password
+      PGADMIN_DEFAULT_PASSWORD: ${DB_ADMIN_PASSWORD}
     ports:
       - "8085:80"
     depends_on:
       - db
     networks:
       - app-net
-    secrets:
-      - db_admin_password
 
   flyway:
-    image: flyway/flyway:latest-alpine
+    image: flyway/flyway:12.0.3-alpine-mongo
     volumes:
       - ./script/migrations:/flyway/sql
       - ./flyway.conf:/flyway/conf/flyway.conf
@@ -90,7 +86,3 @@ services:
 
 networks:
   app-net:
-
-secrets:
-  db_admin_password:
-    file: .db_admin_password

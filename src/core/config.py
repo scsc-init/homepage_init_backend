@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     db_user: str
     db_password: str
 
-    model_config = SettingsConfigDict(env_file=".env", frozen=True)
+    model_config = SettingsConfigDict(env_file=".env", frozen=True, extra="ignore")
 
 
 @lru_cache

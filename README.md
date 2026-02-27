@@ -5,7 +5,7 @@ SCSC 홈페이지 Main BE 문서
 > 최초작성일: 2025-04-30  
 > 최신개정일: 2026-02-27  
 > 최신개정자: 이한경  
-> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com)  
+> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com), [최정원](jwchoi915@snu.ac.kr)  
 
 ## 브랜치
 
