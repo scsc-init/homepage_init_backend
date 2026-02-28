@@ -3,9 +3,9 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2025-01-05  
-> 최신개정자: [최정원](jwchoi915@snu.ac.kr)  
-> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com)  
+> 최신개정일: 2026-02-27  
+> 최신개정자: 이한경  
+> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com), [최정원](jwchoi915@snu.ac.kr)  
 
 ## 브랜치
 
@@ -22,6 +22,9 @@ JWT_SECRET="some-session-secret"
 JWT_VALID_SECONDS=3600
 NOTICE_CHANNEL_ID=0
 GRANT_CHANNEL_ID=0
+DB_USER=app_user
+DB_PASSWORD=app_password
+DB_ADMIN_PASSWORD=admin_password
 ```
 
 | Key Name             | Description                                                      |
@@ -29,7 +32,6 @@ GRANT_CHANNEL_ID=0
 | `API_SECRET`             | API 요청 시 검증에 사용되는 비밀 코드. 일치하지 않으면 401 반환  |
 | `JWT_SECRET`             | 로그인 관련 JWT를 암호화하거나 검증하는 데 사용하는 비밀 키          |
 | `JWT_VALID_SECONDS`      | 로그인 관련 JWT 유효 시간(초)          |
-| `SQLITE_FILENAME`        | SQLite3 데이터베이스 파일의 경로 또는 파일 이름. MSA가 아닌 단독으로 실행할 때는 생략할 수 없음.    |
 | `IMAGE_DIR`              | 이미지 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_DIR`               | 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
 | `FILE_MAX_SIZE`          | 파일 최대 용량(바이트) |
@@ -45,14 +47,10 @@ GRANT_CHANNEL_ID=0
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 | `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
-
-## 기타 설정 파일
-
-### `script/insert_sample_data/president.csv`(Optional)
-
-- DB 초기화 시 자동으로 사용자 테이블에 추가되는 president 권한을 가진 사용자 목록을 정의합니다
-- `script/insert_sample_data/president.example.csv`의 형식을 참고하여 작성합니다
-- 예시 파일에 포함된 값은 마이그래이션 파일에 의해 이미 추가된 값으로 `presidents.csv` 파일에 포함할 필요가 없습니다. 포함하면 오류 없이 무시됩니다. 
+| `DB_NAME`                | postgresql db 이름 |
+| `DB_USER`                | postgresql 백엔드용 계정 이름 |
+| `DB_PASSWORD`            | postgresql 백엔드용 계정 비밀번호 |
+| `DB_ADMIN_PASSWORD`      | postgresql 관리자용 계정 및 pgadmin 관리자용 계정 비밀번호 |
 
 
 ## 실행 방법(with docker)
@@ -61,58 +59,7 @@ linux, docker가 요구됩니다. docker compose>=2.25.0가 요구됩니다.
 
 docker container를 빌드하고 실행합니다.
 ```bash
-docker-compose up --build
-```
-
-
-## 실행 방법(without docker)
-
-루트에 다음 명령어로 필요한 폴더를 추가합니다.
-
-```bash
-mkdir -p \
-  ./db \
-  ./logs \
-  ./static/download \
-  ./static/article \
-  ./static/image/photo \
-  ./static/image/pfps \
-  ./static/w
-```
-
-db 파일을 생성합니다.
-```bash
-./script/migrations/index.sh ./db/YOUR_DB_FILENAME.db
-```
-
-(선택) 예시 데이터를 db에 추가합니다. 
-```bash
-./script/insert_sample_data/index.sh ./db/YOUR_DB_FILENAME.db
-```
-
-(선택) 예시 데이터가 잘 추가되었는지 확인합니다. 
-```bash
-sqlite3 ./YOUR_DB_FILENAME.db "select * from major;"
-sqlite3 ./YOUR_DB_FILENAME.db "select * from user;"
-```
-
-실행합니다. `uv`를 요구합니다. `uv` 설정에 관련된 내용은 하단의 `developer tips` 절에 설명됩니다.  
-```bash
-uv run python main.py --host 0.0.0.0 --port 8080
-```
-
-### 기타
-
-- 실행 명령어 상세 설명
-
-```bash
-fastapi run --help
-```
-
-- 개발 중 실행 명령어
-
-```bash
-fastapi dev main.py
+docker compose up --build
 ```
 
 ## developer tips
@@ -185,7 +132,7 @@ uv run env PYTHONPATH=. pytest
 | `/src/`             | 메인 코드 디렉토리 (main.py 제외 전체 코드 포함) |
 | ├── `controller/`   | 여러 테이블을 조작하는 중요 로직 |
 | ├── `core/`         | 환경 변수 등 프로젝트 전역 설정 로직 |
-| ├── `db/`           | SQLite3 DB 연결 및 설정 관련 코드 |
+| ├── `db/`           | DB 연결 및 설정 관련 코드 |
 | ├── `middleware/`   | 미들웨어 정의 및 처리 |
 | ├── `model/`        | DB 테이블 정의 및 ORM 모델 |
 | ├── `routes/`       | API 라우터 모음 |

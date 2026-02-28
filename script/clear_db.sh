@@ -4,16 +4,15 @@ set -e
 
 usage() {
   cat <<USAGE
-Usage: $0 [--force] [--static-dir <dir>] <database_file>
+Usage: $0 [--force]
   --force        Delete without interactive prompts
-  --static-dir   Optional static directory to delete after removing DB
 USAGE
   exit 1
 }
 
 FORCE=false
-STATIC_DIR=""
-DB_FILE=""
+STATIC_DIR="static"
+DB_DIR="data"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -21,26 +20,14 @@ while [[ $# -gt 0 ]]; do
       FORCE=true
       shift
       ;;
-    --static-dir)
-      STATIC_DIR="$2"
-      shift 2
-      ;;
     -*|--*)
       echo "Unknown option: $1"
       usage
       ;;
-    *)
-      DB_FILE="$1"
-      shift
-      ;;
   esac
 done
 
-if [[ -z "$DB_FILE" ]]; then
-  usage
-fi
-
-DB_FILE="$(realpath "$DB_FILE")"
+DB_DIR="$(realpath -m "$DB_DIR")"
 
 prompt_confirm() {
   local prompt="$1"
@@ -51,16 +38,16 @@ prompt_confirm() {
   [[ "$reply" == "yes" ]]
 }
 
-if [[ -f "$DB_FILE" ]]; then
-  if prompt_confirm "Delete database file '$DB_FILE'?"; then
-    rm "$DB_FILE"
-    echo "Deleted database file '$DB_FILE'"
+if [[ -d "$DB_DIR" ]]; then
+  if prompt_confirm "Delete database directory '$DB_DIR'?"; then
+    rm -r "$DB_DIR"
+    echo "Deleted database directory '$DB_DIR'"
   else
-    echo "Skipped deleting database file"
+    echo "Skipped deleting database directory"
     exit 1
   fi
 else
-  echo "Database file '$DB_FILE' does not exist."
+  echo "Database directory '$DB_DIR' does not exist."
 fi
 
 if [[ -n "$STATIC_DIR" ]]; then

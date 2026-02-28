@@ -1,3 +1,4 @@
+import os
 from os import path
 from typing import Annotated, Optional
 
@@ -137,19 +138,9 @@ class ArticleService:
                     )
                 )
             else:
-                try:
-                    with open(
-                        path.join(get_settings().article_dir, f"{article.id}.md"),
-                        "r",
-                        encoding="utf-8",
-                    ) as fp:
-                        content = fp.read()
-                except Exception:
-                    logger.error(
-                        f"err_type=get_article_list_by_board ; error occurred during reading a file ; {board_id=} ; {article.id=}",
-                        exc_info=True,
-                    )
-                    content = ""
+                content = self._read_file(
+                    path.join(get_settings().article_dir, f"{article.id}.md")
+                )
                 result.append(
                     ArticleResponse.model_validate(article).model_copy(
                         update={"content": content}
@@ -181,19 +172,9 @@ class ArticleService:
                 {**article.__dict__, "content": DELETED, "attachments": []}
             )
 
-        try:
-            with open(
-                path.join(get_settings().article_dir, f"{article.id}.md"),
-                "r",
-                encoding="utf-8",
-            ) as fp:
-                content = fp.read()
-        except Exception:
-            logger.error(
-                f"err_type=get_article_by_id ; error occurred during reading a file ; {article.id=}",
-                exc_info=True,
-            )
-            content = ""
+        content = self._read_file(
+            path.join(get_settings().article_dir, f"{article.id}.md")
+        )
         attachments = self.attachment_repository.select_by_article_id(article.id)
         return ArticleWithAttachmentResponse.model_validate(
             {
@@ -202,6 +183,25 @@ class ArticleService:
                 "attachments": [a.file_id for a in attachments],
             }
         )
+
+    @staticmethod
+    def _read_file(file_path: str) -> str:
+        if os.path.exists(file_path):
+            try:
+                with open(
+                    file_path,
+                    "r",
+                    encoding="utf-8",
+                ) as fp:
+                    return fp.read()
+            except OSError:
+                logger.error(
+                    f"err_type=get_article_by_id ; error occurred during reading a file ; {file_path=}",
+                    exc_info=True,
+                )
+                return "Error reading content."
+        logger.warning(f"Article file missing: {file_path=}")
+        return "Content currently unavailable."
 
     async def _update_article(
         self, article: Article, body: BodyUpdateArticle, current_user: User
