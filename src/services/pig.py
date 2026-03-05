@@ -22,6 +22,7 @@ from src.util import (
 )
 
 from .article import ArticleServiceDep, BodyCreateArticle
+from .join_notification import notify_ig_owner_join_sms
 from .scsc import ctrl_status_available
 
 
@@ -356,6 +357,16 @@ class PigService:
                 action_code=2001,
                 body={"user_id": current_user.discord_id, "role_name": pig.title},
             )
+
+        await notify_ig_owner_join_sms(
+            ig_type="pig",
+            ig_id=pig.id,
+            ig_title=pig.title,
+            owner_id=pig.owner,
+            joined_user=current_user,
+            applied_at=pig_member.created_at,
+            user_repository=self.user_repository,
+        )
 
         logger.info(
             f"info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}"

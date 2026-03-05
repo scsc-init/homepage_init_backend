@@ -15,6 +15,7 @@ from src.util import (
 )
 
 from .article import ArticleServiceDep, BodyCreateArticle
+from .join_notification import notify_ig_owner_join_sms
 from .scsc import ctrl_status_available
 
 
@@ -329,6 +330,16 @@ class SigService:
                 action_code=2001,
                 body={"user_id": current_user.discord_id, "role_name": sig.title},
             )
+
+        await notify_ig_owner_join_sms(
+            ig_type="sig",
+            ig_id=sig.id,
+            ig_title=sig.title,
+            owner_id=sig.owner,
+            joined_user=current_user,
+            applied_at=sig_member.created_at,
+            user_repository=self.user_repository,
+        )
 
         logger.info(
             f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"

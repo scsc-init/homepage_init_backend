@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -22,6 +23,10 @@ class Settings(BaseSettings):
     notice_channel_id: int
     grant_channel_id: int
     w_html_dir: str = "static/w/"
+    sms_api_url: Optional[str] = None
+    sms_api_key: Optional[str] = None
+    sms_api_secret: Optional[str] = None
+    sms_sender: Optional[str] = None
     db_name: str = "main_db"
     db_user: str
     db_password: str
