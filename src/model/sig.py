@@ -84,3 +84,24 @@ class SIGMember(Base):
         DateTime(timezone=False),
         default_factory=utcnow,
     )
+
+
+class SIGTag(Base):
+    __tablename__ = "sig_tag"
+    __table_args__ = (
+        UniqueConstraint(
+            "sig_id",
+            "label",
+            name="uq_sig_tag_sig_id_label",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    sig_id: Mapped[int] = mapped_column(Integer, ForeignKey("sig.id"), nullable=False)
+    label: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+    )
