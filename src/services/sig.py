@@ -442,15 +442,17 @@ class SigService:
             and sig.owner != executor.id
         ):
             raise HTTPException(403, detail="타인의 시그에 태그를 추가할 수 없습니다")
-
-        sig_tag = self.sig_tag_repository.create(SIGTag(sig_id=sig_id, label=label))
+        try:
+            sig_tag = self.sig_tag_repository.create(SIGTag(sig_id=sig_id, label=label))
+        except IntegrityError:
+            pass
         logger.info(f"info_type=add_sig_tag ; {sig_id=} ; {label=} ; {executor.id=}")
         return sig_tag
 
     def get_sig_tags(self, sig_id: int) -> Sequence[SIGTag]:
         return self.sig_tag_repository.get_by_sig_id(sig_id)
 
-    def remove_sig_tag(self, sig_id, label: str, executor: User):
+    def remove_sig_tag(self, sig_id: int, label: str, executor: User):
         sig = self.sig_repository.get_by_id(sig_id)
         if sig is None:
             raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")

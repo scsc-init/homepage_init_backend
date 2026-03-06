@@ -167,18 +167,18 @@ def add_sig_tag(
 
 
 @sig_router.get("/sig/{id}/tag")
-def get_sig_tag(
+def get_sig_tags(
     id: int,
     sig_service: SigServiceDep,
 ) -> Sequence[SIGTag]:
     return sig_service.get_sig_tags(id)
 
 
-@sig_router.delete("/sig/{id}/tag", status_code=204)
+@sig_router.delete("/sig/{id}/tag/{label}", status_code=204)
 def remove_sig_tag(
     id: int,
+    label: str,
     current_user: UserDep,
-    body: BodyAddSigTag,
     sig_service: SigServiceDep,
 ) -> None:
-    return sig_service.remove_sig_tag(id, body.label, current_user)
+    return sig_service.remove_sig_tag(id, label, current_user)
