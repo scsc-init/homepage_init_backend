@@ -30,3 +30,9 @@ class SigResponse(BaseResponse):
     is_rolling_admission: bool
     created_at: datetime
     updated_at: datetime
+
+
+class SigTagResponse(BaseResponse):
+    id: int
+    sig_id: int
+    label: str

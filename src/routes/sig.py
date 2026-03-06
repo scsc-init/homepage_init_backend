@@ -1,11 +1,11 @@
 from typing import Optional, Sequence
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.dependencies import SCSCGlobalStatusDep, UserDep
-from src.model import SCSCStatus, SIGTag
-from src.schemas import SigMemberResponse, SigResponse
+from src.model import SCSCStatus
+from src.schemas import SigMemberResponse, SigResponse, SigTagResponse
 from src.services import (
     BodyCreateSIG,
     BodyExecutiveJoinSIG,
@@ -153,7 +153,7 @@ async def executive_leave_sig(
 
 
 class BodyAddSigTag(BaseModel):
-    label: str
+    label: str = Field(min_length=1, max_length=20)
 
 
 @sig_router.post("/sig/{id}/tag", status_code=201)
@@ -162,16 +162,18 @@ def add_sig_tag(
     current_user: UserDep,
     body: BodyAddSigTag,
     sig_service: SigServiceDep,
-) -> SIGTag:
-    return sig_service.add_sig_tag(id, body.label, current_user)
+) -> SigTagResponse:
+    return SigTagResponse.model_validate(
+        sig_service.add_sig_tag(id, body.label, current_user)
+    )
 
 
 @sig_router.get("/sig/{id}/tag")
 def get_sig_tags(
     id: int,
     sig_service: SigServiceDep,
-) -> Sequence[SIGTag]:
-    return sig_service.get_sig_tags(id)
+) -> Sequence[SigTagResponse]:
+    return SigTagResponse.model_validate_list(sig_service.get_sig_tags(id))
 
 
 @sig_router.delete("/sig/{id}/tag/{label}", status_code=204)

@@ -445,7 +445,7 @@ class SigService:
         try:
             sig_tag = self.sig_tag_repository.create(SIGTag(sig_id=sig_id, label=label))
         except IntegrityError:
-            pass
+            raise HTTPException(409, detail="이미 추가된 태그입니다")
         logger.info(f"info_type=add_sig_tag ; {sig_id=} ; {label=} ; {executor.id=}")
         return sig_tag
 
