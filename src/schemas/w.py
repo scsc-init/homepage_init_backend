@@ -9,7 +9,3 @@ class WHTMLMetadataResponse(BaseResponse):
     creator: str | None = None
     created_at: datetime
     updated_at: datetime
-
-
-class WHTMLMetadataWithCreatorResponse(WHTMLMetadataResponse):
-    creator_name: str | None = None

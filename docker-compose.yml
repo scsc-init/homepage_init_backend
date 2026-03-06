@@ -43,7 +43,6 @@ services:
 
   db:
     image: postgres:17-alpine
-    container_name: postgres_db
     restart: always
     environment:
       POSTGRES_DB: ${DB_NAME:-main_db}
@@ -60,7 +59,6 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
-    container_name: pgadmin_container
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com

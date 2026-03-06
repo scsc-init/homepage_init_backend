@@ -1,5 +1,4 @@
 from typing import Annotated, Optional, Sequence
-from urllib.parse import urlparse
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -35,7 +34,7 @@ class BodyCreatePIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: RollingAdmission = "during_recruiting"
+    is_rolling_admission: RollingAdmission = RollingAdmission.DURING_RECRUITING
     websites: Optional[list[BodyPigWebsite]] = None
 
 
@@ -331,9 +330,7 @@ class PigService:
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
 
-        if pig.is_rolling_admission == RollingAdmission.NEVER:
-            raise HTTPException(400, "해당 피그는 가입을 받지 않습니다")
-        elif pig.is_rolling_admission == RollingAdmission.ALWAYS:
+        if pig.is_rolling_admission == RollingAdmission.ALWAYS:
             allowed = ctrl_status_available.join_sigpig_rolling_admission
         elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
             allowed = ctrl_status_available.join_sigpig

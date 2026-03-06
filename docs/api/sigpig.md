@@ -474,13 +474,92 @@ END;
 
 ---
 
+## 시그 태그 기능(SIG Only)
+
+### 시그 태그 추가 (Add SIG Tag)
+
+시그에 새로운 태그를 추가합니다. **시그 소유자** 또는 **운영진(Executive)** 이상의 권한이 필요합니다.
+
+* **Method**: `POST`
+* **URL**: `/sig/:id/tag`
+* **Request Body**:
+* `label` (string): 추가할 태그 이름
+* **Response Body**:
+* `[SigTagResponse]`: 태그 객체
+```json
+{
+  "id": 1,
+  "sig_id": 1,
+  "label": "기초 SIG"
+}
+```
+
+
+* **Status Codes**:
+* `201 Created`: 태그 추가 성공
+* `403 Forbidden`: 권한 없음 (타인의 시그에 태그 추가 시도)
+* `404 Not Found`: 해당 ID의 시그가 존재하지 않음
+* `409 Conflict`: 이미 동일한 이름의 태그가 존재함
+
+
+
+---
+
+### 시그 태그 목록 조회 (Get SIG Tags)
+
+특정 시그에 등록된 모든 태그 목록을 조회합니다.
+
+* **Method**: `GET`
+* **URL**: `/sig/:id/tag`
+* **Response Body**:
+* `Sequence[SigTagResponse]`: 태그 객체 리스트
+```json
+[
+  {
+    "id": 1,
+    "sig_id": 1,
+    "label": "기초 SIG"
+  },
+  {
+    "id": 2,
+    "sig_id": 1,
+    "label": "AI"
+  }
+]
+```
+
+
+* **Status Codes**:
+* `200 OK`: 조회 성공 (태그가 없으면 빈 리스트 반환)
+
+
+
+---
+
+### 시그 태그 삭제 (Remove SIG Tag)
+
+시그에 등록된 특정 태그를 삭제합니다. **시그 소유자** 또는 **운영진(Executive)** 이상의 권한이 필요합니다.
+
+* **Method**: `DELETE`
+* **URL**: `/sig/:id/tag/:label`
+* **Status Codes**:
+* `204 No Content`: 삭제 성공 (이미 태그가 없는 경우에도 동일)
+* `403 Forbidden`: 권한 없음 (타인의 시그 태그 삭제 시도)
+* `404 Not Found`: 해당 ID와 label의 시그 태그가 존재하지 않음
+
+
+
+---
+
+
 ## PIG 관련 API(/api/pig)
 `/api/sig`에서 `sig`를 `pig`로 바꾼다
 
 ### 예외 사항
 
 * 시그와 구조가 다른 피그만의 API 예외 사항은 아래와 같다.
-* 피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다는 차이가 있다.
+* 피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다.
+* 피그는 웹사이트(string)을 여러 개 가질 수 있다. 
 
 ---
 
@@ -497,6 +576,13 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
   "is_rolling_admission": "during_recruiting",
+  "websites": [
+    {
+      "label": "GitHub",
+      "url": "https://github.com/aipig",
+      "sort_order": 1,
+    }
+  ]
 }
 ```
 
@@ -508,17 +594,28 @@ END;
   "title": "AI PIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content_id": 1,
-  "status": "recruiting",
+  "status": "active",
   "created_year": 2025,
   "created_semester": 1,
   "year": 2025,
   "semester": 1,
+  "owner": "hash_of_owner_user",
+  "should_extend": true,
+  "is_rolling_admission": "during_recruiting",
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user",
-  "is_rolling_admission": "during_recruiting",
+  "websites": [
+    {
+      "id": 101,
+      "pig_id": 1,
+      "label": "GitHub",
+      "url": "https://github.com/aipig",
+      "sort_order": 1,
+      "created_at": "2025-03-01T10:00:00Z",
+      "updated_at": "2025-03-01T10:00:00Z"
+    }
+  ]
 }
-
 ```
 
 * **Status Codes**:
@@ -548,13 +645,23 @@ END;
   "created_semester": 1,
   "year": 2025,
   "semester": 1,
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
   "owner": "hash_of_owner_user",
   "should_extend": true,
   "is_rolling_admission": "during_recruiting",
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "websites": [
+    {
+      "id": 101,
+      "pig_id": 1,
+      "label": "GitHub",
+      "url": "https://github.com/aipig",
+      "sort_order": 1,
+      "created_at": "2025-03-01T10:00:00Z",
+      "updated_at": "2025-03-01T10:00:00Z"
+    }
+  ]
 }
-
 ```
 
 * **Status Codes**:
@@ -588,11 +695,22 @@ END;
     "created_semester": 1,
     "year": 2025,
     "semester": 1,
-    "created_at": "2025-03-01T10:00:00Z",
-    "updated_at": "2025-04-01T12:00:00Z",
     "owner": "hash_of_owner_user",
     "should_extend": true,
     "is_rolling_admission": "during_recruiting",
+    "created_at": "2025-03-01T10:00:00Z",
+    "updated_at": "2025-04-01T12:00:00Z",
+    "websites": [
+      {
+        "id": 101,
+        "pig_id": 1,
+        "label": "GitHub",
+        "url": "https://github.com/aipig",
+        "sort_order": 1,
+        "created_at": "2025-03-01T10:00:00Z",
+        "updated_at": "2025-03-01T10:00:00Z"
+      }
+    ]
   },
   ...
 ]
@@ -606,10 +724,10 @@ END;
 
 ---
 
-## Update PIG (Owner Only)
+## Update PIG
 
 * **Method**: `POST`
-* **URL**: `/api/pig/:id/update`
+* **URL**: `/api/pig/:id/update` (for owner) / `/api/executive/pig/:id/update` (for executive)
 * **Request Body** (JSON):
 
 ```json
@@ -619,11 +737,19 @@ END;
   "content": "### 안녕하세요",
   "should_extend": true,
   "is_rolling_admission": "during_recruiting",
+  "websites": [
+    {
+      "label": "GitHub",
+      "url": "https://github.com/aipig",
+      "sort_order": 1,
+    }
+  ]
 }
 ```
 
 - 일부만 포함하여 요청을 보내도 된다
 - content가 포함된다면, 새로운 article을 생성하여 content_id가 바뀐다
+- websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운 websites로 대체된다. 
 
 * **Status Codes**:
 
@@ -636,35 +762,6 @@ END;
 
 ---
 
-## Update PIG (Executive)
-
-* **Method**: `POST`
-* **URL**: `/api/executive/pig/:id/update`
-* **Request Body**: 
-
-```json
-{
-  "title": "AI PIG",
-  "description": "업데이트된 설명입니다.",
-  "content": "### 안녕하세요",
-  "status": "recruiting",
-  "should_extend": true,
-  "is_rolling_admission": "during_recruiting",
-}
-```
-
-- 일부만 포함하여 요청을 보내도 된다
-- content가 포함된다면, 새로운 article을 생성하여 content_id가 바뀐다
-
-* **Status Codes**:
-
-  * `204 No Content`
-  * `401 Unauthorized`
-  * `403 Forbidden`
-  * `404 Not Found`
-  * `409 Conflict`: `title`, `year`, `semester` 중복
-
----
 
 ## Join PIG (Current User)
 

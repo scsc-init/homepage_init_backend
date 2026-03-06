@@ -10,6 +10,13 @@ Common gitmoji examples for quick copy-paste:
 🔒  :lock:     → Fix security issues
 -->
 
+<!--
+백엔드 PR 올리기 전 확인 사항
+1. 수정한 부분 정상 작동 테스트
+2. 수정한 부분 관련 문서화
+3. develop 브랜치 수정사항 병합
+-->
+
 ### 이 PR이 어떤 이슈를 고쳤나요?
 
 <!-- fixed #n의 형식으로 작성해 주세요 -->

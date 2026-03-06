@@ -3,7 +3,7 @@ from typing import Annotated, Any, Optional, Sequence
 from fastapi import Depends
 from sqlalchemy import select
 
-from src.model import SIG, SCSCStatus, SIGMember
+from src.model import SIG, SCSCStatus, SIGMember, SIGTag
 
 from .crud_repository import CRUDRepository
 
@@ -50,5 +50,20 @@ class SigMemberRepository(CRUDRepository[SIGMember, int]):
         return self.session.scalars(stmt).all()
 
 
+class SigTagRepository(CRUDRepository[SIGTag, int]):
+    @property
+    def model(self) -> type[SIGTag]:
+        return SIGTag
+
+    def get_by_sig_id(self, sig_id: int) -> Sequence[SIGTag]:
+        stmt = select(SIGTag).where(SIGTag.sig_id == sig_id)
+        return self.session.scalars(stmt).all()
+
+    def get_by_sig_id_and_label(self, sig_id: int, label: str) -> Optional[SIGTag]:
+        stmt = select(SIGTag).where(SIGTag.sig_id == sig_id, SIGTag.label == label)
+        return self.session.scalar(stmt)
+
+
 SigRepositoryDep = Annotated[SigRepository, Depends()]
 SigMemberRepositoryDep = Annotated[SigMemberRepository, Depends()]
+SigTagRepositoryDep = Annotated[SigTagRepository, Depends()]
