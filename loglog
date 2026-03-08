@@ -1,0 +1,16 @@
+git commit -m "user table 분리"
+black....................................................................Failed
+- hook id: black
+- exit code: 2
+
+warning: `VIRTUAL_ENV=/mnt/c/Users/dlxod/init/homepage_init_backend/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+error: Failed to query Python interpreter at `/home/dlxod/init/homepage_init_backend/.venv/bin/python3`
+  Caused by: Permission denied (os error 13)
+
+isort....................................................................Failed
+- hook id: isort
+- exit code: 2
+
+warning: `VIRTUAL_ENV=/mnt/c/Users/dlxod/init/homepage_init_backend/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+error: Failed to query Python interpreter at `/home/dlxod/init/homepage_init_backend/.venv/bin/python3`
+  Caused by: Permission denied (os error 13)

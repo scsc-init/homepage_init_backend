@@ -1,9 +1,10 @@
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
+from src.db import get_user_role_level
 from src.dependencies import UserDep, api_secret
-from src.schemas import PublicUserResponse, UserResponse
+from src.schemas import PublicUserResponse, UserResponse, UserSummaryResponse
 from src.services import (
     BodyCreateUser,
     BodyLogin,
@@ -52,6 +53,7 @@ async def get_public_executives(
 
 @user_router.get("/executive/users")
 async def get_users(
+    current_user: UserDep,
     user_service: UserServiceDep,
     email: Optional[str] = None,
     name: Optional[str] = None,
@@ -64,6 +66,8 @@ async def get_users(
     discord_name: Optional[str] = None,
     major_id: Optional[int] = None,
 ) -> Sequence[UserResponse]:
+    if current_user.role < get_user_role_level("president"):
+        raise HTTPException(403, detail="permission denied: president role required")
     return user_service.get_users(
         email,
         name,
@@ -76,6 +80,14 @@ async def get_users(
         discord_name,
         major_id,
     )
+
+
+@user_router.get("/executive/users/read")
+async def get_user_summaries(
+    current_user: UserDep,
+    user_service: UserServiceDep,
+) -> Sequence[UserSummaryResponse]:
+    return user_service.get_user_summaries(current_user)
 
 
 @user_router.get("/executive/user/{id}", response_model=UserResponse)
