@@ -25,6 +25,7 @@ GRANT_CHANNEL_ID=0
 DB_USER=app_user
 DB_PASSWORD=app_password
 DB_ADMIN_PASSWORD=admin_password
+READONLY_PASSWORD=readonly_password
 ```
 
 | Key Name             | Description                                                      |
@@ -47,10 +48,11 @@ DB_ADMIN_PASSWORD=admin_password
 | `NOTICE_CHANNEL_ID`      | 디스코드 서버에서 공지 채널의 ID. |
 | `GRANT_CHANNEL_ID`       | 디스코드 서버에서 지원금 신청 채널의 ID. |
 | `W_HTML_DIR`             | HTML 파일 업로드 경로. 폴더가 이미 생성되어 있어야 함 |
-| `DB_NAME`                | postgresql db 이름 |
+| `DB_NAME`                | postgresql db 이름. 기본값 `main_db` |
 | `DB_USER`                | postgresql 백엔드용 계정 이름 |
 | `DB_PASSWORD`            | postgresql 백엔드용 계정 비밀번호 |
 | `DB_ADMIN_PASSWORD`      | postgresql 관리자용 계정 및 pgadmin 관리자용 계정 비밀번호 |
+| `READONLY_PASSWORD`      | postgresql 읽기전용(프론트엔드용) 계정 비밀번호 |
 
 
 ## 실행 방법(with docker)

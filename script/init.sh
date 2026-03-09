@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+psql -v ON_ERROR_STOP=1 --username postgres --dbname "${DB_NAME:-main_db}" <<-EOSQL
+    -- 1. App User with Env Password
+    CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+    GRANT ALL ON DATABASE ${DB_NAME:-main_db} TO $DB_USER;
+    GRANT ALL ON ALL TABLES IN SCHEMA public TO $DB_USER;
+    GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;
+
+    -- 2. ReadOnly User with Env Password
+    CREATE USER readonly_user WITH PASSWORD '$READONLY_PASSWORD';
+    GRANT CONNECT ON DATABASE ${DB_NAME:-main_db} TO readonly_user;
+    GRANT USAGE ON SCHEMA public TO readonly_user;
+    GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_user;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO readonly_user;
+    ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO readonly_user;
+EOSQL
