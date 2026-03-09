@@ -93,9 +93,10 @@ async def get_user_summaries(
 @user_router.get("/executive/user/{id}", response_model=UserResponse)
 async def get_user_by_id(
     id: str,
+    current_user: UserDep,
     user_service: UserServiceDep,
 ) -> UserResponse:
-    return user_service.get_user_by_id(id)
+    return user_service.get_user_by_id(current_user, id)
 
 
 @user_router.get("/role_names")
