@@ -26,10 +26,8 @@ from .key_value import KvServiceDep
 from .user import OldboyServiceDep, UserServiceDep
 
 _valid_scsc_global_status_update = (
-    (SCSCStatus.inactive, SCSCStatus.recruiting),
     (SCSCStatus.recruiting, SCSCStatus.active),
     (SCSCStatus.active, SCSCStatus.recruiting),
-    (SCSCStatus.active, SCSCStatus.inactive),
 )
 
 
@@ -80,7 +78,7 @@ class SCSCService:
         return self.scsc_global_status
 
     def get_all_statuses(self) -> dict[str, list[str]]:
-        return {"statuses": ["recruiting", "active", "inactive"]}
+        return {"statuses": ["recruiting", "active"]}
 
     async def _process_igs_change_semester(
         self, model: Type[SIG | PIG], scsc_global_status: SCSCGlobalStatus
@@ -103,7 +101,7 @@ class SCSCService:
                     ig.status = SCSCStatus.recruiting
                     self.session.add(ig)
                 else:
-                    ig.status = SCSCStatus.inactive
+                    ig.status = "inactive"
                     self.session.add(ig)
                     await mq_client.send_discord_bot_request_no_reply(
                         action_code=action_code,
@@ -180,6 +178,25 @@ class SCSCService:
                 pig.status = SCSCStatus.active
                 self.session.add(pig)
 
+            unprocessed_applicants = self.oldboy_repository.get_unprocessed()
+            for applicant in unprocessed_applicants:
+                try:
+                    await self.oldboy_service.process_applicant(applicant.id)
+                except Exception as e:
+                    logger.error(
+                        f"err_type=process_applicant_during_scsc_global_status_update ; applicant.id={applicant.id} ; executor={current_user_id} ; msg={e}"
+                    )
+            self.session.execute(
+                update(User)
+                .where(
+                    ~User.is_active,
+                    ~User.is_banned,
+                    User.role <= get_user_role_level("member"),
+                )
+                .values(role=get_user_role_level("dormant"))
+                .execution_options(synchronize_session=False)
+            )
+
         # end of active
         if scsc_global_status.status == SCSCStatus.active:
             await mq_client.send_discord_bot_request_no_reply(
@@ -238,27 +255,6 @@ class SCSCService:
                 .execution_options(synchronize_session=False)
             )
             self.standby_repository.delete_all()
-
-        # start of inactive (regular semester starts)
-        if new_status == SCSCStatus.inactive:
-            unprocessed_applicants = self.oldboy_repository.get_unprocessed()
-            for applicant in unprocessed_applicants:
-                try:
-                    await self.oldboy_service.process_applicant(applicant.id)
-                except Exception as e:
-                    logger.error(
-                        f"err_type=process_applicant_during_scsc_global_status_update ; applicant.id={applicant.id} ; executor={current_user_id} ; msg={e}"
-                    )
-            self.session.execute(
-                update(User)
-                .where(
-                    ~User.is_active,
-                    ~User.is_banned,
-                    User.role <= get_user_role_level("member"),
-                )
-                .values(role=get_user_role_level("dormant"))
-                .execution_options(synchronize_session=False)
-            )
 
         # update the scsc global status
         if scsc_global_status.status == SCSCStatus.active:

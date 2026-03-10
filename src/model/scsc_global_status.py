@@ -17,7 +17,6 @@ from .base import Base
 class SCSCStatus(str, enum):
     recruiting = "recruiting"
     active = "active"
-    inactive = "inactive"
 
 
 class SCSCGlobalStatus(Base):
