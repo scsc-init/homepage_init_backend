@@ -163,6 +163,7 @@ class UserService:
 
     def get_users(
         self,
+        current_user: User,
         email: Optional[str] = None,
         name: Optional[str] = None,
         phone: Optional[str] = None,
@@ -174,6 +175,10 @@ class UserService:
         discord_name: Optional[str] = None,
         major_id: Optional[int] = None,
     ) -> Sequence[UserResponse]:
+        if current_user.role < get_user_role_level("president"):
+            raise HTTPException(
+                403, detail="permission denied: president role required"
+            )
         filters = {}
         if email:
             filters["email"] = email

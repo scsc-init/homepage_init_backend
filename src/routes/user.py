@@ -66,9 +66,8 @@ async def get_users(
     discord_name: Optional[str] = None,
     major_id: Optional[int] = None,
 ) -> Sequence[UserResponse]:
-    if current_user.role < get_user_role_level("president"):
-        raise HTTPException(403, detail="permission denied: president role required")
     return user_service.get_users(
+        current_user,
         email,
         name,
         phone,
