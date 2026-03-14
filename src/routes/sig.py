@@ -22,6 +22,7 @@ class BodyCreateTag(BaseModel):
     text: str = Field(..., min_length=1)
     is_major: bool = False
 
+
 @sig_router.post("/sig/create", status_code=201)
 async def create_sig(
     scsc_global_status: SCSCGlobalStatusDep,

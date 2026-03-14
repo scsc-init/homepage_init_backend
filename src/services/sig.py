@@ -452,7 +452,9 @@ class SigService:
             raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
 
         try:
-            sig_tag = self.sig_tag_repository.create(SIGTag(sig_id=sig_id, tag_id=tag_id))
+            sig_tag = self.sig_tag_repository.create(
+                SIGTag(sig_id=sig_id, tag_id=tag_id)
+            )
         except IntegrityError:
             raise HTTPException(409, detail="이미 추가된 태그입니다") from None
 
@@ -482,7 +484,9 @@ class SigService:
 
         self.sig_tag_repository.delete(sig_tag)
 
-        logger.info(f"info_type=remove_sig_tag ; {sig_id=} ; {tag_id=} ; {executor.id=}")
+        logger.info(
+            f"info_type=remove_sig_tag ; {sig_id=} ; {tag_id=} ; {executor.id=}"
+        )
 
     def get_tags(self) -> Sequence[Tag]:
         return self.tag_repository.get_all()
@@ -522,4 +526,6 @@ class SigService:
         self.tag_repository.delete(tag)
 
         logger.info(f"info_type=delete_tag ; {tag_id=} ; {executor.id=}")
+
+
 SigServiceDep = Annotated[SigService, Depends()]
