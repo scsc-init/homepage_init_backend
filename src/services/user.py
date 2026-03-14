@@ -151,7 +151,7 @@ class UserService:
         logger.info(f"info_type=user_created ; user_id={user.id}")
         return UserResponse.model_validate(user)
 
-    def get_user_by_id(self, current_user: User, id: str) -> UserResponse:
+    def get_user_by_id(self, current_user: User, id: str) -> UserResponse:  # noqa: A002
         if current_user.role < get_user_role_level("president"):
             raise HTTPException(
                 403, detail="permission denied: president role required"

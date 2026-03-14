@@ -89,7 +89,7 @@ async def get_user_summaries(
     return user_service.get_user_summaries(current_user)
 
 
-@user_router.get("/executive/user/{id}", response_model=UserResponse)
+@user_router.get("/executive/user/{id}", response_model=UserResponse)  # noqa: A002
 async def get_user_by_id(
     id: str,
     current_user: UserDep,
