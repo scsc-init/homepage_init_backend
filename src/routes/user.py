@@ -96,9 +96,7 @@ async def get_user_by_id(
     current_user: UserDep,
     user_service: UserServiceDep,
 ) -> UserResponse:
-    if current_user.role < get_user_role_level("president"):
-        raise HTTPException(403, detail="permission denied: president role required")
-    return user_service.get_user_by_id(id)
+    return user_service.get_user_by_id(current_user, id)
 
 
 @user_router.get("/role_names")
