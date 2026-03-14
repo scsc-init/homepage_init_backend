@@ -30,7 +30,6 @@ class UserSummaryResponse(BaseResponse):
     role: int
     is_active: bool
     is_banned: bool
-    deposit_confirmed: bool
 
 
 class PublicUserResponse(BaseResponse):

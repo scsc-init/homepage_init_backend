@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+﻿from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
@@ -96,7 +96,9 @@ async def get_user_by_id(
     current_user: UserDep,
     user_service: UserServiceDep,
 ) -> UserResponse:
-    return user_service.get_user_by_id(current_user, id)
+    if current_user.role < get_user_role_level("president"):
+        raise HTTPException(403, detail="permission denied: president role required")
+    return user_service.get_user_by_id(id)
 
 
 @user_router.get("/role_names")
