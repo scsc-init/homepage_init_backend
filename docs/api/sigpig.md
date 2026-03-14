@@ -474,34 +474,43 @@ END;
 
 ---
 
+
+
 ## 시그 태그 기능(SIG Only)
 
 ### 시그 태그 추가 (Add SIG Tag)
 
-시그에 새로운 태그를 추가합니다. **시그 소유자** 또는 **운영진(Executive)** 이상의 권한이 필요합니다.
+시그에 기존에 등록된 태그를 추가합니다. **시그 소유자** 또는 **운영진(Executive)** 이상의 권한이 필요합니다.
 
 * **Method**: `POST`
-* **URL**: `/sig/:id/tag`
+* **URL**: `/api/sig/:id/tag`
 * **Request Body**:
-* `label` (string): 추가할 태그 이름
+
+```json
+{
+  "tag_id": 3
+}
+````
+
 * **Response Body**:
-* `[SigTagResponse]`: 태그 객체
+
 ```json
 {
   "id": 1,
   "sig_id": 1,
-  "label": "기초 SIG"
+  "tag_id": 3
 }
 ```
 
-
 * **Status Codes**:
+
 * `201 Created`: 태그 추가 성공
+
 * `403 Forbidden`: 권한 없음 (타인의 시그에 태그 추가 시도)
+
 * `404 Not Found`: 해당 ID의 시그가 존재하지 않음
-* `409 Conflict`: 이미 동일한 이름의 태그가 존재함
 
-
+* `409 Conflict`: 이미 동일한 태그가 추가되어 있음
 
 ---
 
@@ -510,29 +519,29 @@ END;
 특정 시그에 등록된 모든 태그 목록을 조회합니다.
 
 * **Method**: `GET`
-* **URL**: `/sig/:id/tag`
+
+* **URL**: `/api/sig/:id/tag`
+
 * **Response Body**:
-* `Sequence[SigTagResponse]`: 태그 객체 리스트
+
 ```json
 [
   {
     "id": 1,
     "sig_id": 1,
-    "label": "기초 SIG"
+    "tag_id": 3
   },
   {
     "id": 2,
     "sig_id": 1,
-    "label": "AI"
+    "tag_id": 5
   }
 ]
 ```
 
-
 * **Status Codes**:
+
 * `200 OK`: 조회 성공 (태그가 없으면 빈 리스트 반환)
-
-
 
 ---
 
@@ -541,12 +550,16 @@ END;
 시그에 등록된 특정 태그를 삭제합니다. **시그 소유자** 또는 **운영진(Executive)** 이상의 권한이 필요합니다.
 
 * **Method**: `DELETE`
-* **URL**: `/sig/:id/tag/:label`
-* **Status Codes**:
-* `204 No Content`: 삭제 성공 (이미 태그가 없는 경우에도 동일)
-* `403 Forbidden`: 권한 없음 (타인의 시그 태그 삭제 시도)
-* `404 Not Found`: 해당 ID와 label의 시그 태그가 존재하지 않음
 
+* **URL**: `/api/sig/:id/tag/:tag_id`
+
+* **Status Codes**:
+
+* `204 No Content`: 삭제 성공 (이미 태그가 없는 경우에도 동일)
+
+* `403 Forbidden`: 권한 없음 (타인의 시그 태그 삭제 시도)
+
+* `404 Not Found`: 해당 ID와 tag_id의 시그 태그가 존재하지 않음
 
 
 ---

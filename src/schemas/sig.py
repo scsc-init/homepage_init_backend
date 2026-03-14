@@ -35,4 +35,10 @@ class SigResponse(BaseResponse):
 class SigTagResponse(BaseResponse):
     id: int
     sig_id: int
-    label: str
+    tag_id: int
+
+
+class TagResponse(BaseResponse):
+    id: int
+    text: str
+    is_major: bool

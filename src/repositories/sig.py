@@ -3,7 +3,7 @@ from typing import Annotated, Any, Optional, Sequence
 from fastapi import Depends
 from sqlalchemy import select
 
-from src.model import SIG, SCSCStatus, SIGMember, SIGTag
+from src.model import SIG, SCSCStatus, SIGMember, SIGTag, Tag
 
 from .crud_repository import CRUDRepository
 
@@ -59,11 +59,29 @@ class SigTagRepository(CRUDRepository[SIGTag, int]):
         stmt = select(SIGTag).where(SIGTag.sig_id == sig_id)
         return self.session.scalars(stmt).all()
 
-    def get_by_sig_id_and_label(self, sig_id: int, label: str) -> Optional[SIGTag]:
-        stmt = select(SIGTag).where(SIGTag.sig_id == sig_id, SIGTag.label == label)
+    def get_by_sig_id_and_tag_id(self, sig_id: int, tag_id: int) -> Optional[SIGTag]:
+        stmt = select(SIGTag).where(SIGTag.sig_id == sig_id, SIGTag.tag_id == tag_id)
         return self.session.scalar(stmt)
+
+
+class TagRepository(CRUDRepository[Tag, int]):
+    @property
+    def model(self) -> type[Tag]:
+        return Tag
+
+    def get_by_text(self, text: str) -> Optional[Tag]:
+        stmt = select(Tag).where(Tag.text == text)
+        return self.session.scalar(stmt)
+
+    def get_all(self) -> Sequence[Tag]:
+        return self.session.scalars(select(Tag)).all()
+
+    def get_non_major(self) -> Sequence[Tag]:
+        stmt = select(Tag).where(Tag.is_major.is_(False))
+        return self.session.scalars(stmt).all()
 
 
 SigRepositoryDep = Annotated[SigRepository, Depends()]
 SigMemberRepositoryDep = Annotated[SigMemberRepository, Depends()]
 SigTagRepositoryDep = Annotated[SigTagRepository, Depends()]
+TagRepositoryDep = Annotated[TagRepository, Depends()]

@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from src.dependencies import SCSCGlobalStatusDep, UserDep
 from src.model import SCSCStatus
-from src.schemas import SigMemberResponse, SigResponse, SigTagResponse
+from src.schemas import SigMemberResponse, SigResponse, SigTagResponse, TagResponse
 from src.services import (
     BodyCreateSIG,
     BodyExecutiveJoinSIG,
@@ -17,6 +17,10 @@ from src.services import (
 
 sig_router = APIRouter(tags=["sig"])
 
+
+class BodyCreateTag(BaseModel):
+    text: str = Field(..., min_length=1)
+    is_major: bool = False
 
 @sig_router.post("/sig/create", status_code=201)
 async def create_sig(
@@ -153,7 +157,7 @@ async def executive_leave_sig(
 
 
 class BodyAddSigTag(BaseModel):
-    label: str = Field(min_length=1, max_length=20)
+    tag_id: int
 
 
 @sig_router.post("/sig/{id}/tag", status_code=201)
@@ -164,7 +168,7 @@ def add_sig_tag(
     sig_service: SigServiceDep,
 ) -> SigTagResponse:
     return SigTagResponse.model_validate(
-        sig_service.add_sig_tag(id, body.label, current_user)
+        sig_service.add_sig_tag(id, body.tag_id, current_user)
     )
 
 
@@ -176,11 +180,36 @@ def get_sig_tags(
     return SigTagResponse.model_validate_list(sig_service.get_sig_tags(id))
 
 
-@sig_router.delete("/sig/{id}/tag/{label}", status_code=204)
+@sig_router.delete("/sig/{id}/tag/{tag_id}", status_code=204)
 def remove_sig_tag(
     id: int,
-    label: str,
+    tag_id: int,
     current_user: UserDep,
     sig_service: SigServiceDep,
 ) -> None:
-    return sig_service.remove_sig_tag(id, label, current_user)
+    sig_service.remove_sig_tag(id, tag_id, current_user)
+
+
+@sig_router.get("/tags")
+def get_tags(sig_service: SigServiceDep) -> Sequence[TagResponse]:
+    return TagResponse.model_validate_list(sig_service.get_tags())
+
+
+@sig_router.post("/executive/tag", status_code=201)
+def create_tag(
+    body: BodyCreateTag,
+    current_user: UserDep,
+    sig_service: SigServiceDep,
+) -> TagResponse:
+    return TagResponse.model_validate(
+        sig_service.create_tag(body.text, body.is_major, current_user)
+    )
+
+
+@sig_router.delete("/executive/tag/{tag_id}", status_code=204)
+def delete_tag(
+    tag_id: int,
+    current_user: UserDep,
+    sig_service: SigServiceDep,
+) -> None:
+    sig_service.delete_tag(tag_id, current_user)

@@ -86,13 +86,27 @@ class SIGMember(Base):
     )
 
 
+class Tag(Base):
+    __tablename__ = "tag"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    text: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    is_major: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+    )
+
+
 class SIGTag(Base):
     __tablename__ = "sig_tag"
     __table_args__ = (
         UniqueConstraint(
             "sig_id",
-            "label",
-            name="uq_sig_tag_sig_id_label",
+            "tag_id",
+            name="uq_sig_tag_sig_id_tag_id",
         ),
     )
 
@@ -100,7 +114,7 @@ class SIGTag(Base):
         Integer, primary_key=True, autoincrement=True, init=False
     )
     sig_id: Mapped[int] = mapped_column(Integer, ForeignKey("sig.id"), nullable=False)
-    label: Mapped[str] = mapped_column(String, nullable=False)
+    tag_id: Mapped[int] = mapped_column(Integer, ForeignKey("tag.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
         default_factory=utcnow,

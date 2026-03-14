@@ -7,11 +7,12 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
-from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, SIGTag, User
+from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, SIGTag, Tag, User
 from src.repositories import (
     SigMemberRepositoryDep,
     SigRepositoryDep,
     SigTagRepositoryDep,
+    TagRepositoryDep,
     UserRepositoryDep,
 )
 from src.schemas import SigMemberResponse, SigResponse, UserResponse
@@ -58,12 +59,14 @@ class SigService:
         sig_repository: SigRepositoryDep,
         sig_member_repository: SigMemberRepositoryDep,
         sig_tag_repository: SigTagRepositoryDep,
+        tag_repository: TagRepositoryDep,
         user_repository: UserRepositoryDep,
     ) -> None:
         self.article_service = article_service
         self.sig_repository = sig_repository
         self.sig_member_repository = sig_member_repository
         self.sig_tag_repository = sig_tag_repository
+        self.tag_repository = tag_repository
         self.user_repository = user_repository
 
     async def create_sig(
@@ -433,40 +436,90 @@ class SigService:
             f"info_type=sig_leave ; {sig.id=} ; {sig.title=} ; {executor.id=} ; left_user_id={body.user_id} ; {sig.year=} ; {sig.semester=}"
         )
 
-    def add_sig_tag(self, sig_id: int, label: str, executor: User):
+    def add_sig_tag(self, sig_id: int, tag_id: int, executor: User) -> SIGTag:
         sig = self.sig_repository.get_by_id(sig_id)
         if sig is None:
             raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
+
         if (
             executor.role < get_user_role_level("executive")
             and sig.owner != executor.id
         ):
             raise HTTPException(403, detail="타인의 시그에 태그를 추가할 수 없습니다")
+
+        tag = self.tag_repository.get_by_id(tag_id)
+        if tag is None:
+            raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
+
         try:
-            sig_tag = self.sig_tag_repository.create(SIGTag(sig_id=sig_id, label=label))
+            sig_tag = self.sig_tag_repository.create(SIGTag(sig_id=sig_id, tag_id=tag_id))
         except IntegrityError:
             raise HTTPException(409, detail="이미 추가된 태그입니다") from None
-        logger.info(f"info_type=add_sig_tag ; {sig_id=} ; {label=} ; {executor.id=}")
+
+        logger.info(f"info_type=add_sig_tag ; {sig_id=} ; {tag_id=} ; {executor.id=}")
         return sig_tag
 
     def get_sig_tags(self, sig_id: int) -> Sequence[SIGTag]:
-        return self.sig_tag_repository.get_by_sig_id(sig_id)
-
-    def remove_sig_tag(self, sig_id: int, label: str, executor: User):
         sig = self.sig_repository.get_by_id(sig_id)
         if sig is None:
             raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
+        return self.sig_tag_repository.get_by_sig_id(sig_id)
+
+    def remove_sig_tag(self, sig_id: int, tag_id: int, executor: User) -> None:
+        sig = self.sig_repository.get_by_id(sig_id)
+        if sig is None:
+            raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
+
         if (
             executor.role < get_user_role_level("executive")
             and sig.owner != executor.id
         ):
             raise HTTPException(403, detail="타인의 시그 태그를 삭제할 수 없습니다")
-        sig_tag = self.sig_tag_repository.get_by_sig_id_and_label(sig_id, label)
+
+        sig_tag = self.sig_tag_repository.get_by_sig_id_and_tag_id(sig_id, tag_id)
         if sig_tag is None:
             return
 
         self.sig_tag_repository.delete(sig_tag)
-        logger.info(f"info_type=remove_sig_tag ; {sig_id=} ; {label=} ; {executor.id=}")
 
+        logger.info(f"info_type=remove_sig_tag ; {sig_id=} ; {tag_id=} ; {executor.id=}")
 
+    def get_tags(self) -> Sequence[Tag]:
+        return self.tag_repository.get_all()
+
+    def create_tag(self, text: str, is_major: bool, executor: User) -> Tag:
+        if executor.role < get_user_role_level("executive"):
+            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
+
+        normalized_text = text.strip()
+        if not normalized_text:
+            raise HTTPException(422, detail="태그명은 비어 있을 수 없습니다")
+
+        existing = self.tag_repository.get_by_text(normalized_text)
+        if existing is not None:
+            raise HTTPException(409, detail="이미 존재하는 태그입니다")
+
+        try:
+            tag = self.tag_repository.create(
+                Tag(text=normalized_text, is_major=is_major)
+            )
+        except IntegrityError:
+            raise HTTPException(409, detail="이미 존재하는 태그입니다") from None
+
+        logger.info(
+            f"info_type=create_tag ; tag_id={tag.id} ; text={tag.text} ; is_major={tag.is_major} ; executor_id={executor.id}"
+        )
+        return tag
+
+    def delete_tag(self, tag_id: int, executor: User) -> None:
+        if executor.role < get_user_role_level("executive"):
+            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
+
+        tag = self.tag_repository.get_by_id(tag_id)
+        if tag is None:
+            raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
+
+        self.tag_repository.delete(tag)
+
+        logger.info(f"info_type=delete_tag ; {tag_id=} ; {executor.id=}")
 SigServiceDep = Annotated[SigService, Depends()]
