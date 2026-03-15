@@ -180,4 +180,4 @@ class RabbitMQClient:
         )
 
 
-mq_client = RabbitMQClient()
+mq_client = RabbitMQClient() if get_settings().enable_rabbitmq else None

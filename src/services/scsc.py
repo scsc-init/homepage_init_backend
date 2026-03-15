@@ -105,13 +105,14 @@ class SCSCService:
                 else:
                     ig.status = SCSCStatus.inactive
                     self.session.add(ig)
-                    await mq_client.send_discord_bot_request_no_reply(
-                        action_code=action_code,
-                        body={
-                            name_key: ig.title,
-                            "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}",
-                        },
-                    )
+                    if mq_client:
+                        await mq_client.send_discord_bot_request_no_reply(
+                            action_code=action_code,
+                            body={
+                                name_key: ig.title,
+                                "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}",
+                            },
+                        )
             except Exception as e:
                 logger.error(
                     f"err_type=process_igs ; ig_id={ig.id} ; ig_title={ig.title} ; msg=error processing {model.__name__}: {e}",
@@ -155,18 +156,20 @@ class SCSCService:
 
         # start of recruiting
         if new_status == SCSCStatus.recruiting:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3002,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                },
-            )
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3004,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                },
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3002,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                    },
+                )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3004,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                    },
+                )
 
         # start of active
         if new_status == SCSCStatus.active:
@@ -182,40 +185,41 @@ class SCSCService:
 
         # end of active
         if scsc_global_status.status == SCSCStatus.active:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3008,
-                body={
-                    "data": {
-                        "previousSemester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"
-                    }
-                },
-            )
-            sig_res = await mq_client.send_discord_bot_request(
-                action_code=3005,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                },
-            )
-            pig_res = await mq_client.send_discord_bot_request(
-                action_code=3005,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                },
-            )
-            if not sig_res:
+            if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3002,
+                    action_code=3008,
+                    body={
+                        "data": {
+                            "previousSemester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"
+                        }
+                    },
+                )
+                sig_res = await mq_client.send_discord_bot_request(
+                    action_code=3005,
                     body={
                         "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
                     },
                 )
-            if not pig_res:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3004,
+                pig_res = await mq_client.send_discord_bot_request(
+                    action_code=3005,
                     body={
                         "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
                     },
                 )
+                if not sig_res:
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=3002,
+                        body={
+                            "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                        },
+                    )
+                if not pig_res:
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=3004,
+                        body={
+                            "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                        },
+                    )
 
             await self._process_igs_change_semester(SIG, scsc_global_status)
             await self._process_igs_change_semester(PIG, scsc_global_status)
