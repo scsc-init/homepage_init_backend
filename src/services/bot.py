@@ -20,7 +20,7 @@ class BotService:
 
     async def get_discord_invite(self):
         if not mq_client:
-            return {"result": "mq is not enabled"}
+            raise HTTPException(status_code=503, detail="RabbitMQ is disabled")
         try:
             result = await mq_client.send_discord_bot_request(action_code=1001)
             return {"result": result}
@@ -34,10 +34,11 @@ class BotService:
             raise HTTPException(status_code=500, detail="Unexpected error")
 
     async def send_message_to_id(self, body: BodySendMessageToID):
-        if mq_client:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=1002, body=body.model_dump()
-            )
+        if not mq_client:
+            raise HTTPException(status_code=503, detail="RabbitMQ is disabled")
+        await mq_client.send_discord_bot_request_no_reply(
+            action_code=1002, body=body.model_dump()
+        )
 
     async def get_status(self):
         try:
