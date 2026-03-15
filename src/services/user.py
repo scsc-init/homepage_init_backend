@@ -388,6 +388,8 @@ class UserService:
         """
         Change role of user by removing all possible roles and adding new one.
         """
+        if not mq_client:
+            return
         for role in self.user_role_repository.list_all():
             await mq_client.send_discord_bot_request_no_reply(
                 action_code=2002, body={"user_id": discord_id, "role_name": role.name}

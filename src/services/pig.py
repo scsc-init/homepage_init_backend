@@ -126,14 +126,15 @@ class PigService:
             ) from exc
 
         if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=4003,
-                body={
-                    "pig_name": pig.title,
-                    "user_id_list": [current_user.discord_id],
-                    "pig_description": pig.description,
-                },
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=4003,
+                    body={
+                        "pig_name": pig.title,
+                        "user_id_list": [current_user.discord_id],
+                        "pig_description": pig.description,
+                    },
+                )
 
         logger.info(
             f"info_type=pig_created ; pig_id={pig.id} ; title={pig.title} ; owner_id={current_user.id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
@@ -219,9 +220,10 @@ class PigService:
         if body.description:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=4006, body=bot_body
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=4006, body=bot_body
+                )
 
         logger.info(
             f"info_type=pig_updated ; pig_id={id} ; title={pig.title} ; revisioner_id={current_user.id} ; year={pig.year} ; semester={pig.semester} ; is_rolling_admission={pig.is_rolling_admission}"
@@ -244,13 +246,14 @@ class PigService:
         pig.status = SCSCStatus.inactive
         self.pig_repository.update(pig)
 
-        await mq_client.send_discord_bot_request_no_reply(
-            action_code=4004,
-            body={
-                "pig_name": pig.title,
-                "previous_semester": f"{pig.year}-{map_semester_name.get(pig.semester)}",
-            },
-        )
+        if mq_client:
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4004,
+                body={
+                    "pig_name": pig.title,
+                    "previous_semester": f"{pig.year}-{map_semester_name.get(pig.semester)}",
+                },
+            )
 
         logger.info(
             f"info_type=pig_deleted ; pig_id={pig.id} ; remover_id={current_user.id}"
@@ -349,10 +352,11 @@ class PigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": current_user.discord_id, "role_name": pig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2001,
+                    body={"user_id": current_user.discord_id, "role_name": pig.title},
+                )
 
         logger.info(
             f"info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}"
@@ -376,10 +380,11 @@ class PigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": user.discord_id, "role_name": pig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2001,
+                    body={"user_id": user.discord_id, "role_name": pig.title},
+                )
 
         logger.info(
             f"info_type=pig_join ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
@@ -409,10 +414,11 @@ class PigService:
         self.pig_member_repository.delete(member)
 
         if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": current_user.discord_id, "role_name": pig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2002,
+                    body={"user_id": current_user.discord_id, "role_name": pig.title},
+                )
 
         logger.info(
             f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={pig.year} ; semester={pig.semester}"
@@ -441,10 +447,11 @@ class PigService:
         self.pig_member_repository.delete(member)
 
         if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": user.discord_id, "role_name": pig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2002,
+                    body={"user_id": user.discord_id, "role_name": pig.title},
+                )
 
         logger.info(
             f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"

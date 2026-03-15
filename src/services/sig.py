@@ -115,14 +115,15 @@ class SigService:
             ) from exc
 
         if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=4001,
-                body={
-                    "sig_name": sig.title,
-                    "user_id_list": [current_user.discord_id],
-                    "sig_description": sig.description,
-                },
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=4001,
+                    body={
+                        "sig_name": sig.title,
+                        "user_id_list": [current_user.discord_id],
+                        "sig_description": sig.description,
+                    },
+                )
 
         logger.info(
             f"info_type=sig_created ; sig_id={sig.id} ; title={sig.title} ; owner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
@@ -205,9 +206,10 @@ class SigService:
         if body.description:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=4005, body=bot_body
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=4005, body=bot_body
+                )
 
         logger.info(
             f"info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
@@ -230,13 +232,14 @@ class SigService:
         sig.status = SCSCStatus.inactive
         self.sig_repository.update(sig)
 
-        await mq_client.send_discord_bot_request_no_reply(
-            action_code=4002,
-            body={
-                "sig_name": sig.title,
-                "previous_semester": f"{sig.year}-{map_semester_name.get(sig.semester)}",
-            },
-        )
+        if mq_client:
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4002,
+                body={
+                    "sig_name": sig.title,
+                    "previous_semester": f"{sig.year}-{map_semester_name.get(sig.semester)}",
+                },
+            )
 
         logger.info(
             f"info_type=sig_deleted ; sig_id={sig.id} ; remover_id={current_user.id}"
@@ -332,10 +335,11 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": current_user.discord_id, "role_name": sig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2001,
+                    body={"user_id": current_user.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
             f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
@@ -359,10 +363,11 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": user.discord_id, "role_name": sig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2001,
+                    body={"user_id": user.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
             f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
@@ -392,10 +397,11 @@ class SigService:
         self.sig_member_repository.delete(member)
 
         if executor.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": executor.discord_id, "role_name": sig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2002,
+                    body={"user_id": executor.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
             f"info_type=sig_leave ; {sig.id=} ; {sig.title=} ; {executor.id=} ; left_user_id={executor.id} ; {sig.year=} ; {sig.semester=}"
@@ -424,10 +430,11 @@ class SigService:
         self.sig_member_repository.delete(member)
 
         if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": user.discord_id, "role_name": sig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2002,
+                    body={"user_id": user.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
             f"info_type=sig_leave ; {sig.id=} ; {sig.title=} ; {executor.id=} ; left_user_id={body.user_id} ; {sig.year=} ; {sig.semester=}"
