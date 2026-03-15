@@ -25,7 +25,6 @@ class Settings(BaseSettings):
     db_name: str = "main_db"
     db_user: str
     db_password: str
-    enable_rabbitmq: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True, extra="ignore")
 
