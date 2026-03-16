@@ -481,7 +481,7 @@ def generate_user_hash(email: str) -> str:
 
 - **Method**: `POST`  
 - **URL**: `/api/executive/user/:id`  
-- **설명**: 관리자(`president `)가 특정 회원의 정보를 변경합니다.
+- **설명**: 관리자(`president`)가 특정 회원의 정보를 변경합니다.
 - **Path Parameters**:
     - `id` (string, required): 변경할 사용자 계정의 고유 ID.
 - **Request Body**:
