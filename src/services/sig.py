@@ -15,10 +15,8 @@ from src.repositories import (
     TagRepositoryDep,
     UserRepositoryDep,
 )
-from src.schemas import SigMemberResponse, SigResponse, UserResponse
-from src.util import (
-    map_semester_name,
-)
+from src.schemas import SigMemberResponse, SigResponse, TagResponse, UserResponse
+from src.util import map_semester_name
 
 from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
@@ -68,6 +66,37 @@ class SigService:
         self.sig_tag_repository = sig_tag_repository
         self.tag_repository = tag_repository
         self.user_repository = user_repository
+
+    def _get_tags_for_sig(self, sig_id: int) -> list[TagResponse]:
+        sig_tags = self.sig_tag_repository.get_by_sig_id(sig_id)
+        tag_responses: list[TagResponse] = []
+
+        for sig_tag in sig_tags:
+            tag = self.tag_repository.get_by_id(sig_tag.tag_id)
+            if tag is None:
+                continue
+            tag_responses.append(TagResponse.model_validate(tag))
+
+        return tag_responses
+
+    def _build_sig_response(self, sig: SIG) -> SigResponse:
+        return SigResponse(
+            id=sig.id,
+            title=sig.title,
+            description=sig.description,
+            content_id=sig.content_id,
+            status=sig.status,
+            created_year=sig.created_year,
+            created_semester=sig.created_semester,
+            year=sig.year,
+            semester=sig.semester,
+            owner=sig.owner,
+            should_extend=sig.should_extend,
+            is_rolling_admission=sig.is_rolling_admission,
+            created_at=sig.created_at,
+            updated_at=sig.updated_at,
+            tags=self._get_tags_for_sig(sig.id),
+        )
 
     async def create_sig(
         self,
@@ -138,6 +167,10 @@ class SigService:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
         return sig
 
+    def get_sig_response_by_id(self, id: int) -> SigResponse:
+        sig = self.get_by_id(id)
+        return self._build_sig_response(sig)
+
     def get_sigs(
         self,
         year: Optional[int] = None,
@@ -153,7 +186,7 @@ class SigService:
             filters["status"] = status
 
         sigs = self.sig_repository.get_by_filters(filters)
-        return SigResponse.model_validate_list(sigs)
+        return [self._build_sig_response(sig) for sig in sigs]
 
     async def update_sig(
         self,
@@ -492,9 +525,6 @@ class SigService:
         return self.tag_repository.get_all()
 
     def create_tag(self, text: str, is_major: bool, executor: User) -> Tag:
-        if executor.role < get_user_role_level("executive"):
-            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
-
         normalized_text = text.strip()
         if not normalized_text:
             raise HTTPException(422, detail="태그명은 비어 있을 수 없습니다")
@@ -516,9 +546,6 @@ class SigService:
         return tag
 
     def delete_tag(self, tag_id: int, executor: User) -> None:
-        if executor.role < get_user_role_level("executive"):
-            raise HTTPException(403, detail="관리자 이상의 권한이 필요합니다")
-
         tag = self.tag_repository.get_by_id(tag_id)
         if tag is None:
             raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")

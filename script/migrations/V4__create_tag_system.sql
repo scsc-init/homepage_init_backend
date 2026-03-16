@@ -1,3 +1,5 @@
+BEGIN;
+
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -117,3 +119,5 @@ BEGIN
         DROP COLUMN label;
     END IF;
 END $$;
+
+COMMIT;

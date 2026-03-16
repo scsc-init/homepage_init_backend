@@ -76,8 +76,8 @@ class TagRepository(CRUDRepository[Tag, int]):
     def get_all(self) -> Sequence[Tag]:
         return self.session.scalars(select(Tag)).all()
 
-    def get_non_major(self) -> Sequence[Tag]:
-        stmt = select(Tag).where(Tag.is_major.is_(False))
+    def get_by_is_major(self, is_major: bool) -> Sequence[Tag]:
+        stmt = select(Tag).where(Tag.is_major.is_(is_major))
         return self.session.scalars(stmt).all()
 
 
