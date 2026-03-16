@@ -27,8 +27,8 @@ from src.schemas import (
     LeadershipContactsResponse,
     PublicUserResponse,
     UserResponse,
+    UserSummaryResponse,
 )
-from src.schemas import PublicUserResponse, UserResponse, UserSummaryResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
@@ -258,6 +258,7 @@ class UserService:
             president=president,
             vice_presidents=vice_contacts,
         )
+
     def get_user_summaries(self, current_user: User) -> Sequence[UserSummaryResponse]:
         if current_user.role < get_user_role_level("executive"):
             raise HTTPException(
