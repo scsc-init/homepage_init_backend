@@ -218,3 +218,8 @@ async def process_deposit(
     standby_service: StandbyServiceDep,
 ) -> ProcessDepositResponse:
     return await standby_service.process_deposit(body)
+
+
+@user_router.get("/leadership/contact")
+async def get_leadership_contact(user_service: UserServiceDep):
+    return user_service.get_leadership_contacts()
