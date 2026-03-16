@@ -81,7 +81,7 @@ async def get_users(
     )
 
 
-@user_router.get("/executive/users/read")
+@user_router.get("/executive/users/summary")
 async def get_user_summaries(
     current_user: UserDep,
     user_service: UserServiceDep,
