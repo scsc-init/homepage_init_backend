@@ -6,7 +6,7 @@ from .key_value import KvResponse
 from .major import MajorResponse
 from .pig import PigMemberResponse, PigResponse, PigWebsiteResponse
 from .scsc_global_status import SCSCGlobalStatusResponse
-from .sig import SigMemberResponse, SigResponse, SigTagResponse
+from .sig import SigMemberResponse, SigResponse, SigTagResponse, TagResponse
 from .user import (
     LeadershipContact,
     LeadershipContactsResponse,
@@ -14,5 +14,6 @@ from .user import (
     PublicUserResponse,
     StandbyReqTblResponse,
     UserResponse,
+    UserSummaryResponse,
 )
 from .w import WHTMLMetadataResponse

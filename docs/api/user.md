@@ -222,7 +222,7 @@ CREATE TABLE standby_req_tbl (
 
 * **Method**: `GET`
 * **URL**: `/api/executive/users`
-* **Description**: Query Parameter에 맞는 사용자를 조회한다. 
+* **Description**: Query Parameter에 맞는 사용자를 조회한다(required level 1000). 
 * **Query Parameters**: all optional
   * `email`: `str`
   * `name`: `str`
@@ -271,7 +271,37 @@ CREATE TABLE standby_req_tbl (
   * `403 Forbidden`
 ---
 
-## Get User by ID(Executive)
+---
+## Get User Summaries (요약된 사용자 정보 목록)
+
+- **Method**: `GET`
+- **URL**: `/api/executive/users/summary` 
+- **Description**: 전화번호, 학번 등의 개인정보가 제한된 사용자의 목록을 반환한다(required level>=500).
+* **Example Request**:
+  `/api/executive/users/summary`
+* **Response**:
+
+```json
+[
+  {
+    "id": "a83c7aed49b69257312fb41419301e1dcbd563e6a2a682facd9752f80290449c",
+    "name": "홍길동",
+    "major_id": 1,
+    "role": 500,
+    "is_active": true,
+    "is_banned": false
+  }
+]
+```
+
+* **Status Codes**:
+  * `200 OK`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+---
+
+
+## Get User by ID(President)
 
 - **Method**: `GET`  
 - **URL**: `/api/executive/user/:id`  
@@ -451,7 +481,7 @@ def generate_user_hash(email: str) -> str:
 
 - **Method**: `POST`  
 - **URL**: `/api/executive/user/:id`  
-- **설명**: 관리자(`executive`)가 특정 회원의 정보를 변경합니다.
+- **설명**: 관리자(`president`)가 특정 회원의 정보를 변경합니다.
 - **Path Parameters**:
     - `id` (string, required): 변경할 사용자 계정의 고유 ID.
 - **Request Body**:
@@ -474,9 +504,7 @@ def generate_user_hash(email: str) -> str:
   - `204 No Content`: 사용자 정보가 성공적으로 변경되었습니다.
   - `401 Unauthorized`: 로그인하지 않았거나 유효한 인증 정보가 없습니다.
   - `403 Forbidden`:
-      - 관리자(`executive`) 권한이 없거나,
-      - 자신보다 높거나 같은 등급의 역할을 가진 사용자의 정보를 변경하려는 경우,
-      - 자신보다 높은 등급의 역할을 사용자에게 부여하려는 경우.
+      - 관리자(`president`) 권한이 없는 경우
   - `404 Not Found`: 제공된 `id`에 해당하는 사용자 계정을 찾을 수 없습니다.
   - `409 Conflict`: `phone` 또는 `student_id`와 같은 UNIQUE 필드 값이 이미 존재합니다.
   - `422 Unprocessable Entity`:
