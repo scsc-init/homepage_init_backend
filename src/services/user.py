@@ -22,7 +22,7 @@ from src.repositories import (
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
-from src.schemas import PublicUserResponse, UserResponse
+from src.schemas import PublicUserResponse, UserResponse, UserSummaryResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
@@ -151,7 +151,11 @@ class UserService:
         logger.info(f"info_type=user_created ; user_id={user.id}")
         return UserResponse.model_validate(user)
 
-    def get_user_by_id(self, id: str) -> UserResponse:
+    def get_user_by_id(self, current_user: User, id: str) -> UserResponse:  # noqa: A002
+        if current_user.role < get_user_role_level("president"):
+            raise HTTPException(
+                403, detail="permission denied: president role required"
+            )
         user = self.user_repository.get_by_id(id)
         if not user:
             raise HTTPException(404, detail="user not found")
@@ -159,6 +163,7 @@ class UserService:
 
     def get_users(
         self,
+        current_user: User,
         email: Optional[str] = None,
         name: Optional[str] = None,
         phone: Optional[str] = None,
@@ -170,6 +175,10 @@ class UserService:
         discord_name: Optional[str] = None,
         major_id: Optional[int] = None,
     ) -> Sequence[UserResponse]:
+        if current_user.role < get_user_role_level("president"):
+            raise HTTPException(
+                403, detail="permission denied: president role required"
+            )
         filters = {}
         if email:
             filters["email"] = email
@@ -215,6 +224,29 @@ class UserService:
 
         users = self.user_repository.get_by_filters(filters)
         return UserResponse.model_validate_list(users)
+
+    def get_user_summaries(self, current_user: User) -> Sequence[UserSummaryResponse]:
+        if current_user.role < get_user_role_level("executive"):
+            raise HTTPException(
+                403, detail="permission denied: executive role required"
+            )
+
+        users = self.user_repository.list_all()
+
+        summaries: list[UserSummaryResponse] = []
+        for user in users:
+            summaries.append(
+                UserSummaryResponse(
+                    id=user.id,
+                    name=user.name,
+                    major_id=user.major_id,
+                    role=user.role,
+                    is_active=user.is_active,
+                    is_banned=user.is_banned,
+                )
+            )
+
+        return summaries
 
     def get_public_executives(self) -> Sequence[PublicUserResponse]:
         return PublicUserResponse.model_validate_list(
@@ -323,6 +355,12 @@ class UserService:
         user = self.user_repository.get_by_id(id)
         if user is None:
             raise HTTPException(404, detail="no user exists")
+
+        if current_user.role < get_user_role_level("president"):
+            raise HTTPException(
+                403,
+                detail="permission denied: president role required",
+            )
 
         old_role = user.role
 

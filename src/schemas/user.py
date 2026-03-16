@@ -23,6 +23,15 @@ class UserResponse(BaseResponse):
     updated_at: datetime
 
 
+class UserSummaryResponse(BaseResponse):
+    id: str
+    name: str
+    major_id: int
+    role: int
+    is_active: bool
+    is_banned: bool
+
+
 class PublicUserResponse(BaseResponse):
     id: str
     email: str

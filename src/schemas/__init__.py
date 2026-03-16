@@ -12,5 +12,6 @@ from .user import (
     PublicUserResponse,
     StandbyReqTblResponse,
     UserResponse,
+    UserSummaryResponse,
 )
 from .w import WHTMLMetadataResponse
