@@ -64,7 +64,14 @@ class User(Base):
 
 
 class UserSummary(Base):
-    __tablename__ = "user"  # Points to the existing user table
+    """
+    A read-only projection of the 'user' table containing public profile data.
+
+    This model maps to a subset of the 'user' table to optimize queries and protect privacy.
+    It includes a pre-joined relationship to the 'Major' model.
+    """
+
+    __tablename__ = "user"
     __table_args__ = {"extend_existing": True}  # Allows multiple mappings to one table
 
     id: Mapped[str] = mapped_column(String, primary_key=True)

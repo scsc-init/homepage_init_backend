@@ -141,6 +141,9 @@ class PigService:
         return pig
 
     def get_by_id(self, id: int) -> PIG:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
         pig = self.pig_repository.get_by_id(id)
         if not pig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
@@ -306,8 +309,11 @@ class PigService:
         self._handover_pig_ctrl(pig, body.new_owner, current_user.id, is_executive)
 
     def get_members(self, id: int) -> Sequence[PIGMember]:
-        self.get_by_id(id)
-        return self.pig_member_repository.get_members_by_pig_id(id)
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
+        pig = self.get_by_id(id)  # check existence of the pig
+        return pig.members
 
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)

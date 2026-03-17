@@ -41,13 +41,12 @@ async def get_all_pigs(
     semester: Optional[int] = None,
     status: Optional[SCSCStatus] = None,
 ) -> Sequence[PigResponse]:
-    return PigResponse.model_validate_list(
-        pig_service.get_pigs(
-            year,
-            semester,
-            status,
-        )
+    pigs = pig_service.get_pigs(
+        year,
+        semester,
+        status,
     )
+    return PigResponse.model_validate_list(pigs)
 
 
 @pig_router.post("/pig/{id}/update", status_code=204)

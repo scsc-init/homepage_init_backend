@@ -144,6 +144,9 @@ class SigService:
         return sig
 
     def get_by_id(self, id: int) -> SIG:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
         sig = self.sig_repository.get_by_id(id)
         if not sig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
@@ -306,6 +309,9 @@ class SigService:
         self._handover_sig_ctrl(sig, body.new_owner, current_user.id, is_executive)
 
     def get_members(self, id: int) -> Sequence[SIGMember]:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
         sig = self.get_by_id(id)  # check existence of the sig
         return sig.members
 

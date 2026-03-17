@@ -46,13 +46,12 @@ async def get_all_sigs(
     semester: Optional[int] = None,
     status: Optional[SCSCStatus] = None,
 ) -> Sequence[SigResponse]:
-    return SigResponse.model_validate_list(
-        sig_service.get_sigs(
-            year,
-            semester,
-            status,
-        )
+    sigs = sig_service.get_sigs(
+        year,
+        semester,
+        status,
     )
+    return SigResponse.model_validate_list(sigs)
 
 
 @sig_router.post("/sig/{id}/update", status_code=204)
