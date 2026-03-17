@@ -36,7 +36,7 @@ async def create_sig(
 
 @sig_router.get("/sig/{id}")
 async def get_sig_by_id(id: int, sig_service: SigServiceDep) -> SigResponse:
-    return SigResponse.model_validate(sig_service.get_sig_response_by_id(id))
+    return SigResponse.model_validate(sig_service.get_by_id(id))
 
 
 @sig_router.get("/sigs")

@@ -100,7 +100,9 @@ class PIG(Base):
 
 class PIGMember(Base):
     __tablename__ = "pig_member"
-    __table_args__ = (UniqueConstraint("ig_id", "user_id", name="uq_ig_user"),)
+    __table_args__ = (
+        UniqueConstraint("ig_id", "user_id", name="uq_pig_member_ig_user"),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True, init=False

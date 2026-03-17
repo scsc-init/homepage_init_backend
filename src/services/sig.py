@@ -149,9 +149,6 @@ class SigService:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
         return sig
 
-    def get_sig_response_by_id(self, id: int) -> SIG:
-        return self.get_by_id(id)
-
     def get_sigs(
         self,
         year: Optional[int] = None,

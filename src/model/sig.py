@@ -86,7 +86,9 @@ class SIG(Base):
 
 class SIGMember(Base):
     __tablename__ = "sig_member"
-    __table_args__ = (UniqueConstraint("ig_id", "user_id", name="uq_ig_user"),)
+    __table_args__ = (
+        UniqueConstraint("ig_id", "user_id", name="uq_sig_member_ig_user"),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True, init=False
