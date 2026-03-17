@@ -142,7 +142,7 @@ class PigService:
 
     def get_by_id(self, id: int) -> PIG:
         """
-        Throws HTTPException with status 404 when no sig corresponding to the id found
+        Throws HTTPException with status 404 when no pig corresponding to the id found
         """
         pig = self.pig_repository.get_by_id(id)
         if not pig:
@@ -310,7 +310,7 @@ class PigService:
 
     def get_members(self, id: int) -> Sequence[PIGMember]:
         """
-        Throws HTTPException with status 404 when no sig corresponding to the id found
+        Throws HTTPException with status 404 when no pig corresponding to the id found
         """
         pig = self.get_by_id(id)  # check existence of the pig
         return pig.members
