@@ -69,7 +69,7 @@ class UserSummary(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String)
-    role: Mapped[int] = mapped_column(Integer)
+    role: Mapped[int] = mapped_column(Integer, ForeignKey("user_role.level"))
     major_id: Mapped[int] = mapped_column(ForeignKey("major.id"))
     is_active: Mapped[bool] = mapped_column(Boolean)
     is_banned: Mapped[bool] = mapped_column(Boolean)

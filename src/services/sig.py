@@ -306,8 +306,8 @@ class SigService:
         self._handover_sig_ctrl(sig, body.new_owner, current_user.id, is_executive)
 
     def get_members(self, id: int) -> Sequence[SIGMember]:
-        self.get_by_id(id)  # check existence of the sig
-        return self.sig_member_repository.get_members_by_sig_id(id)
+        sig = self.get_by_id(id)  # check existence of the sig
+        return sig.members
 
     async def join_sig(self, id: int, current_user: User) -> None:
         sig = self.get_by_id(id)
