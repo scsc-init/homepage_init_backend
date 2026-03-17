@@ -36,7 +36,7 @@ async def create_sig(
 
 @sig_router.get("/sig/{id}")
 async def get_sig_by_id(id: int, sig_service: SigServiceDep) -> SigResponse:
-    return sig_service.get_sig_response_by_id(id)
+    return SigResponse.model_validate(sig_service.get_sig_response_by_id(id))
 
 
 @sig_router.get("/sigs")
@@ -46,10 +46,12 @@ async def get_all_sigs(
     semester: Optional[int] = None,
     status: Optional[SCSCStatus] = None,
 ) -> Sequence[SigResponse]:
-    return sig_service.get_sigs(
-        year,
-        semester,
-        status,
+    return SigResponse.model_validate_list(
+        sig_service.get_sigs(
+            year,
+            semester,
+            status,
+        )
     )
 
 
@@ -115,7 +117,7 @@ async def executive_handover_sig(
 async def get_sig_members(
     id: int, sig_service: SigServiceDep
 ) -> Sequence[SigMemberResponse]:
-    return sig_service.get_members(id)
+    return SigMemberResponse.model_validate_list(sig_service.get_members(id))
 
 
 @sig_router.post("/sig/{id}/member/join", status_code=204)

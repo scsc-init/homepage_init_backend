@@ -25,13 +25,13 @@ async def create_pig(
     pig_service: PigServiceDep,
 ) -> PigResponse:
     pig = await pig_service.create_pig(scsc_global_status, current_user, body)
-    return pig_service.get_pig_response(pig)
+    return PigResponse.model_validate(pig)
 
 
 @pig_router.get("/pig/{id}")
 async def get_pig_by_id(id: int, pig_service: PigServiceDep) -> PigResponse:
     pig = pig_service.get_by_id(id)
-    return pig_service.get_pig_response(pig)
+    return PigResponse.model_validate(pig)
 
 
 @pig_router.get("/pigs")
@@ -41,10 +41,12 @@ async def get_all_pigs(
     semester: Optional[int] = None,
     status: Optional[SCSCStatus] = None,
 ) -> Sequence[PigResponse]:
-    return pig_service.get_pigs(
-        year,
-        semester,
-        status,
+    return PigResponse.model_validate_list(
+        pig_service.get_pigs(
+            year,
+            semester,
+            status,
+        )
     )
 
 
@@ -110,7 +112,7 @@ async def executive_handover_pig(
 async def get_pig_members(
     id: int, pig_service: PigServiceDep
 ) -> Sequence[PigMemberResponse]:
-    return pig_service.get_members(id)
+    return PigMemberResponse.model_validate_list(pig_service.get_members(id))
 
 
 @pig_router.post("/pig/{id}/member/join", status_code=204)

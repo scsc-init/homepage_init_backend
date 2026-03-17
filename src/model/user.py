@@ -60,6 +60,17 @@ class User(Base):
     )
 
 
+class UserSummary(Base):
+    __tablename__ = "user"  # Points to the existing user table
+    __table_args__ = {"extend_existing": True}  # Allows multiple mappings to one table
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    role: Mapped[int] = mapped_column(Integer)
+    is_active: Mapped[bool] = mapped_column(Boolean)
+    is_banned: Mapped[bool] = mapped_column(Boolean)
+
+
 class StandbyReqTbl(Base):
     __tablename__ = "standby_req_tbl"
 

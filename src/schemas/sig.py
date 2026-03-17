@@ -1,11 +1,9 @@
 from datetime import datetime
 
-from pydantic import Field
-
 from src.model import SCSCStatus
 
 from .base import BaseResponse
-from .user import UserResponse
+from .user import UserSummaryResponse
 
 
 class TagResponse(BaseResponse):
@@ -19,7 +17,7 @@ class SigMemberResponse(BaseResponse):
     ig_id: int
     user_id: str
     created_at: datetime
-    user: UserResponse | None = None
+    user: UserSummaryResponse
 
 
 class SigResponse(BaseResponse):
@@ -37,7 +35,9 @@ class SigResponse(BaseResponse):
     is_rolling_admission: bool
     created_at: datetime
     updated_at: datetime
-    tags: list[TagResponse] = Field(default_factory=list)
+    owner_user: UserSummaryResponse
+    members: list[SigMemberResponse]
+    tags: list[TagResponse]
 
 
 class SigTagResponse(BaseResponse):

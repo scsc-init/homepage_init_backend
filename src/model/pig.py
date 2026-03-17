@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum as PythonEnum
 
@@ -11,12 +13,13 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
 
 from .base import Base
 from .scsc_global_status import SCSCStatus
+from .user import UserSummary
 
 
 class RollingAdmission(str, PythonEnum):
@@ -84,6 +87,16 @@ class PIG(Base):
         onupdate=utcnow,
     )
 
+    owner_user: Mapped[UserSummary] = relationship(
+        "UserSummary", lazy="selectin", init=False, viewonly=True
+    )
+    members: Mapped[list[PIGMember]] = relationship(
+        "PIGMember", lazy="selectin", init=False, viewonly=True
+    )
+    websites: Mapped[list[PIGWebsite]] = relationship(
+        "PIGWebsite", lazy="selectin", init=False, viewonly=True
+    )
+
 
 class PIGMember(Base):
     __tablename__ = "pig_member"
@@ -97,6 +110,10 @@ class PIGMember(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
         default_factory=utcnow,
+    )
+
+    user: Mapped[UserSummary] = relationship(
+        "UserSummary", lazy="selectin", init=False, viewonly=True
     )
 
 

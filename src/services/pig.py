@@ -15,7 +15,6 @@ from src.repositories import (
     PigWebsiteRepositoryDep,
     UserRepositoryDep,
 )
-from src.schemas import PigMemberResponse, PigResponse, PigWebsiteResponse, UserResponse
 from src.util import (
     map_semester_name,
 )
@@ -152,7 +151,7 @@ class PigService:
         year: Optional[int] = None,
         semester: Optional[int] = None,
         status: Optional[SCSCStatus] = None,
-    ) -> Sequence[PigResponse]:
+    ) -> Sequence[PIG]:
         filters = {}
         if year is not None:
             filters["year"] = year
@@ -161,8 +160,7 @@ class PigService:
         if status:
             filters["status"] = status
 
-        pigs = self.pig_repository.get_by_filters(filters)
-        return PigResponse.model_validate_list(pigs)
+        return self.pig_repository.get_by_filters(filters)
 
     async def update_pig(
         self,
@@ -307,28 +305,9 @@ class PigService:
             raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
         self._handover_pig_ctrl(pig, body.new_owner, current_user.id, is_executive)
 
-    def get_members(self, id: int) -> Sequence[PigMemberResponse]:
+    def get_members(self, id: int) -> Sequence[PIGMember]:
         self.get_by_id(id)
-
-        members = self.pig_member_repository.get_members_by_pig_id(id)
-        res: list[PigMemberResponse] = []
-        for member in members:
-            user = self.user_repository.get_by_id(member.user_id)
-
-            user_response = None
-            if user:
-                user_response = UserResponse.model_validate(user)
-
-            member_response = PigMemberResponse(
-                id=member.id,
-                ig_id=member.ig_id,
-                user_id=member.user_id,
-                created_at=member.created_at,
-                user=user_response,
-            )
-            res.append(member_response)
-
-        return res
+        return self.pig_member_repository.get_members_by_pig_id(id)
 
     async def join_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
@@ -456,14 +435,6 @@ class PigService:
         logger.info(
             f"info_type=pig_leave ; pig_id={pig.id} ; title={pig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={pig.year} ; semester={pig.semester}"
         )
-
-    def get_pig_response(self, pig: PIG) -> PigResponse:
-        websites = []
-        if pig.id is not None:
-            websites = self.pig_website_repository.get_by_pig_id(pig.id)
-        website_responses = PigWebsiteResponse.model_validate_list(websites)
-        pig_response = PigResponse.model_validate(pig)
-        return pig_response.model_copy(update={"websites": website_responses})
 
     def _replace_websites(
         self, pig_id: int, websites: Optional[Sequence[BodyPigWebsite]]

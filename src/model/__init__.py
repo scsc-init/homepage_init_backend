@@ -9,5 +9,12 @@ from .major import Major
 from .pig import PIG, PIGMember, PIGWebsite
 from .scsc_global_status import SCSCGlobalStatus, SCSCStatus
 from .sig import SIG, SIGMember, SIGTag, Tag
-from .user import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserRole
+from .user import (
+    Enrollment,
+    OldboyApplicant,
+    StandbyReqTbl,
+    User,
+    UserRole,
+    UserSummary,
+)
 from .w_html_metadata import WHTMLMetadata
