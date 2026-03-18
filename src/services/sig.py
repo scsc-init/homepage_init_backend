@@ -15,7 +15,7 @@ from src.repositories import (
     TagRepositoryDep,
     UserRepositoryDep,
 )
-from src.schemas import SigMemberResponse, SigResponse, TagResponse, UserResponse
+from src.schemas import TagResponse
 from src.util import map_semester_name
 
 from .article import ArticleServiceDep, BodyCreateArticle
@@ -78,25 +78,6 @@ class SigService:
             tag_responses.append(TagResponse.model_validate(tag))
 
         return tag_responses
-
-    def _build_sig_response(self, sig: SIG) -> SigResponse:
-        return SigResponse(
-            id=sig.id,
-            title=sig.title,
-            description=sig.description,
-            content_id=sig.content_id,
-            status=sig.status,
-            created_year=sig.created_year,
-            created_semester=sig.created_semester,
-            year=sig.year,
-            semester=sig.semester,
-            owner=sig.owner,
-            should_extend=sig.should_extend,
-            is_rolling_admission=sig.is_rolling_admission,
-            created_at=sig.created_at,
-            updated_at=sig.updated_at,
-            tags=self._get_tags_for_sig(sig.id),
-        )
 
     async def create_sig(
         self,
@@ -163,21 +144,20 @@ class SigService:
         return sig
 
     def get_by_id(self, id: int) -> SIG:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
         sig = self.sig_repository.get_by_id(id)
         if not sig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
         return sig
-
-    def get_sig_response_by_id(self, id: int) -> SigResponse:
-        sig = self.get_by_id(id)
-        return self._build_sig_response(sig)
 
     def get_sigs(
         self,
         year: Optional[int] = None,
         semester: Optional[int] = None,
         status: Optional[SCSCStatus] = None,
-    ) -> Sequence[SigResponse]:
+    ) -> Sequence[SIG]:
         filters = {}
         if year is not None:
             filters["year"] = year
@@ -186,8 +166,7 @@ class SigService:
         if status:
             filters["status"] = status
 
-        sigs = self.sig_repository.get_by_filters(filters)
-        return [self._build_sig_response(sig) for sig in sigs]
+        return self.sig_repository.get_by_filters(filters)
 
     async def update_sig(
         self,
@@ -329,28 +308,12 @@ class SigService:
             raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
         self._handover_sig_ctrl(sig, body.new_owner, current_user.id, is_executive)
 
-    def get_members(self, id: int) -> Sequence[SigMemberResponse]:
-        self.get_by_id(id)
-
-        members = self.sig_member_repository.get_members_by_sig_id(id)
-        res: list[SigMemberResponse] = []
-        for member in members:
-            user = self.user_repository.get_by_id(member.user_id)
-
-            user_response = None
-            if user:
-                user_response = UserResponse.model_validate(user)
-
-            member_response = SigMemberResponse(
-                id=member.id,
-                ig_id=member.ig_id,
-                user_id=member.user_id,
-                created_at=member.created_at,
-                user=user_response,
-            )
-            res.append(member_response)
-
-        return res
+    def get_members(self, id: int) -> Sequence[SIGMember]:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
+        sig = self.get_by_id(id)
+        return sig.members
 
     async def join_sig(self, id: int, current_user: User) -> None:
         sig = self.get_by_id(id)

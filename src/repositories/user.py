@@ -4,7 +4,14 @@ from fastapi import Depends
 from sqlalchemy import delete, desc, exists, func, select
 
 from src.db import get_user_role_level
-from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserRole
+from src.model import (
+    Enrollment,
+    OldboyApplicant,
+    StandbyReqTbl,
+    User,
+    UserRole,
+    UserSummary,
+)
 
 from .crud_repository import CRUDRepository
 
@@ -53,6 +60,9 @@ class UserRepository(CRUDRepository[User, str]):
         return self.session.scalars(
             select(User).where(User.role >= get_user_role_level("executive"))
         ).all()
+
+    def get_all_summary(self) -> Sequence[UserSummary]:
+        return self.session.scalars(select(UserSummary)).all()
 
     def delete_all_except_student_ids(self, excluded_student_ids: list[str]) -> None:
         if not excluded_student_ids:

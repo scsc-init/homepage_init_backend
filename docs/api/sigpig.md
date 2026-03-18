@@ -107,6 +107,7 @@ END;
 - 시그 정보를 관리하는 API
 - 시그장은 사용자 테이블과 외래 키로 연결됨
 - 시그 구성원은 시그 테이블, 사용자 테이블과 외래 키로 연결됨
+- 응답 형식은 [/src/schemas/sig.py](/src/schemas/sig.py) 참고하십시오
 
 ---
 
@@ -126,27 +127,7 @@ END;
 }
 ```
 
-* **Response**:
-
-```json
-{
-  "id": 1,
-  "title": "AI SIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_id": 1,
-  "status": "recruiting",
-  "created_year": 2025,
-  "created_semester": 1,
-  "year": 2025,
-  "semester": 1,
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user",
-  "is_rolling_admission": false
-}
-
-```
-
+* **Response**: `SigResponse`
 * **Status Codes**:
 
   * `201 Created`
@@ -161,27 +142,7 @@ END;
 
 * **Method**: `GET`
 * **URL**: `/api/sig/:id`
-* **Response**:
-
-```json
-{
-  "id": 1,
-  "title": "AI SIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_id": 1,
-  "status": "active",
-  "created_year": 2025,
-  "created_semester": 1,
-  "year": 2025,
-  "semester": 1,
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user",
-  "should_extend": true,
-  "is_rolling_admission": true,
-}
-```
-
+* **Response**: `SigResponse`
 * **Status Codes**:
 
   * `200 OK`
@@ -199,33 +160,8 @@ END;
   * `status` `str`
 * **Example Request**:
   * `/api/sigs?year=2025&semester=3&status=active`
-* **Response**:
-
-```json
-[
-  {
-    "id": 1,
-    "title": "AI SIG",
-    "description": "인공지능을 연구하는 소모임입니다.",
-    "content_id": 1,
-    "status": "active",
-    "created_year": 2025,
-    "created_semester": 1,
-    "year": 2025,
-    "semester": 1,
-    "created_at": "2025-03-01T10:00:00Z",
-    "updated_at": "2025-04-01T12:00:00Z",
-    "owner": "hash_of_owner_user",
-    "should_extend": true,
-    "is_rolling_admission": true,
-  },
-  ...
-]
-
-```
-
+* **Response**: `Sequence[SigResponse]`
 * **Status Codes**:
-
   * `200 OK`
 
 ---
@@ -573,6 +509,7 @@ END;
 * 시그와 구조가 다른 피그만의 API 예외 사항은 아래와 같다.
 * 피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다.
 * 피그는 웹사이트(string)을 여러 개 가질 수 있다. 
+* 응답 형식은 [/src/schemas/pig.py](/src/schemas/pig.py) 참고하십시오
 
 ---
 
@@ -599,40 +536,8 @@ END;
 }
 ```
 
-* **Response**:
-
-```json
-{
-  "id": 1,
-  "title": "AI PIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_id": 1,
-  "status": "active",
-  "created_year": 2025,
-  "created_semester": 1,
-  "year": 2025,
-  "semester": 1,
-  "owner": "hash_of_owner_user",
-  "should_extend": true,
-  "is_rolling_admission": "during_recruiting",
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
-  "websites": [
-    {
-      "id": 101,
-      "pig_id": 1,
-      "label": "GitHub",
-      "url": "https://github.com/aipig",
-      "sort_order": 1,
-      "created_at": "2025-03-01T10:00:00Z",
-      "updated_at": "2025-03-01T10:00:00Z"
-    }
-  ]
-}
-```
-
+* **Response**: `PigResponse`
 * **Status Codes**:
-
   * `201 Created`
   * `400 Bad Request`: pig global status가 recruiting이 아닐 때
   * `401 Unauthorized`: 로그인 하지 않음
@@ -645,40 +550,8 @@ END;
 
 * **Method**: `GET`
 * **URL**: `/api/pig/:id`
-* **Response**:
-
-```json
-{
-  "id": 1,
-  "title": "AI PIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_id": 1,
-  "status": "active",
-  "created_year": 2025,
-  "created_semester": 1,
-  "year": 2025,
-  "semester": 1,
-  "owner": "hash_of_owner_user",
-  "should_extend": true,
-  "is_rolling_admission": "during_recruiting",
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
-  "websites": [
-    {
-      "id": 101,
-      "pig_id": 1,
-      "label": "GitHub",
-      "url": "https://github.com/aipig",
-      "sort_order": 1,
-      "created_at": "2025-03-01T10:00:00Z",
-      "updated_at": "2025-03-01T10:00:00Z"
-    }
-  ]
-}
-```
-
+* **Response**: `PigResponse`
 * **Status Codes**:
-
   * `200 OK`
   * `404 Not Found`: 해당 PIG가 존재하지 않음
 
@@ -694,44 +567,8 @@ END;
   * `status` `str`
 * **Example Request**:
   * `/api/pigs?year=2025&semester=3&status=active`
-* **Response**:
-
-```json
-[
-  {
-    "id": 1,
-    "title": "AI PIG",
-    "description": "인공지능을 연구하는 소모임입니다.",
-    "content_id": 1,
-    "status": "active",
-    "created_year": 2025,
-    "created_semester": 1,
-    "year": 2025,
-    "semester": 1,
-    "owner": "hash_of_owner_user",
-    "should_extend": true,
-    "is_rolling_admission": "during_recruiting",
-    "created_at": "2025-03-01T10:00:00Z",
-    "updated_at": "2025-04-01T12:00:00Z",
-    "websites": [
-      {
-        "id": 101,
-        "pig_id": 1,
-        "label": "GitHub",
-        "url": "https://github.com/aipig",
-        "sort_order": 1,
-        "created_at": "2025-03-01T10:00:00Z",
-        "updated_at": "2025-03-01T10:00:00Z"
-      }
-    ]
-  },
-  ...
-]
-
-```
-
+* **Response**: `Sequence[PigResponse]`
 * **Status Codes**:
-
   * `200 OK`
 
 

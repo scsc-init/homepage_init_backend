@@ -1,11 +1,10 @@
 from datetime import datetime
-from typing import Optional
 
 from src.model import SCSCStatus
 from src.model.pig import RollingAdmission
 
 from .base import BaseResponse
-from .user import UserResponse
+from .user import UserSummaryResponse
 
 
 class PigMemberResponse(BaseResponse):
@@ -13,7 +12,7 @@ class PigMemberResponse(BaseResponse):
     ig_id: int
     user_id: str
     created_at: datetime
-    user: Optional[UserResponse] = None
+    user: UserSummaryResponse
 
 
 class PigWebsiteResponse(BaseResponse):
@@ -41,4 +40,6 @@ class PigResponse(BaseResponse):
     is_rolling_admission: RollingAdmission
     created_at: datetime
     updated_at: datetime
-    websites: list[PigWebsiteResponse] = []
+    owner_user: UserSummaryResponse
+    members: list[PigMemberResponse]
+    websites: list[PigWebsiteResponse]

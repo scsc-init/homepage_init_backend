@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
 
 from .base import Base
+from .major import Major
 
 
 class UserRole(Base):
@@ -57,6 +60,29 @@ class User(Base):
         DateTime(timezone=False),
         default_factory=utcnow,
         onupdate=utcnow,
+    )
+
+
+class UserSummary(Base):
+    """
+    A read-only projection of the 'user' table containing public profile data.
+
+    This model maps to a subset of the 'user' table to optimize queries and protect privacy.
+    It includes a pre-joined relationship to the 'Major' model.
+    """
+
+    __tablename__ = "user"
+    __table_args__ = {"extend_existing": True}  # Allows multiple mappings to one table
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    role: Mapped[int] = mapped_column(Integer, ForeignKey("user_role.level"))
+    major_id: Mapped[int] = mapped_column(ForeignKey("major.id"))
+    is_active: Mapped[bool] = mapped_column(Boolean)
+    is_banned: Mapped[bool] = mapped_column(Boolean)
+
+    major: Mapped[Major] = relationship(
+        "Major", lazy="selectin", init=False, viewonly=True
     )
 
 
