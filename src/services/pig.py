@@ -312,7 +312,7 @@ class PigService:
         """
         Throws HTTPException with status 404 when no pig corresponding to the id found
         """
-        pig = self.get_by_id(id)  # check existence of the pig
+        pig = self.get_by_id(id)
         return pig.members
 
     async def join_pig(self, id: int, current_user: User) -> None:

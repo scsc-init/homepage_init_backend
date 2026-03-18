@@ -312,7 +312,7 @@ class SigService:
         """
         Throws HTTPException with status 404 when no sig corresponding to the id found
         """
-        sig = self.get_by_id(id)  # check existence of the sig
+        sig = self.get_by_id(id)
         return sig.members
 
     async def join_sig(self, id: int, current_user: User) -> None:
