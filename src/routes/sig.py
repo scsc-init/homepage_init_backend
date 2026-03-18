@@ -1,6 +1,6 @@
 from typing import Optional, Sequence
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from src.dependencies import SCSCGlobalStatusDep, UserDep
@@ -31,7 +31,7 @@ async def create_sig(
     sig_service: SigServiceDep,
 ) -> SigResponse:
     sig = await sig_service.create_sig(scsc_global_status, current_user, body)
-    return sig_service.get_sig_response_by_id(sig.id)
+    return SigResponse.model_validate(sig)
 
 
 @sig_router.get("/sig/{id}")
@@ -45,29 +45,15 @@ async def get_all_sigs(
     year: Optional[int] = None,
     semester: Optional[int] = None,
     status: Optional[SCSCStatus] = None,
+    tag: Optional[list[str]] = Query(None),
 ) -> Sequence[SigResponse]:
     sigs = sig_service.get_sigs(
         year,
         semester,
         status,
+        tag,
     )
     return SigResponse.model_validate_list(sigs)
-
-
-@sig_router.get("/sig/category/{tag_text}")
-async def get_sigs_by_tag_text(
-    tag_text: str,
-    sig_service: SigServiceDep,
-    year: Optional[int] = None,
-    semester: Optional[int] = None,
-    status: Optional[SCSCStatus] = None,
-) -> Sequence[SigResponse]:
-    return sig_service.get_sigs_by_tag_text(
-        tag_text,
-        year,
-        semester,
-        status,
-    )
 
 
 @sig_router.post("/sig/{id}/update", status_code=204)
@@ -194,7 +180,7 @@ def get_sig_tags(
     id: int,
     sig_service: SigServiceDep,
 ) -> Sequence[TagResponse]:
-    return list(sig_service.get_sig_tags(id))
+    return TagResponse.model_validate_list(sig_service.get_sig_tags(id))
 
 
 @sig_router.delete("/sig/{id}/tag/{tag_id}", status_code=204)

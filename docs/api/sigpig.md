@@ -143,41 +143,6 @@ END;
 * **Method**: `GET`
 * **URL**: `/api/sig/:id`
 * **Response**: `SigResponse`
-=======
-* **Response**:
-
-```json
-{
-  "id": 1,
-  "title": "AI SIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_id": 1,
-  "status": "active",
-  "created_year": 2025,
-  "created_semester": 1,
-  "year": 2025,
-  "semester": 1,
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user",
-  "should_extend": true,
-  "is_rolling_admission": true,
-  "tags": [
-    {
-      "id": 1,
-      "text": "SIG",
-      "is_major": true,
-      "created_at": "2025-03-01T10:00:00Z"
-    },
-    {
-      "id": 2,
-      "text": "애드혹",
-      "is_major": false,
-      "created_at": "2025-03-01T10:00:00Z"
-    }
-  ]
-}
-```
 * **Status Codes**:
 
   * `200 OK`
@@ -192,52 +157,15 @@ END;
 * **Query Parameters**: all optional
   * `year`: `int`
   * `semester`: `int`
-  * `status` `str`
+  * `status`: `str`
+  * `tag`: `str` (repeatable)
 * **Example Request**:
   * `/api/sigs?year=2025&semester=3&status=active`
+  * `/api/sigs?tag=SIG&tag=PS`
 * **Response**: `Sequence[SigResponse]`
-=======
-* **Response**:
-
-```json
-[
-  {
-    "id": 1,
-    "title": "AI SIG",
-    "description": "인공지능을 연구하는 소모임입니다.",
-    "content_id": 1,
-    "status": "active",
-    "created_year": 2025,
-    "created_semester": 1,
-    "year": 2025,
-    "semester": 1,
-    "created_at": "2025-03-01T10:00:00Z",
-    "updated_at": "2025-04-01T12:00:00Z",
-    "owner": "hash_of_owner_user",
-    "should_extend": true,
-    "is_rolling_admission": true,
-    "tags": [
-      {
-        "id": 1,
-        "text": "SIG",
-        "is_major": true,
-        "created_at": "2025-03-01T10:00:00Z"
-      },
-      {
-        "id": 2,
-        "text": "애드혹",
-        "is_major": false,
-        "created_at": "2025-03-01T10:00:00Z"
-      }
-    ]
-  }
-  ...
-]
-
-```
-
 * **Status Codes**:
   * `200 OK`
+
 
 ---
 
@@ -765,7 +693,7 @@ SIG 응답에는 `tags` 필드가 포함된다.
 
 ### 프론트 SIG 목록 태그 필터
 
-SIG 목록 페이지에서는 `GET /api/sigs`로 받은 각 SIG의 `tags` 필드를 이용해 태그 필터를 수행한다.
+SIG 목록 페이지에서는 `GET /api/sigs`와 `tag` 쿼리 파라미터를 이용해 태그 필터를 수행한다.
 
 * 다중 태그 선택 가능
 * 선택된 여러 태그는 **AND 조건**으로 적용

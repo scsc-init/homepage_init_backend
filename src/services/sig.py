@@ -15,7 +15,6 @@ from src.repositories import (
     TagRepositoryDep,
     UserRepositoryDep,
 )
-from src.schemas import TagResponse
 from src.util import map_semester_name
 
 from .article import ArticleServiceDep, BodyCreateArticle
@@ -69,10 +68,6 @@ class SigService:
 
     def _is_executive(self, user: User) -> bool:
         return user.role >= get_user_role_level("executive")
-
-    def _get_tags_for_sig(self, sig_id: int) -> list[TagResponse]:
-        tags = self.tag_repository.get_by_sig_id(sig_id)
-        return [TagResponse.model_validate(tag) for tag in tags]
 
     async def create_sig(
         self,
@@ -139,9 +134,6 @@ class SigService:
         return sig
 
     def get_by_id(self, id: int) -> SIG:
-        """
-        Throws HTTPException with status 404 when no sig corresponding to the id found
-        """
         sig = self.sig_repository.get_by_id(id)
         if not sig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
@@ -152,6 +144,7 @@ class SigService:
         year: Optional[int] = None,
         semester: Optional[int] = None,
         status: Optional[SCSCStatus] = None,
+        tags: Optional[Sequence[str]] = None,
     ) -> Sequence[SIG]:
         filters = {}
         if year is not None:
@@ -161,25 +154,7 @@ class SigService:
         if status:
             filters["status"] = status
 
-        return self.sig_repository.get_by_filters(filters)
-
-    def get_sigs_by_tag_text(
-        self,
-        tag_text: str,
-        year: Optional[int] = None,
-        semester: Optional[int] = None,
-        status: Optional[SCSCStatus] = None,
-    ) -> Sequence[SigResponse]:
-        filters = {}
-        if year is not None:
-            filters["year"] = year
-        if semester is not None:
-            filters["semester"] = semester
-        if status:
-            filters["status"] = status
-
-        sigs = self.sig_repository.get_by_tag_text(tag_text.strip(), filters)
-        return [self._build_sig_response(sig) for sig in sigs]
+        return self.sig_repository.get_by_filters(filters, tags)
 
     async def update_sig(
         self,
@@ -322,9 +297,6 @@ class SigService:
         self._handover_sig_ctrl(sig, body.new_owner, current_user.id, is_executive)
 
     def get_members(self, id: int) -> Sequence[SIGMember]:
-        """
-        Throws HTTPException with status 404 when no sig corresponding to the id found
-        """
         sig = self.get_by_id(id)
         return sig.members
 
@@ -480,11 +452,15 @@ class SigService:
         )
         return sig_tag
 
-    def get_sig_tags(self, sig_id: int) -> Sequence[TagResponse]:
+    def get_sig_tags(self, sig_id: int) -> Sequence[Tag]:
         sig = self.sig_repository.get_by_id(sig_id)
         if sig is None:
             raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
-        return self._get_tags_for_sig(sig_id)
+
+        return sorted(
+            sig.tags,
+            key=lambda tag: (not tag.is_major, tag.text),
+        )
 
     def remove_sig_tag(self, sig_id: int, tag_id: int, executor: User) -> None:
         sig = self.sig_repository.get_by_id(sig_id)

@@ -26,30 +26,22 @@ class SigRepository(CRUDRepository[SIG, int]):
     def get_by_status(self, status: SCSCStatus) -> Sequence[SIG]:
         return self.session.scalars(select(SIG).where(SIG.status == status)).all()
 
-    def get_by_filters(self, filters: dict[str, Any]) -> Sequence[SIG]:
+    def get_by_filters(
+        self,
+        filters: dict[str, Any],
+        tag_texts: Optional[Sequence[str]] = None,
+    ) -> Sequence[SIG]:
         query = select(SIG)
+
         for attr, value in filters.items():
             if value is not None:
                 query = query.where(getattr(SIG, attr) == value)
-        return self.session.scalars(query).all()
 
-    def get_by_tag_text(
-        self,
-        tag_text: str,
-        filters: dict[str, Any] | None = None,
-    ) -> Sequence[SIG]:
-        query = (
-            select(SIG)
-            .join(SIGTag, SIGTag.sig_id == SIG.id)
-            .join(Tag, Tag.id == SIGTag.tag_id)
-            .where(Tag.text == tag_text)
-            .distinct()
-        )
-
-        if filters:
-            for attr, value in filters.items():
-                if value is not None:
-                    query = query.where(getattr(SIG, attr) == value)
+        if tag_texts:
+            for tag_text in tag_texts:
+                normalized_tag_text = tag_text.strip()
+                if normalized_tag_text:
+                    query = query.where(SIG.tags.any(Tag.text == normalized_tag_text))
 
         return self.session.scalars(query).all()
 
@@ -102,15 +94,6 @@ class TagRepository(CRUDRepository[Tag, int]):
 
     def get_by_is_major(self, is_major: bool) -> Sequence[Tag]:
         stmt = select(Tag).where(Tag.is_major.is_(is_major))
-        return self.session.scalars(stmt).all()
-
-    def get_by_sig_id(self, sig_id: int) -> Sequence[Tag]:
-        stmt = (
-            select(Tag)
-            .join(SIGTag, SIGTag.tag_id == Tag.id)
-            .where(SIGTag.sig_id == sig_id)
-            .order_by(Tag.is_major.desc(), Tag.text.asc())
-        )
         return self.session.scalars(stmt).all()
 
 
