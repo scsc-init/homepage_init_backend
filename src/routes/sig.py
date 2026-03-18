@@ -31,7 +31,7 @@ async def create_sig(
     sig_service: SigServiceDep,
 ) -> SigResponse:
     sig = await sig_service.create_sig(scsc_global_status, current_user, body)
-    return SigResponse.model_validate(sig)
+    return sig_service.get_sig_response_by_id(sig.id)
 
 
 @sig_router.get("/sig/{id}")
@@ -52,6 +52,22 @@ async def get_all_sigs(
         status,
     )
     return SigResponse.model_validate_list(sigs)
+
+
+@sig_router.get("/sig/category/{tag_text}")
+async def get_sigs_by_tag_text(
+    tag_text: str,
+    sig_service: SigServiceDep,
+    year: Optional[int] = None,
+    semester: Optional[int] = None,
+    status: Optional[SCSCStatus] = None,
+) -> Sequence[SigResponse]:
+    return sig_service.get_sigs_by_tag_text(
+        tag_text,
+        year,
+        semester,
+        status,
+    )
 
 
 @sig_router.post("/sig/{id}/update", status_code=204)
@@ -177,8 +193,8 @@ def add_sig_tag(
 def get_sig_tags(
     id: int,
     sig_service: SigServiceDep,
-) -> Sequence[SigTagResponse]:
-    return SigTagResponse.model_validate_list(sig_service.get_sig_tags(id))
+) -> Sequence[TagResponse]:
+    return list(sig_service.get_sig_tags(id))
 
 
 @sig_router.delete("/sig/{id}/tag/{tag_id}", status_code=204)
@@ -196,14 +212,25 @@ def get_tags(sig_service: SigServiceDep) -> Sequence[TagResponse]:
     return TagResponse.model_validate_list(sig_service.get_tags())
 
 
-@sig_router.post("/executive/tag", status_code=201)
-def create_tag(
+@sig_router.post("/tag", status_code=201)
+def create_tag_by_user(
     body: BodyCreateTag,
     current_user: UserDep,
     sig_service: SigServiceDep,
 ) -> TagResponse:
     return TagResponse.model_validate(
-        sig_service.create_tag(body.text, body.is_major, current_user)
+        sig_service.create_tag_by_user(body.text, current_user)
+    )
+
+
+@sig_router.post("/executive/tag", status_code=201)
+def create_tag_by_executive(
+    body: BodyCreateTag,
+    current_user: UserDep,
+    sig_service: SigServiceDep,
+) -> TagResponse:
+    return TagResponse.model_validate(
+        sig_service.create_tag_by_executive(body.text, body.is_major, current_user)
     )
 
 

@@ -67,17 +67,12 @@ class SigService:
         self.tag_repository = tag_repository
         self.user_repository = user_repository
 
+    def _is_executive(self, user: User) -> bool:
+        return user.role >= get_user_role_level("executive")
+
     def _get_tags_for_sig(self, sig_id: int) -> list[TagResponse]:
-        sig_tags = self.sig_tag_repository.get_by_sig_id(sig_id)
-        tag_responses: list[TagResponse] = []
-
-        for sig_tag in sig_tags:
-            tag = self.tag_repository.get_by_id(sig_tag.tag_id)
-            if tag is None:
-                continue
-            tag_responses.append(TagResponse.model_validate(tag))
-
-        return tag_responses
+        tags = self.tag_repository.get_by_sig_id(sig_id)
+        return [TagResponse.model_validate(tag) for tag in tags]
 
     async def create_sig(
         self,
@@ -167,6 +162,24 @@ class SigService:
             filters["status"] = status
 
         return self.sig_repository.get_by_filters(filters)
+
+    def get_sigs_by_tag_text(
+        self,
+        tag_text: str,
+        year: Optional[int] = None,
+        semester: Optional[int] = None,
+        status: Optional[SCSCStatus] = None,
+    ) -> Sequence[SigResponse]:
+        filters = {}
+        if year is not None:
+            filters["year"] = year
+        if semester is not None:
+            filters["semester"] = semester
+        if status:
+            filters["status"] = status
+
+        sigs = self.sig_repository.get_by_tag_text(tag_text.strip(), filters)
+        return [self._build_sig_response(sig) for sig in sigs]
 
     async def update_sig(
         self,
@@ -444,15 +457,16 @@ class SigService:
         if sig is None:
             raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
 
-        if (
-            executor.role < get_user_role_level("executive")
-            and sig.owner != executor.id
-        ):
+        is_executive = self._is_executive(executor)
+        if not is_executive and sig.owner != executor.id:
             raise HTTPException(403, detail="타인의 시그에 태그를 추가할 수 없습니다")
 
         tag = self.tag_repository.get_by_id(tag_id)
         if tag is None:
             raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
+
+        if tag.is_major and not is_executive:
+            raise HTTPException(403, detail="major 태그는 운영진만 추가할 수 있습니다")
 
         try:
             sig_tag = self.sig_tag_repository.create(
@@ -461,34 +475,44 @@ class SigService:
         except IntegrityError:
             raise HTTPException(409, detail="이미 추가된 태그입니다") from None
 
-        logger.info(f"info_type=add_sig_tag ; {sig_id=} ; {tag_id=} ; {executor.id=}")
+        logger.info(
+            f"info_type=add_sig_tag ; sig_id={sig_id} ; tag_id={tag_id} ; executor_id={executor.id}"
+        )
         return sig_tag
 
-    def get_sig_tags(self, sig_id: int) -> Sequence[SIGTag]:
+    def get_sig_tags(self, sig_id: int) -> Sequence[TagResponse]:
         sig = self.sig_repository.get_by_id(sig_id)
         if sig is None:
             raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
-        return self.sig_tag_repository.get_by_sig_id(sig_id)
+        return self._get_tags_for_sig(sig_id)
 
     def remove_sig_tag(self, sig_id: int, tag_id: int, executor: User) -> None:
         sig = self.sig_repository.get_by_id(sig_id)
         if sig is None:
             raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
 
-        if (
-            executor.role < get_user_role_level("executive")
-            and sig.owner != executor.id
-        ):
+        is_executive = self._is_executive(executor)
+        if not is_executive and sig.owner != executor.id:
             raise HTTPException(403, detail="타인의 시그 태그를 삭제할 수 없습니다")
+
+        tag = self.tag_repository.get_by_id(tag_id)
+        if tag is None:
+            raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
+
+        if tag.is_major and not is_executive:
+            raise HTTPException(403, detail="major 태그는 운영진만 삭제할 수 있습니다")
 
         sig_tag = self.sig_tag_repository.get_by_sig_id_and_tag_id(sig_id, tag_id)
         if sig_tag is None:
-            return
+            raise HTTPException(404, detail="해당 시그에 연결된 태그가 없습니다")
 
         self.sig_tag_repository.delete(sig_tag)
 
+        if not tag.is_major and self.sig_tag_repository.count_by_tag_id(tag_id) == 0:
+            self.tag_repository.delete(tag)
+
         logger.info(
-            f"info_type=remove_sig_tag ; {sig_id=} ; {tag_id=} ; {executor.id=}"
+            f"info_type=remove_sig_tag ; sig_id={sig_id} ; tag_id={tag_id} ; executor_id={executor.id}"
         )
 
     def get_tags(self) -> Sequence[Tag]:
@@ -515,6 +539,12 @@ class SigService:
         )
         return tag
 
+    def create_tag_by_user(self, text: str, executor: User) -> Tag:
+        return self.create_tag(text, False, executor)
+
+    def create_tag_by_executive(self, text: str, is_major: bool, executor: User) -> Tag:
+        return self.create_tag(text, is_major, executor)
+
     def delete_tag(self, tag_id: int, executor: User) -> None:
         tag = self.tag_repository.get_by_id(tag_id)
         if tag is None:
@@ -522,7 +552,9 @@ class SigService:
 
         self.tag_repository.delete(tag)
 
-        logger.info(f"info_type=delete_tag ; {tag_id=} ; {executor.id=}")
+        logger.info(
+            f"info_type=delete_tag ; tag_id={tag_id} ; executor_id={executor.id}"
+        )
 
 
 SigServiceDep = Annotated[SigService, Depends()]

@@ -33,6 +33,26 @@ class SigRepository(CRUDRepository[SIG, int]):
                 query = query.where(getattr(SIG, attr) == value)
         return self.session.scalars(query).all()
 
+    def get_by_tag_text(
+        self,
+        tag_text: str,
+        filters: dict[str, Any] | None = None,
+    ) -> Sequence[SIG]:
+        query = (
+            select(SIG)
+            .join(SIGTag, SIGTag.sig_id == SIG.id)
+            .join(Tag, Tag.id == SIGTag.tag_id)
+            .where(Tag.text == tag_text)
+            .distinct()
+        )
+
+        if filters:
+            for attr, value in filters.items():
+                if value is not None:
+                    query = query.where(getattr(SIG, attr) == value)
+
+        return self.session.scalars(query).all()
+
 
 class SigMemberRepository(CRUDRepository[SIGMember, int]):
     @property
@@ -63,6 +83,10 @@ class SigTagRepository(CRUDRepository[SIGTag, int]):
         stmt = select(SIGTag).where(SIGTag.sig_id == sig_id, SIGTag.tag_id == tag_id)
         return self.session.scalar(stmt)
 
+    def count_by_tag_id(self, tag_id: int) -> int:
+        stmt = select(SIGTag).where(SIGTag.tag_id == tag_id)
+        return len(self.session.scalars(stmt).all())
+
 
 class TagRepository(CRUDRepository[Tag, int]):
     @property
@@ -78,6 +102,15 @@ class TagRepository(CRUDRepository[Tag, int]):
 
     def get_by_is_major(self, is_major: bool) -> Sequence[Tag]:
         stmt = select(Tag).where(Tag.is_major.is_(is_major))
+        return self.session.scalars(stmt).all()
+
+    def get_by_sig_id(self, sig_id: int) -> Sequence[Tag]:
+        stmt = (
+            select(Tag)
+            .join(SIGTag, SIGTag.tag_id == Tag.id)
+            .where(SIGTag.sig_id == sig_id)
+            .order_by(Tag.is_major.desc(), Tag.text.asc())
+        )
         return self.session.scalars(stmt).all()
 
 

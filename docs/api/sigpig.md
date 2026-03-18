@@ -143,6 +143,41 @@ END;
 * **Method**: `GET`
 * **URL**: `/api/sig/:id`
 * **Response**: `SigResponse`
+=======
+* **Response**:
+
+```json
+{
+  "id": 1,
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_id": 1,
+  "status": "active",
+  "created_year": 2025,
+  "created_semester": 1,
+  "year": 2025,
+  "semester": 1,
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "owner": "hash_of_owner_user",
+  "should_extend": true,
+  "is_rolling_admission": true,
+  "tags": [
+    {
+      "id": 1,
+      "text": "SIG",
+      "is_major": true,
+      "created_at": "2025-03-01T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "text": "애드혹",
+      "is_major": false,
+      "created_at": "2025-03-01T10:00:00Z"
+    }
+  ]
+}
+```
 * **Status Codes**:
 
   * `200 OK`
@@ -161,6 +196,46 @@ END;
 * **Example Request**:
   * `/api/sigs?year=2025&semester=3&status=active`
 * **Response**: `Sequence[SigResponse]`
+=======
+* **Response**:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "AI SIG",
+    "description": "인공지능을 연구하는 소모임입니다.",
+    "content_id": 1,
+    "status": "active",
+    "created_year": 2025,
+    "created_semester": 1,
+    "year": 2025,
+    "semester": 1,
+    "created_at": "2025-03-01T10:00:00Z",
+    "updated_at": "2025-04-01T12:00:00Z",
+    "owner": "hash_of_owner_user",
+    "should_extend": true,
+    "is_rolling_admission": true,
+    "tags": [
+      {
+        "id": 1,
+        "text": "SIG",
+        "is_major": true,
+        "created_at": "2025-03-01T10:00:00Z"
+      },
+      {
+        "id": 2,
+        "text": "애드혹",
+        "is_major": false,
+        "created_at": "2025-03-01T10:00:00Z"
+      }
+    ]
+  }
+  ...
+]
+
+```
+
 * **Status Codes**:
   * `200 OK`
 
@@ -414,19 +489,114 @@ END;
 
 ## 시그 태그 기능(SIG Only)
 
-### 시그 태그 추가 (Add SIG Tag)
+### 태그 모델
 
-시그에 기존에 등록된 태그를 추가합니다. **시그 소유자** 또는 **운영진(Executive)** 이상의 권한이 필요합니다.
+SIG 응답에는 `tags` 필드가 포함된다.
+
+```json
+{
+  "id": 1,
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_id": 1,
+  "status": "active",
+  "created_year": 2025,
+  "created_semester": 1,
+  "year": 2025,
+  "semester": 1,
+  "created_at": "2025-03-01T10:00:00Z",
+  "updated_at": "2025-04-01T12:00:00Z",
+  "owner": "hash_of_owner_user",
+  "should_extend": true,
+  "is_rolling_admission": true,
+  "tags": [
+    {
+      "id": 1,
+      "text": "SIG",
+      "is_major": true,
+      "created_at": "2025-03-01T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "text": "애드혹",
+      "is_major": false,
+      "created_at": "2025-03-01T10:00:00Z"
+    }
+  ]
+}
+```
+
+`GET /api/sigs`의 각 원소도 동일하게 `tags`를 포함한다.
+
+---
+
+### 태그로 SIG 조회
+
+특정 태그 텍스트를 가진 SIG 목록을 조회한다.
+
+* **Method**: `GET`
+* **URL**: `/api/sig/category/:tag_text`
+* **Query Parameters**: optional
+  * `year`: `int`
+  * `semester`: `int`
+  * `status`: `str`
+
+* **Response Body**:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "애드혹 SIG",
+    "description": "애드혹하게 모이는 SIG",
+    "content_id": 3,
+    "status": "active",
+    "created_year": 2025,
+    "created_semester": 1,
+    "year": 2025,
+    "semester": 1,
+    "owner": "hash_of_owner_user",
+    "should_extend": false,
+    "is_rolling_admission": true,
+    "created_at": "2025-03-01T10:00:00Z",
+    "updated_at": "2025-03-01T10:00:00Z",
+    "tags": [
+      {
+        "id": 1,
+        "text": "SIG",
+        "is_major": true,
+        "created_at": "2025-03-01T10:00:00Z"
+      },
+      {
+        "id": 2,
+        "text": "애드혹",
+        "is_major": false,
+        "created_at": "2025-03-01T10:00:00Z"
+      }
+    ]
+  }
+]
+```
+
+* **Status Codes**:
+  * `200 OK`
+
+---
+
+### 시그 태그 추가
+
+시그에 기존 태그를 추가한다.
 
 * **Method**: `POST`
 * **URL**: `/api/sig/:id/tag`
+
 * **Request Body**:
 
 ```json
 {
   "tag_id": 3
 }
-````
+```
 
 * **Response Body**:
 
@@ -434,28 +604,28 @@ END;
 {
   "id": 1,
   "sig_id": 1,
-  "tag_id": 3
+  "tag_id": 3,
+  "created_at": "2025-03-01T10:00:00Z"
 }
 ```
 
+* **권한**
+  * 시그 소유자 또는 운영진 이상 가능
+  * `is_major=true` 태그는 운영진 이상만 추가 가능
+
 * **Status Codes**:
-
-* `201 Created`: 태그 추가 성공
-
-* `403 Forbidden`: 권한 없음 (타인의 시그에 태그 추가 시도)
-
-* `404 Not Found`: 해당 ID의 시그가 존재하지 않음
-
-* `409 Conflict`: 이미 동일한 태그가 추가되어 있음
+  * `201 Created`
+  * `403 Forbidden`
+  * `404 Not Found`
+  * `409 Conflict`
 
 ---
 
-### 시그 태그 목록 조회 (Get SIG Tags)
+### 시그 태그 목록 조회
 
-특정 시그에 등록된 모든 태그 목록을 조회합니다.
+특정 시그에 등록된 모든 태그 목록을 조회한다.
 
 * **Method**: `GET`
-
 * **URL**: `/api/sig/:id/tag`
 
 * **Response Body**:
@@ -464,38 +634,143 @@ END;
 [
   {
     "id": 1,
-    "sig_id": 1,
-    "tag_id": 3
+    "text": "SIG",
+    "is_major": true,
+    "created_at": "2025-03-01T10:00:00Z"
   },
   {
     "id": 2,
-    "sig_id": 1,
-    "tag_id": 5
+    "text": "애드혹",
+    "is_major": false,
+    "created_at": "2025-03-01T10:00:00Z"
   }
 ]
 ```
 
 * **Status Codes**:
-
-* `200 OK`: 조회 성공 (태그가 없으면 빈 리스트 반환)
+  * `200 OK`
+  * `404 Not Found`
 
 ---
 
-### 시그 태그 삭제 (Remove SIG Tag)
+### 시그 태그 삭제
 
-시그에 등록된 특정 태그를 삭제합니다. **시그 소유자** 또는 **운영진(Executive)** 이상의 권한이 필요합니다.
+시그에 등록된 특정 태그를 삭제한다.
 
 * **Method**: `DELETE`
-
 * **URL**: `/api/sig/:id/tag/:tag_id`
 
+* **권한**
+  * 시그 소유자 또는 운영진 이상 가능
+  * `is_major=true` 태그는 운영진 이상만 삭제 가능
+
+* **동작**
+  * 태그가 어떤 시그에도 더 이상 연결되어 있지 않으면 태그 자체도 자동 삭제됨
+  * 자동 삭제 대상은 non-major 태그만 해당
+
 * **Status Codes**:
+  * `204 No Content`
+  * `403 Forbidden`
+  * `404 Not Found`
 
-* `204 No Content`: 삭제 성공 (이미 태그가 없는 경우에도 동일)
+---
 
-* `403 Forbidden`: 권한 없음 (타인의 시그 태그 삭제 시도)
+### 태그 생성 (Current User)
 
-* `404 Not Found`: 해당 ID와 tag_id의 시그 태그가 존재하지 않음
+일반 사용자가 non-major 태그를 생성한다.
+
+* **Method**: `POST`
+* **URL**: `/api/tag`
+
+* **Request Body**:
+
+```json
+{
+  "text": "군대"
+}
+```
+
+* **Response Body**:
+
+```json
+{
+  "id": 5,
+  "text": "군대",
+  "is_major": false,
+  "created_at": "2025-03-01T10:00:00Z"
+}
+```
+
+* **Status Codes**:
+  * `201 Created`
+  * `401 Unauthorized`
+  * `409 Conflict`
+  * `422 Unprocessable Content`
+
+---
+
+### 태그 생성 (Executive)
+
+운영진이 태그를 생성한다.
+
+* **Method**: `POST`
+* **URL**: `/api/executive/tag`
+
+* **Request Body**:
+
+```json
+{
+  "text": "SIG",
+  "is_major": true
+}
+```
+
+* **Response Body**:
+
+```json
+{
+  "id": 1,
+  "text": "SIG",
+  "is_major": true,
+  "created_at": "2025-03-01T10:00:00Z"
+}
+```
+
+* **Status Codes**:
+  * `201 Created`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `409 Conflict`
+  * `422 Unprocessable Content`
+
+---
+
+### 태그 삭제 (Executive)
+
+운영진이 태그 자체를 삭제한다.
+
+* **Method**: `DELETE`
+* **URL**: `/api/executive/tag/:tag_id`
+
+* **동작**
+  * 해당 태그가 연결된 모든 SIG에서 태그 연결도 함께 제거됨
+
+* **Status Codes**:
+  * `204 No Content`
+  * `401 Unauthorized`
+  * `403 Forbidden`
+  * `404 Not Found`
+
+---
+
+### 프론트 SIG 목록 태그 필터
+
+SIG 목록 페이지에서는 `GET /api/sigs`로 받은 각 SIG의 `tags` 필드를 이용해 태그 필터를 수행한다.
+
+* 다중 태그 선택 가능
+* 선택된 여러 태그는 **AND 조건**으로 적용
+* 예: `SIG`, `PS`를 동시에 선택하면 두 태그를 모두 가진 SIG만 표시
+* URL 쿼리 파라미터는 `?tag=SIG&tag=PS` 형태로 유지한다
 
 
 ---
