@@ -247,7 +247,7 @@ CREATE TABLE attachment (
   {
     "id": 1,
     "title": "안녕하세요",
-    "content": "## Hello?",
+    "content": "## Hello!",
     "board_id": 1,
     "author_id": "",
     "created_at": "2025-04-01T12:00:00",
