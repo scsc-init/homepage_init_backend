@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
 from src.model import SIG, SCSCStatus, SIGMember, SIGTag, Tag
 
@@ -80,6 +80,11 @@ class SigTagRepository(CRUDRepository[SIGTag, int]):
     def get_by_tag_id(self, tag_id: int) -> Sequence[SIGTag]:
         stmt = select(SIGTag).where(SIGTag.tag_id == tag_id)
         return self.session.scalars(stmt).all()
+
+    def delete_by_tag_id(self, tag_id: int) -> None:
+        stmt = delete(SIGTag).where(SIGTag.tag_id == tag_id)
+        self.session.execute(stmt)
+        self.session.flush()
 
 
 class TagRepository(CRUDRepository[Tag, int]):

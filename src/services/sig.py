@@ -147,7 +147,7 @@ class SigService:
         year: Optional[int] = None,
         semester: Optional[int] = None,
         status: Optional[SCSCStatus] = None,
-        tags: list[str] = [],
+        tags: Sequence[str] | None = None,
     ) -> Sequence[SIG]:
         filters = {}
         if year is not None:
@@ -491,10 +491,7 @@ class SigService:
         self.sig_tag_repository.delete(sig_tag)
 
         if not tag.is_major and self.sig_tag_repository.count_by_tag_id(tag_id) == 0:
-            sig_tags = self.sig_tag_repository.get_by_tag_id(tag_id)
-            for sig_tag in sig_tags:
-                self.sig_tag_repository.delete(sig_tag)
-
+            self.sig_tag_repository.delete_by_tag_id(tag_id)
             self.tag_repository.delete(tag)
 
         logger.info(
