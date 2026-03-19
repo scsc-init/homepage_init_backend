@@ -10,6 +10,7 @@ class TagResponse(BaseResponse):
     id: int
     text: str
     is_major: bool
+    created_at: datetime
 
 
 class SigMemberResponse(BaseResponse):
@@ -44,3 +45,4 @@ class SigTagResponse(BaseResponse):
     id: int
     sig_id: int
     tag_id: int
+    created_at: datetime
