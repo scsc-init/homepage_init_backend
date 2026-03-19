@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from src.model import SIG, SCSCStatus, SIGMember, SIGTag, Tag
 
@@ -29,7 +29,7 @@ class SigRepository(CRUDRepository[SIG, int]):
     def get_by_filters(
         self,
         filters: dict[str, Any],
-        tag_texts: Optional[Sequence[str]] = None,
+        tag_texts: list[str] = [],
     ) -> Sequence[SIG]:
         query = select(SIG)
 
@@ -39,9 +39,7 @@ class SigRepository(CRUDRepository[SIG, int]):
 
         if tag_texts:
             for tag_text in tag_texts:
-                normalized_tag_text = tag_text.strip()
-                if normalized_tag_text:
-                    query = query.where(SIG.tags.any(Tag.text == normalized_tag_text))
+                query = query.where(SIG.tags.any(Tag.text == tag_text))
 
         return self.session.scalars(query).all()
 
@@ -76,8 +74,8 @@ class SigTagRepository(CRUDRepository[SIGTag, int]):
         return self.session.scalar(stmt)
 
     def count_by_tag_id(self, tag_id: int) -> int:
-        stmt = select(SIGTag).where(SIGTag.tag_id == tag_id)
-        return len(self.session.scalars(stmt).all())
+        stmt = select(func.count()).select_from(SIGTag).where(SIGTag.tag_id == tag_id)
+        return self.session.scalar(stmt) or 0
 
 
 class TagRepository(CRUDRepository[Tag, int]):

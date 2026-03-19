@@ -134,6 +134,9 @@ class SigService:
         return sig
 
     def get_by_id(self, id: int) -> SIG:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
         sig = self.sig_repository.get_by_id(id)
         if not sig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
@@ -144,7 +147,7 @@ class SigService:
         year: Optional[int] = None,
         semester: Optional[int] = None,
         status: Optional[SCSCStatus] = None,
-        tags: Optional[Sequence[str]] = None,
+        tags: list[str] = [],
     ) -> Sequence[SIG]:
         filters = {}
         if year is not None:
@@ -297,6 +300,9 @@ class SigService:
         self._handover_sig_ctrl(sig, body.new_owner, current_user.id, is_executive)
 
     def get_members(self, id: int) -> Sequence[SIGMember]:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
         sig = self.get_by_id(id)
         return sig.members
 
@@ -494,7 +500,7 @@ class SigService:
     def get_tags(self) -> Sequence[Tag]:
         return self.tag_repository.get_all()
 
-    def create_tag(self, text: str, is_major: bool, executor: User) -> Tag:
+    def _create_tag(self, text: str, is_major: bool, executor: User) -> Tag:
         normalized_text = text.strip()
         if not normalized_text:
             raise HTTPException(422, detail="태그명은 비어 있을 수 없습니다")
@@ -516,10 +522,10 @@ class SigService:
         return tag
 
     def create_tag_by_user(self, text: str, executor: User) -> Tag:
-        return self.create_tag(text, False, executor)
+        return self._create_tag(text, False, executor)
 
     def create_tag_by_executive(self, text: str, is_major: bool, executor: User) -> Tag:
-        return self.create_tag(text, is_major, executor)
+        return self._create_tag(text, is_major, executor)
 
     def delete_tag(self, tag_id: int, executor: User) -> None:
         tag = self.tag_repository.get_by_id(tag_id)

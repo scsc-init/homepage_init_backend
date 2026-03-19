@@ -166,6 +166,12 @@ END;
 * **Status Codes**:
   * `200 OK`
 
+* **Notes**:
+  * 각 원소는 `tags` 필드를 포함한다
+  * `tag` 쿼리 파라미터는 다중 선택 가능
+  * 선택된 여러 태그는 **AND 조건**으로 적용된다
+  * 예: `SIG`, `PS`를 동시에 선택하면 두 태그를 모두 가진 SIG만 표시된다
+  * URL 쿼리 파라미터는 `?tag=SIG&tag=PS` 형태로 사용한다
 
 ---
 
@@ -416,101 +422,6 @@ END;
 
 
 ## 시그 태그 기능(SIG Only)
-
-### 태그 모델
-
-SIG 응답에는 `tags` 필드가 포함된다.
-
-```json
-{
-  "id": 1,
-  "title": "AI SIG",
-  "description": "인공지능을 연구하는 소모임입니다.",
-  "content_id": 1,
-  "status": "active",
-  "created_year": 2025,
-  "created_semester": 1,
-  "year": 2025,
-  "semester": 1,
-  "created_at": "2025-03-01T10:00:00Z",
-  "updated_at": "2025-04-01T12:00:00Z",
-  "owner": "hash_of_owner_user",
-  "should_extend": true,
-  "is_rolling_admission": true,
-  "tags": [
-    {
-      "id": 1,
-      "text": "SIG",
-      "is_major": true,
-      "created_at": "2025-03-01T10:00:00Z"
-    },
-    {
-      "id": 2,
-      "text": "애드혹",
-      "is_major": false,
-      "created_at": "2025-03-01T10:00:00Z"
-    }
-  ]
-}
-```
-
-`GET /api/sigs`의 각 원소도 동일하게 `tags`를 포함한다.
-
----
-
-### 태그로 SIG 조회
-
-특정 태그 텍스트를 가진 SIG 목록을 조회한다.
-
-* **Method**: `GET`
-* **URL**: `/api/sig/category/:tag_text`
-* **Query Parameters**: optional
-  * `year`: `int`
-  * `semester`: `int`
-  * `status`: `str`
-
-* **Response Body**:
-
-```json
-[
-  {
-    "id": 1,
-    "title": "애드혹 SIG",
-    "description": "애드혹하게 모이는 SIG",
-    "content_id": 3,
-    "status": "active",
-    "created_year": 2025,
-    "created_semester": 1,
-    "year": 2025,
-    "semester": 1,
-    "owner": "hash_of_owner_user",
-    "should_extend": false,
-    "is_rolling_admission": true,
-    "created_at": "2025-03-01T10:00:00Z",
-    "updated_at": "2025-03-01T10:00:00Z",
-    "tags": [
-      {
-        "id": 1,
-        "text": "SIG",
-        "is_major": true,
-        "created_at": "2025-03-01T10:00:00Z"
-      },
-      {
-        "id": 2,
-        "text": "애드혹",
-        "is_major": false,
-        "created_at": "2025-03-01T10:00:00Z"
-      }
-    ]
-  }
-]
-```
-
-* **Status Codes**:
-  * `200 OK`
-
----
-
 ### 시그 태그 추가
 
 시그에 기존 태그를 추가한다.
@@ -688,18 +599,6 @@ SIG 응답에는 `tags` 필드가 포함된다.
   * `401 Unauthorized`
   * `403 Forbidden`
   * `404 Not Found`
-
----
-
-### 프론트 SIG 목록 태그 필터
-
-SIG 목록 페이지에서는 `GET /api/sigs`와 `tag` 쿼리 파라미터를 이용해 태그 필터를 수행한다.
-
-* 다중 태그 선택 가능
-* 선택된 여러 태그는 **AND 조건**으로 적용
-* 예: `SIG`, `PS`를 동시에 선택하면 두 태그를 모두 가진 SIG만 표시
-* URL 쿼리 파라미터는 `?tag=SIG&tag=PS` 형태로 유지한다
-
 
 ---
 
