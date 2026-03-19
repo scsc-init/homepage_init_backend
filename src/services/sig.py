@@ -491,6 +491,10 @@ class SigService:
         self.sig_tag_repository.delete(sig_tag)
 
         if not tag.is_major and self.sig_tag_repository.count_by_tag_id(tag_id) == 0:
+            sig_tags = self.sig_tag_repository.get_by_tag_id(tag_id)
+            for sig_tag in sig_tags:
+                self.sig_tag_repository.delete(sig_tag)
+
             self.tag_repository.delete(tag)
 
         logger.info(

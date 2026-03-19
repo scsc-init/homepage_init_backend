@@ -76,6 +76,10 @@ class SigTagRepository(CRUDRepository[SIGTag, int]):
     def count_by_tag_id(self, tag_id: int) -> int:
         stmt = select(func.count()).select_from(SIGTag).where(SIGTag.tag_id == tag_id)
         return self.session.scalar(stmt) or 0
+    
+    def get_by_tag_id(self, tag_id: int) -> Sequence[SIGTag]:
+        stmt = select(SIGTag).where(SIGTag.tag_id == tag_id)
+        return self.session.scalars(stmt).all()
 
 
 class TagRepository(CRUDRepository[Tag, int]):
