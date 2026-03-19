@@ -29,7 +29,7 @@ class SigRepository(CRUDRepository[SIG, int]):
     def get_by_filters(
         self,
         filters: dict[str, Any],
-        tag_texts: list[str] = [],
+        tag_texts: Sequence[str] | None = None,
     ) -> Sequence[SIG]:
         query = select(SIG)
 
