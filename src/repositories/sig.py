@@ -84,7 +84,6 @@ class SigTagRepository(CRUDRepository[SIGTag, int]):
     def delete_by_tag_id(self, tag_id: int) -> None:
         stmt = delete(SIGTag).where(SIGTag.tag_id == tag_id)
         self.session.execute(stmt)
-        self.session.flush()
 
 
 class TagRepository(CRUDRepository[Tag, int]):
