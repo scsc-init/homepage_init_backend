@@ -1,6 +1,6 @@
-﻿from typing import Optional, Sequence
+from typing import Optional, Sequence
 
-from fastapi import APIRouter, Depends, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 
 from src.db import get_user_role_level
 from src.dependencies import UserDep, api_secret
