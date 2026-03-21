@@ -25,7 +25,6 @@ from src.repositories import (
 from src.schemas import (
     PublicUserResponse,
     UserResponse,
-    UserSummaryResponse,
 )
 from src.util import (
     DepositDTO,
