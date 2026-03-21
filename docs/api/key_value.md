@@ -35,6 +35,10 @@ END;
 | footer-message | `서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com` | 푸터에 들어가는 문자열 |
 | president | `<hash-of-main-president> \|\| null` | 회장에 해당하는 유저의 해쉬값(유저는 반드시 president 권한이어야 함) |
 | vice-president | `<hash-of-vice-president>;<hash> \|\| null` | 부회장에 해당하는 유저의 해쉬값을 세미콜론으로 concat한 값(유저는 반드시 president 권한이어야 함) |
+| president-name | `XXX` | 회장 이름 |
+| vice-president-name | `XXX;XXX` | 부회장의 이름을 세미콜론으로 concat한 값 |
+| president-phone | `010-xxxx-xxxx` | 회장 전화번호 |
+| vice-president-phone | `010-xxxx-xxxx;010-xxxx-xxxx` | 부회장의 전화번호를 세미콜론으로 concat한 값 |
 | enrollment_grant_until | `year-semester` | 지금 등록 시 부여할 마지막 등록 학기. 예를 들어, 2026 여름학기로 설정하려면 `2026-2`로 설정한다.  |
 
 ## API 구조
