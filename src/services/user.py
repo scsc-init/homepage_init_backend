@@ -23,8 +23,6 @@ from src.repositories import (
     UserRoleRepositoryDep,
 )
 from src.schemas import (
-    LeadershipContact,
-    LeadershipContactsResponse,
     PublicUserResponse,
     UserResponse,
     UserSummaryResponse,
@@ -117,12 +115,10 @@ class UserService:
         user_repository: UserRepositoryDep,
         user_role_repository: UserRoleRepositoryDep,
         standby_repository: StandbyReqTblRepositoryDep,
-        kv_service: KvServiceDep,
     ) -> None:
         self.user_repository = user_repository
         self.user_role_repository = user_role_repository
         self.standby_repository = standby_repository
-        self.kv_service = kv_service
 
     async def create_user(self, body: BodyCreateUser) -> UserResponse:
         if not is_valid_phone(body.phone):
@@ -232,32 +228,6 @@ class UserService:
 
         users = self.user_repository.get_by_filters(filters)
         return UserResponse.model_validate_list(users)
-
-    def get_leadership_contacts(self) -> LeadershipContactsResponse:
-        president_id = self.kv_service.get_kv_value("main-president").value or ""
-        vice_ids_raw = self.kv_service.get_kv_value("vice-president").value or ""
-        vice_ids = [x.strip() for x in vice_ids_raw.split(";") if x.strip()]
-
-        def user_to_contact(user):
-            if not user:
-                return None
-            return LeadershipContact(name=user.name, phone=user.phone)
-
-        president = None
-        if president_id:
-            president = user_to_contact(self.user_repository.get_by_id(president_id))
-
-        vice_contacts = []
-        for vid in vice_ids:
-            user = self.user_repository.get_by_id(vid)
-            contact = user_to_contact(user)
-            if contact:
-                vice_contacts.append(contact)
-
-        return LeadershipContactsResponse(
-            president=president,
-            vice_presidents=vice_contacts,
-        )
 
     def get_user_summaries(self, current_user: User) -> Sequence[UserSummaryResponse]:
         if current_user.role < get_user_role_level("executive"):

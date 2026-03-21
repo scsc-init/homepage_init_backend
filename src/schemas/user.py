@@ -55,13 +55,3 @@ class OldboyApplicantResponse(BaseResponse):
     id: str
     processed: bool
     created_at: datetime
-
-
-class LeadershipContact(BaseResponse):
-    name: str
-    phone: str
-
-
-class LeadershipContactsResponse(BaseResponse):
-    president: LeadershipContact | None = None
-    vice_presidents: list[LeadershipContact]

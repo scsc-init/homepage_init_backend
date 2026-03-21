@@ -1,6 +1,6 @@
 ﻿from typing import Optional, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
 
 from src.db import get_user_role_level
 from src.dependencies import UserDep, api_secret
@@ -230,8 +230,3 @@ async def process_deposit(
     standby_service: StandbyServiceDep,
 ) -> ProcessDepositResponse:
     return await standby_service.process_deposit(body)
-
-
-@user_router.get("/leadership/contact")
-async def get_leadership_contact(user_service: UserServiceDep):
-    return user_service.get_leadership_contacts()

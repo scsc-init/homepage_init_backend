@@ -8,8 +8,6 @@ from .pig import PigMemberResponse, PigResponse, PigWebsiteResponse
 from .scsc_global_status import SCSCGlobalStatusResponse
 from .sig import SigMemberResponse, SigResponse, SigTagResponse, TagResponse
 from .user import (
-    LeadershipContact,
-    LeadershipContactsResponse,
     OldboyApplicantResponse,
     PublicUserResponse,
     StandbyReqTblResponse,
