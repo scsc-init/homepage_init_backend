@@ -22,10 +22,7 @@ from src.repositories import (
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
-from src.schemas import (
-    PublicUserResponse,
-    UserResponse,
-)
+from src.schemas import PublicUserResponse, UserResponse
 from src.util import (
     DepositDTO,
     generate_user_hash,
