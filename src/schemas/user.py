@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from .base import BaseResponse
+from .major import MajorResponse
 
 
 class UserResponse(BaseResponse):
@@ -30,6 +31,7 @@ class UserSummaryResponse(BaseResponse):
     role: int
     is_active: bool
     is_banned: bool
+    major: MajorResponse
 
 
 class PublicUserResponse(BaseResponse):

@@ -14,7 +14,7 @@ from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User
+from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserSummary
 from src.repositories import (
     EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
@@ -229,28 +229,12 @@ class UserService:
         users = self.user_repository.get_by_filters(filters)
         return UserResponse.model_validate_list(users)
 
-    def get_user_summaries(self, current_user: User) -> Sequence[UserSummaryResponse]:
+    def get_user_summaries(self, current_user: User) -> Sequence[UserSummary]:
         if current_user.role < get_user_role_level("executive"):
             raise HTTPException(
                 403, detail="permission denied: executive role required"
             )
-
-        users = self.user_repository.list_all()
-
-        summaries: list[UserSummaryResponse] = []
-        for user in users:
-            summaries.append(
-                UserSummaryResponse(
-                    id=user.id,
-                    name=user.name,
-                    major_id=user.major_id,
-                    role=user.role,
-                    is_active=user.is_active,
-                    is_banned=user.is_banned,
-                )
-            )
-
-        return summaries
+        return self.user_repository.get_all_summary()
 
     def get_public_executives(self) -> Sequence[PublicUserResponse]:
         return PublicUserResponse.model_validate_list(

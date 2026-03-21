@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 
 from src.model import SIG, SCSCStatus, SIGMember, SIGTag, Tag
 
@@ -26,11 +26,21 @@ class SigRepository(CRUDRepository[SIG, int]):
     def get_by_status(self, status: SCSCStatus) -> Sequence[SIG]:
         return self.session.scalars(select(SIG).where(SIG.status == status)).all()
 
-    def get_by_filters(self, filters: dict[str, Any]) -> Sequence[SIG]:
+    def get_by_filters(
+        self,
+        filters: dict[str, Any],
+        tag_texts: Sequence[str] | None = None,
+    ) -> Sequence[SIG]:
         query = select(SIG)
+
         for attr, value in filters.items():
             if value is not None:
                 query = query.where(getattr(SIG, attr) == value)
+
+        if tag_texts:
+            for tag_text in tag_texts:
+                query = query.where(SIG.tags.any(Tag.text == tag_text))
+
         return self.session.scalars(query).all()
 
 
@@ -62,6 +72,18 @@ class SigTagRepository(CRUDRepository[SIGTag, int]):
     def get_by_sig_id_and_tag_id(self, sig_id: int, tag_id: int) -> Optional[SIGTag]:
         stmt = select(SIGTag).where(SIGTag.sig_id == sig_id, SIGTag.tag_id == tag_id)
         return self.session.scalar(stmt)
+
+    def count_by_tag_id(self, tag_id: int) -> int:
+        stmt = select(func.count()).select_from(SIGTag).where(SIGTag.tag_id == tag_id)
+        return self.session.scalar(stmt) or 0
+
+    def get_by_tag_id(self, tag_id: int) -> Sequence[SIGTag]:
+        stmt = select(SIGTag).where(SIGTag.tag_id == tag_id)
+        return self.session.scalars(stmt).all()
+
+    def delete_by_tag_id(self, tag_id: int) -> None:
+        stmt = delete(SIGTag).where(SIGTag.tag_id == tag_id)
+        self.session.execute(stmt)
 
 
 class TagRepository(CRUDRepository[Tag, int]):

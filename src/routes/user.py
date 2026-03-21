@@ -1,8 +1,7 @@
 from typing import Optional, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
 
-from src.db import get_user_role_level
 from src.dependencies import UserDep, api_secret
 from src.schemas import PublicUserResponse, UserResponse, UserSummaryResponse
 from src.services import (
@@ -86,7 +85,9 @@ async def get_user_summaries(
     current_user: UserDep,
     user_service: UserServiceDep,
 ) -> Sequence[UserSummaryResponse]:
-    return user_service.get_user_summaries(current_user)
+    return UserSummaryResponse.model_validate_list(
+        user_service.get_user_summaries(current_user)
+    )
 
 
 @user_router.get("/executive/user/{id}", response_model=UserResponse)  # noqa: A002
