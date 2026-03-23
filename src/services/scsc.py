@@ -173,15 +173,19 @@ class SCSCService:
 
         # start of active
         if new_status == SCSCStatus.active:
-            recruiting_sigs = self.sig_repository.get_by_status(SCSCStatus.recruiting)
-            for sig in recruiting_sigs:
-                sig.status = SCSCStatus.active
-                self.session.add(sig)
+            self.session.execute(
+                update(SIG)
+                .where(SIG.status == SCSCStatus.recruiting)
+                .values(status=SCSCStatus.active)
+                .execution_options(synchronize_session=False)
+            )
 
-            recruiting_pigs = self.pig_repository.get_by_status(SCSCStatus.recruiting)
-            for pig in recruiting_pigs:
-                pig.status = SCSCStatus.active
-                self.session.add(pig)
+            self.session.execute(
+                update(PIG)
+                .where(PIG.status == SCSCStatus.recruiting)
+                .values(status=SCSCStatus.active)
+                .execution_options(synchronize_session=False)
+            )
 
         # end of active
         if scsc_global_status.status == SCSCStatus.active:

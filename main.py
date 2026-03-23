@@ -66,6 +66,14 @@ if get_settings().cors_all_accept:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=get_settings().cors_whitelist_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Custom middleware follows
 # NOTE: Starlette executes middlewares in reverse order of addition.

@@ -54,6 +54,7 @@ READONLY_PASSWORD=readonly_password
 | `DB_PASSWORD`            | postgresql 백엔드용 계정 비밀번호 |
 | `DB_ADMIN_PASSWORD`      | postgresql 관리자용 계정 및 pgadmin 관리자용 계정 비밀번호 |
 | `READONLY_PASSWORD`      | postgresql 읽기전용(프론트엔드용) 계정 비밀번호 |
+| `CORS_WHITELIST_ORIGINS`  | whitelist된 CORS origin 리스트 |
 
 
 ## 실행 방법(with docker)
