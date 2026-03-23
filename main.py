@@ -69,7 +69,7 @@ if get_settings().cors_all_accept:
 else:
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=get_settings().cors_whitelist,
+        allow_origins=get_settings().cors_whitelist_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
