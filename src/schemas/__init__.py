@@ -6,7 +6,13 @@ from .key_value import KvResponse
 from .major import MajorResponse
 from .pig import PigMemberResponse, PigResponse, PigWebsiteResponse
 from .scsc_global_status import SCSCGlobalStatusResponse
-from .sig import SigMemberResponse, SigResponse, SigTagResponse, TagResponse
+from .sig import (
+    SigMemberResponse,
+    SigResponse,
+    SigTagResponse,
+    SigWebsiteResponse,
+    TagResponse,
+)
 from .user import (
     OldboyApplicantResponse,
     PublicUserResponse,
