@@ -154,18 +154,19 @@ class SCSCService:
 
         # start of recruiting
         if new_status == SCSCStatus.recruiting:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3002,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                },
-            )
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3004,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                },
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3002,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                    },
+                )
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3004,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                    },
+                )
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 try:
