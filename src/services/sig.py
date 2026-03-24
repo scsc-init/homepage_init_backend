@@ -232,10 +232,10 @@ class SigService:
         if not is_executive and sig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
 
-        if sig.status == "inactive":
+        if sig.status == SCSCStatus.inactive:
             raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
 
-        sig.status = "inactive"
+        sig.status = SCSCStatus.inactive
         self.sig_repository.update(sig)
 
         if mq_client:

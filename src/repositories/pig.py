@@ -21,7 +21,7 @@ class PigRepository(CRUDRepository[PIG, int]):
         stmt = select(PIG).where(
             PIG.year == year,
             PIG.semester == semester,
-            PIG.status != "inactive",
+            PIG.status != SCSCStatus.inactive,
         )
         return self.session.scalars(stmt).all()
 

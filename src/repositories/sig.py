@@ -19,7 +19,7 @@ class SigRepository(CRUDRepository[SIG, int]):
         stmt = select(SIG).where(
             SIG.year == year,
             SIG.semester == semester,
-            SIG.status != "inactive",
+            SIG.status != SCSCStatus.inactive,
         )
         return self.session.scalars(stmt).all()
 

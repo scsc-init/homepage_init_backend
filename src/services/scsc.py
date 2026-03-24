@@ -101,7 +101,7 @@ class SCSCService:
                     ig.status = SCSCStatus.recruiting
                     self.session.add(ig)
                 else:
-                    ig.status = "inactive"
+                    ig.status = SCSCStatus.inactive
                     self.session.add(ig)
                     if mq_client:
                         await mq_client.send_discord_bot_request_no_reply(
@@ -154,37 +154,18 @@ class SCSCService:
 
         # start of recruiting
         if new_status == SCSCStatus.recruiting:
-            if mq_client:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3002,
-                    body={
-                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                    },
-                )
-            if mq_client:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3004,
-                    body={
-                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                    },
-                )
-
-        # start of active
-        if new_status == SCSCStatus.active:
-            self.session.execute(
-                update(SIG)
-                .where(SIG.status == SCSCStatus.recruiting)
-                .values(status=SCSCStatus.active)
-                .execution_options(synchronize_session=False)
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=3002,
+                body={
+                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                },
             )
-
-            self.session.execute(
-                update(PIG)
-                .where(PIG.status == SCSCStatus.recruiting)
-                .values(status=SCSCStatus.active)
-                .execution_options(synchronize_session=False)
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=3004,
+                body={
+                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                },
             )
-
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 try:
@@ -203,6 +184,18 @@ class SCSCService:
                 .values(role=get_user_role_level("dormant"))
                 .execution_options(synchronize_session=False)
             )
+
+        # start of active
+        if new_status == SCSCStatus.active:
+            recruiting_sigs = self.sig_repository.get_by_status(SCSCStatus.recruiting)
+            for sig in recruiting_sigs:
+                sig.status = SCSCStatus.active
+                self.session.add(sig)
+
+            recruiting_pigs = self.pig_repository.get_by_status(SCSCStatus.recruiting)
+            for pig in recruiting_pigs:
+                pig.status = SCSCStatus.active
+                self.session.add(pig)
 
         # end of active
         if scsc_global_status.status == SCSCStatus.active:

@@ -17,6 +17,7 @@ from .base import Base
 class SCSCStatus(str, enum):
     recruiting = "recruiting"
     active = "active"
+    inactive = "inactive"  # sig, pig status로 사용됨
 
 
 class SCSCGlobalStatus(Base):
