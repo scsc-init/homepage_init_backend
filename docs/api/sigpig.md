@@ -141,6 +141,8 @@ END;
 }
 ```
 
+websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운 websites로 대체된다.
+
 * **Response**: `SigResponse`
 * **Status Codes**:
 
