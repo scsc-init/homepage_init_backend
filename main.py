@@ -7,15 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 # Mount Static Files
 from fastapi.staticfiles import StaticFiles
 
+# RabbitMQ
+from src.amqp import mq_client
+
 # Middleware
-from src.core import get_settings
+from src.core import get_settings, logger
 
 # Dependencies
 from src.dependencies import check_user_status, user_auth
-from src.middleware import (
-    AssertPermissionMiddleware,
-    HTTPLoggerMiddleware,
-)
+from src.middleware import AssertPermissionMiddleware, HTTPLoggerMiddleware
 
 # Route
 from src.routes import root_router
@@ -24,10 +24,6 @@ from src.routes import root_router
 from src.util import LOGGING_CONFIG
 
 logging.config.dictConfig(LOGGING_CONFIG)
-
-# RabbitMQ
-from src.amqp import mq_client
-from src.core import logger
 
 
 # Lifespan
@@ -40,7 +36,8 @@ async def lifespan(app: FastAPI):
         )
     else:
         try:
-            await mq_client.connect()
+            if mq_client:
+                await mq_client.connect()
 
         except Exception:
             logger.error("Startup Failed: RabbitMQ is required but could not connect.")
@@ -48,7 +45,8 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    await mq_client.close()
+    if mq_client:
+        await mq_client.close()
 
 
 app = FastAPI(
@@ -64,6 +62,14 @@ if get_settings().cors_all_accept:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=get_settings().cors_whitelist_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

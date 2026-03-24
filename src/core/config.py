@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     db_name: str = "main_db"
     db_user: str
     db_password: str
+    cors_whitelist_origins: list[str] = [
+        "http://localhost:3000",
+        "https://dev.scsc.dev",
+        "https://scsc.dev",
+    ]
 
     model_config = SettingsConfigDict(env_file=".env", frozen=True, extra="ignore")
 

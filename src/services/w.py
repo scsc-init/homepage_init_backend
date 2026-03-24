@@ -11,7 +11,6 @@ from sqlalchemy.exc import IntegrityError
 from src.core import get_settings, logger
 from src.model import User, WHTMLMetadata
 from src.repositories import WRepositoryDep
-from src.schemas import WHTMLMetadataWithCreatorResponse
 from src.util import validate_and_read_file
 
 
