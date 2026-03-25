@@ -7,11 +7,21 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
-from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, SIGTag, Tag, User
+from src.model import (
+    SIG,
+    SCSCGlobalStatus,
+    SCSCStatus,
+    SIGMember,
+    SIGTag,
+    SIGWebsite,
+    Tag,
+    User,
+)
 from src.repositories import (
     SigMemberRepositoryDep,
     SigRepositoryDep,
     SigTagRepositoryDep,
+    SigWebsiteRepositoryDep,
     TagRepositoryDep,
     UserRepositoryDep,
 )
@@ -21,11 +31,18 @@ from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
 
 
+class BodySigWebsite(BaseModel):
+    label: str
+    url: str
+    sort_order: Optional[int] = None
+
+
 class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
     is_rolling_admission: bool = False
+    websites: Optional[list[BodySigWebsite]] = None
 
 
 class BodyUpdateSIG(BaseModel):
@@ -35,6 +52,7 @@ class BodyUpdateSIG(BaseModel):
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
     is_rolling_admission: Optional[bool] = None
+    websites: Optional[list[BodySigWebsite]] = None
 
 
 class BodyHandoverSIG(BaseModel):
@@ -55,6 +73,7 @@ class SigService:
         article_service: ArticleServiceDep,
         sig_repository: SigRepositoryDep,
         sig_member_repository: SigMemberRepositoryDep,
+        sig_website_repository: SigWebsiteRepositoryDep,
         sig_tag_repository: SigTagRepositoryDep,
         tag_repository: TagRepositoryDep,
         user_repository: UserRepositoryDep,
@@ -62,6 +81,7 @@ class SigService:
         self.article_service = article_service
         self.sig_repository = sig_repository
         self.sig_member_repository = sig_member_repository
+        self.sig_website_repository = sig_website_repository
         self.sig_tag_repository = sig_tag_repository
         self.tag_repository = tag_repository
         self.user_repository = user_repository
@@ -107,6 +127,8 @@ class SigService:
 
         if sig.id is None:
             raise HTTPException(503, detail="sig primary key does not exist")
+
+        self._replace_websites(sig.id, body.websites)
 
         sig_member = SIGMember(ig_id=sig.id, user_id=current_user.id)
         try:
@@ -204,6 +226,9 @@ class SigService:
             self.sig_repository.update(sig)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+
+        if body.websites is not None:
+            self._replace_websites(id, body.websites)
 
         bot_body = {}
         bot_body["sig_name"] = old_title
@@ -429,6 +454,43 @@ class SigService:
         logger.info(
             f"info_type=sig_leave ; {sig.id=} ; {sig.title=} ; {executor.id=} ; left_user_id={body.user_id} ; {sig.year=} ; {sig.semester=}"
         )
+
+    def _replace_websites(
+        self, sig_id: int, websites: Optional[Sequence[BodySigWebsite]]
+    ) -> None:
+        if websites is None:
+            return
+        website_models = self._prepare_website_models(sig_id, websites)
+        self.sig_website_repository.replace_for_sig(sig_id, website_models)
+
+    def _prepare_website_models(
+        self, sig_id: int, websites: Sequence[BodySigWebsite]
+    ) -> list[SIGWebsite]:
+        if not websites:
+            return []
+        if len(websites) > 10:
+            raise HTTPException(
+                400, detail="웹사이트는 최대 10개까지 등록할 수 있습니다"
+            )
+
+        prepared: list[SIGWebsite] = []
+        for idx, website in enumerate(websites):
+            label = website.label.strip()
+            url = website.url.strip()
+            if not url:
+                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
+            if not label:
+                label = url
+            sort_order = website.sort_order if website.sort_order is not None else idx
+            prepared.append(
+                SIGWebsite(
+                    sig_id=sig_id,
+                    label=label,
+                    url=url,
+                    sort_order=sort_order,
+                )
+            )
+        return prepared
 
     def add_sig_tag(self, sig_id: int, tag_id: int, executor: User) -> SIGTag:
         sig = self.sig_repository.get_by_id(sig_id)

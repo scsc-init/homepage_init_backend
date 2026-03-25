@@ -462,10 +462,10 @@ class PigService:
 
         prepared: list[PIGWebsite] = []
         for idx, website in enumerate(websites):
-            label = (website.label or "").strip()
-            url = (website.url or "").strip()
+            label = website.label.strip()
+            url = website.url.strip()
             if not url:
-                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
+                raise HTTPException(400, detail="URL이 비어 있습니다")
             if not label:
                 label = url
             sort_order = website.sort_order if website.sort_order is not None else idx

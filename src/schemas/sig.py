@@ -21,6 +21,16 @@ class SigMemberResponse(BaseResponse):
     user: UserSummaryResponse
 
 
+class SigWebsiteResponse(BaseResponse):
+    id: int
+    sig_id: int
+    label: str
+    url: str
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class SigResponse(BaseResponse):
     id: int
     title: str
@@ -38,6 +48,7 @@ class SigResponse(BaseResponse):
     updated_at: datetime
     owner_user: UserSummaryResponse
     members: list[SigMemberResponse]
+    websites: list[SigWebsiteResponse]
     tags: list[TagResponse]
 
 

@@ -79,6 +79,9 @@ class SIG(Base):
     members: Mapped[list[SIGMember]] = relationship(
         "SIGMember", lazy="selectin", init=False, viewonly=True
     )
+    websites: Mapped[list[SIGWebsite]] = relationship(
+        "SIGWebsite", lazy="selectin", init=False, viewonly=True
+    )
     tags: Mapped[list[Tag]] = relationship(
         "Tag", secondary="sig_tag", lazy="selectin", init=False, viewonly=True
     )
@@ -102,6 +105,27 @@ class SIGMember(Base):
 
     user: Mapped[UserSummary] = relationship(
         "UserSummary", lazy="selectin", init=False, viewonly=True
+    )
+
+
+class SIGWebsite(Base):
+    __tablename__ = "sig_website"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    sig_id: Mapped[int] = mapped_column(Integer, ForeignKey("sig.id"), nullable=False)
+    label: Mapped[str] = mapped_column(String, nullable=False)
+    url: Mapped[str] = mapped_column(String, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+        onupdate=utcnow,
     )
 
 

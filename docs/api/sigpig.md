@@ -71,6 +71,19 @@ CREATE TABLE pig_member (
 );
 ```
 
+## SIG/PIG Website
+```sql
+CREATE TABLE public.sig_website (
+    id BIGSERIAL PRIMARY KEY,
+    sig_id bigint NOT NULL REFERENCES public.sig(id) ON DELETE CASCADE,
+    label text NOT NULL,
+    url text NOT NULL,
+    sort_order bigint NOT NULL DEFAULT '0'::bigint,
+    created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ## SQL 관련
 ```sql
 CREATE INDEX idx_sig_owner ON sig(owner);
@@ -124,8 +137,11 @@ END;
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
   "is_rolling_admission": false,
+  "websites": []
 }
 ```
+
+websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운 websites로 대체된다.
 
 * **Response**: `SigResponse`
 * **Status Codes**:
@@ -188,6 +204,7 @@ END;
   "content": "### 안녕하세요",
   "should_extend": true,
   "is_rolling_admission": true,
+  "websites": []
 }
 ```
 
@@ -285,6 +302,7 @@ END;
   "status": "recruiting",
   "should_extend": true,
   "is_rolling_admission": true,
+  "websites": []
 }
 ```
 
@@ -610,7 +628,6 @@ END;
 
 * 시그와 구조가 다른 피그만의 API 예외 사항은 아래와 같다.
 * 피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다.
-* 피그는 웹사이트(string)을 여러 개 가질 수 있다. 
 * 응답 형식은 [/src/schemas/pig.py](/src/schemas/pig.py) 참고하십시오
 
 ---
