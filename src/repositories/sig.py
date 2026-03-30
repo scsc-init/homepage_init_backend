@@ -1,7 +1,7 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, insert, select
 
 from src.model import SIG, SCSCStatus, SIGMember, SIGTag, SIGWebsite, Tag
 
@@ -76,8 +76,22 @@ class SigWebsiteRepository(CRUDRepository[SIGWebsite, int]):
     def replace_for_sig(self, sig_id: int, websites: Sequence[SIGWebsite]) -> None:
         with self.transaction:
             self.session.execute(delete(SIGWebsite).where(SIGWebsite.sig_id == sig_id))
-            for website in websites:
-                self.session.add(website)
+
+            if not websites:
+                return
+
+            self.session.execute(
+                insert(SIGWebsite),
+                [
+                    {
+                        "sig_id": website.sig_id,
+                        "label": website.label,
+                        "url": website.url,
+                        "sort_order": website.sort_order,
+                    }
+                    for website in websites
+                ],
+            )
 
     def delete_by_sig_id(self, sig_id: int) -> None:
         with self.transaction:
