@@ -124,7 +124,7 @@ class SCSCService:
 
         for ig in igs:
             try:
-                if mq_client:
+                if not ig.should_extend and mq_client:
                     await mq_client.send_discord_bot_request_no_reply(
                         action_code=action_code,
                         body={
