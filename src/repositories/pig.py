@@ -3,7 +3,7 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import delete, select
+from sqlalchemy import delete, insert, select
 
 from src.model import PIG, PIGMember, PIGWebsite, SCSCStatus
 
@@ -68,8 +68,22 @@ class PigWebsiteRepository(CRUDRepository[PIGWebsite, int]):
     def replace_for_pig(self, pig_id: int, websites: Sequence[PIGWebsite]) -> None:
         with self.transaction:
             self.session.execute(delete(PIGWebsite).where(PIGWebsite.pig_id == pig_id))
-            for website in websites:
-                self.session.add(website)
+
+            if not websites:
+                return
+
+            self.session.execute(
+                insert(PIGWebsite),
+                [
+                    {
+                        "pig_id": website.pig_id,
+                        "label": website.label,
+                        "url": website.url,
+                        "sort_order": website.sort_order,
+                    }
+                    for website in websites
+                ],
+            )
 
     def delete_by_pig_id(self, pig_id: int) -> None:
         with self.transaction:

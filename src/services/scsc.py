@@ -88,34 +88,57 @@ class SCSCService:
         action_code, name_key = (
             (4002, "sig_name") if model == SIG else (4004, "pig_name")
         )
-
         repo = self.sig_repository if model == SIG else self.pig_repository
+
         igs = repo.get_by_year_semester_not_inactive(
             scsc_global_status.year, scsc_global_status.semester
         )
 
+        next_year, next_semester = get_next_year_semester(
+            scsc_global_status.year, scsc_global_status.semester
+        )
+
+        self.session.execute(
+            update(model)
+            .where(
+                model.year == scsc_global_status.year,
+                model.semester == scsc_global_status.semester,
+                model.status != SCSCStatus.inactive,
+            )
+            .values(
+                status=case(
+                    (model.should_extend.is_(True), SCSCStatus.recruiting),
+                    else_=SCSCStatus.inactive,
+                ),
+                year=case(
+                    (model.should_extend.is_(True), next_year),
+                    else_=model.year,
+                ),
+                semester=case(
+                    (model.should_extend.is_(True), next_semester),
+                    else_=model.semester,
+                ),
+            )
+            .execution_options(synchronize_session=False)
+        )
+
         for ig in igs:
             try:
-                if ig.should_extend:
-                    ig.year, ig.semester = get_next_year_semester(
-                        scsc_global_status.year, scsc_global_status.semester
+                if not ig.should_extend and mq_client:
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=action_code,
+                        body={
+                            name_key: ig.title,
+                            "previous_semester": (
+                                f"{scsc_global_status.year}-"
+                                f"{map_semester_name.get(scsc_global_status.semester)}"
+                            ),
+                        },
                     )
-                    ig.status = SCSCStatus.recruiting
-                    self.session.add(ig)
-                else:
-                    ig.status = SCSCStatus.inactive
-                    self.session.add(ig)
-                    if mq_client:
-                        await mq_client.send_discord_bot_request_no_reply(
-                            action_code=action_code,
-                            body={
-                                name_key: ig.title,
-                                "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}",
-                            },
-                        )
             except Exception as e:
                 logger.error(
-                    f"err_type=process_igs ; ig_id={ig.id} ; ig_title={ig.title} ; msg=error processing {model.__name__}: {e}",
+                    f"err_type=process_igs ; ig_id={ig.id} ; ig_title={ig.title} ; "
+                    f"msg=error processing {model.__name__}: {e}",
                     exc_info=True,
                 )
 
