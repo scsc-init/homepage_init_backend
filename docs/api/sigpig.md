@@ -17,7 +17,7 @@ CREATE TABLE sig (
     created_semester INTEGER NOT NULL CHECK (created_semester IN (1, 2, 3, 4)),
 
     should_extend BOOLEAN NOT NULL DEFAULT FALSE,
-    is_rolling_admission BOOLEAN NOT NULL DEFAULT FALSE,
+    is_rolling_admission TEXT DEFAULT 'during_recruiting' NOT NULL CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
 
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -32,14 +32,12 @@ CREATE TABLE sig (
 - status 중 'surveying'은 더 이상 사용하지 않습니다. 기존 'surveying'은 모두 'recruiting'으로 변경됩니다. 
 - `created_year`, `created_semester`: SIG가 **처음 생성된 학기**. 이후 변경되지 않습니다.  
 - `year`, `semester`: SIG가 **현재 속한 학기(운영/종료 학기)**. 학기 이월 시 이 값만 업데이트됩니다.  
+- is_rolling_admission의 type를 pig와 동일하게 str로 수정하고 3가지 상태로 바꾸었습니다.
 
 
 ```sql
 CREATE TABLE pig (
     ... -- same as sig
-    is_rolling_admission TEXT DEFAULT 'during_recruiting' NOT NULL CHECK (is_rolling_admission IN ('always', 'never', 'during_recruiting')),
-    ... -- same as sig
-);
 ```
 
 - `is_rolling_admission` 기본값은 `"during_recruiting"`입니다.
@@ -136,7 +134,7 @@ END;
   "title": "AI SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
-  "is_rolling_admission": false,
+  "is_rolling_admission": "during_recruiting",
   "websites": []
 }
 ```
@@ -203,7 +201,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
   "should_extend": true,
-  "is_rolling_admission": true,
+  "is_rolling_admission": "during_recruiting,
   "websites": []
 }
 ```
@@ -301,7 +299,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
   "content": "### 안녕하세요",
   "status": "recruiting",
   "should_extend": true,
-  "is_rolling_admission": true,
+  "is_rolling_admission": "during_recruiting,
   "websites": []
 }
 ```
@@ -372,8 +370,9 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 
   * `204 No Content`
   * `400 Bad Request`: sig 상태가 가입 가능한 상태가 아닐 때
-    * sig의 `is_rolling_admission`이 `true`이면 `recruiting`, `active`일 때 가입 가능
-    * sig의 `is_rolling_admission`이 `false`이면 `recruiting`일 때 가입 가능
+    * sig의 `is_rolling_admission`이 `always`이면 `recruiting`, `active`일 때 가입 가능
+    * sig의 `is_rolling_admission`이 `during_recruiting`이면 `recruiting`일 때 가입 가능
+    * sig의 `is_rolling_admission`이 `never`이면 가입 불가능
   * `401 Unauthorized`
   * `409 Conflict`: 이미 가입됨
 
@@ -627,7 +626,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 ### 예외 사항
 
 * 시그와 구조가 다른 피그만의 API 예외 사항은 아래와 같다.
-* 피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다.
+* ~~피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다.~~
 * 응답 형식은 [/src/schemas/pig.py](/src/schemas/pig.py) 참고하십시오
 
 ---

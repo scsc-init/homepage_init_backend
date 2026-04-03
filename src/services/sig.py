@@ -29,6 +29,7 @@ from src.util import map_semester_name
 
 from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
+from src.model.sig import RollingAdmission
 
 
 class BodySigWebsite(BaseModel):
@@ -41,7 +42,7 @@ class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: bool = False
+    is_rolling_admission: RollingAdmission = RollingAdmission.DURING_RECRUITING
     websites: Optional[list[BodySigWebsite]] = None
 
 
@@ -51,7 +52,7 @@ class BodyUpdateSIG(BaseModel):
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
-    is_rolling_admission: Optional[bool] = None
+    is_rolling_admission: Optional[RollingAdmission] = None
     websites: Optional[list[BodySigWebsite]] = None
 
 
@@ -333,11 +334,14 @@ class SigService:
 
     async def join_sig(self, id: int, current_user: User) -> None:
         sig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if sig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+        
+        if sig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            raise HTTPException(400, "해당 시그는 가입을 받지 않습니다")
+
         if sig.status not in allowed:
             raise HTTPException(
                 400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
