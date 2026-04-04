@@ -394,11 +394,12 @@ class SigService:
 
     async def leave_sig(self, id: int, executor: User) -> None:
         sig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if sig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+        if sig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            allowed = []
         if sig.status not in allowed:
             raise HTTPException(
                 400,

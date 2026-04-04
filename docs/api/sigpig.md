@@ -40,7 +40,7 @@ CREATE TABLE pig (
     ... -- same as sig
 ```
 
-- `is_rolling_admission` 기본값은 `"during_recruiting"`입니다..
+- `is_rolling_admission` 기본값은 `"during_recruiting"`입니다.
 
 ## SIG/PIG MEMBER DB
 ```sql
@@ -201,7 +201,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
   "description": "업데이트된 설명입니다.",
   "content": "### 안녕하세요",
   "should_extend": true,
-  "is_rolling_admission": "during_recruiting,
+  "is_rolling_admission": "during_recruiting",
   "websites": []
 }
 ```
@@ -299,7 +299,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
   "content": "### 안녕하세요",
   "status": "recruiting",
   "should_extend": true,
-  "is_rolling_admission": "during_recruiting,
+  "is_rolling_admission": "during_recruiting",
   "websites": []
 }
 ```

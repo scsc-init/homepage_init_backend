@@ -377,11 +377,12 @@ class PigService:
 
     async def leave_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+        if pig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            allowed = []
         if pig.status not in allowed:
             raise HTTPException(
                 400,
