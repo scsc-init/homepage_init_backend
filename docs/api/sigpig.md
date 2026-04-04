@@ -40,7 +40,7 @@ CREATE TABLE pig (
     ... -- same as sig
 ```
 
-- `is_rolling_admission` 기본값은 `"during_recruiting"`입니다.
+- `is_rolling_admission` 기본값은 `"during_recruiting"`입니다..
 
 ## SIG/PIG MEMBER DB
 ```sql
