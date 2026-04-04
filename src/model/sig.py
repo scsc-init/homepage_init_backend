@@ -21,10 +21,11 @@ from .base import Base
 from .scsc_global_status import SCSCStatus
 from .user import UserSummary
 
+
 class RollingAdmission(str, PythonEnum):
-    ALWAYS = 'always'
-    NEVER = 'never'
-    DURING_RECRUITING = 'during_recruiting'
+    ALWAYS = "always"
+    NEVER = "never"
+    DURING_RECRUITING = "during_recruiting"
 
 
 class SIG(Base):

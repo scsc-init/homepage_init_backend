@@ -334,7 +334,7 @@ class SigService:
 
     async def join_sig(self, id: int, current_user: User) -> None:
         sig = self.get_by_id(id)
-        
+
         if sig.is_rolling_admission == RollingAdmission.ALWAYS:
             allowed = ctrl_status_available.join_sigpig_rolling_admission
         elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
