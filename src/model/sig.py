@@ -1,7 +1,7 @@
 from __future__ import annotations
-from enum import Enum as PythonEnum
 
 from datetime import datetime
+from enum import Enum as PythonEnum
 
 from sqlalchemy import (
     Boolean,

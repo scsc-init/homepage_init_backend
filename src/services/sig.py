@@ -17,6 +17,7 @@ from src.model import (
     Tag,
     User,
 )
+from src.model.sig import RollingAdmission
 from src.repositories import (
     SigMemberRepositoryDep,
     SigRepositoryDep,
@@ -29,7 +30,6 @@ from src.util import map_semester_name
 
 from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
-from src.model.sig import RollingAdmission
 
 
 class BodySigWebsite(BaseModel):
