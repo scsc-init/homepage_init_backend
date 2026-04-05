@@ -386,7 +386,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 * **Status Codes**:
 
   * `204 No Content`
-   * `400 Bad Request`: sig 상태가 탈퇴 가능한 상태가 아닐 때
+  * `400 Bad Request`: sig 상태가 탈퇴 가능한 상태가 아닐 때
     * sig의 `is_rolling_admission`이 `always`이면 `recruiting`, `active`일 때 탈퇴 가능
     * sig의 `is_rolling_admission`이 `during_recruiting`이면 `recruiting`일 때 탈퇴 가능
     * sig의 `is_rolling_admission`이 `never`이면 탈퇴 불가능
@@ -630,7 +630,6 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 ### 예외 사항
 
 * 시그와 구조가 다른 피그만의 API 예외 사항은 아래와 같다.
-* ~~피그는 `is_rolling_admission` 이 Boolean 이 아니라 String 타입이며 `always`, `never`, `during_recruiting`의 세 가지 경우가 존재한다.~~
 * 응답 형식은 [/src/schemas/pig.py](/src/schemas/pig.py) 참고하십시오
 
 ---
