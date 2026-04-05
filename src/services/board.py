@@ -15,6 +15,7 @@ class BodyCreateBoard(BaseModel):
     description: str
     writing_permission_level: int
     reading_permission_level: int
+    board_type: str
 
 
 class BodyUpdateBoard(BaseModel):
@@ -22,6 +23,7 @@ class BodyUpdateBoard(BaseModel):
     description: Optional[str] = None
     writing_permission_level: Optional[int] = None
     reading_permission_level: Optional[int] = None
+    board_type: Optional[str] = None
 
 
 class BoardService:
@@ -37,6 +39,7 @@ class BoardService:
             description=body.description,
             writing_permission_level=body.writing_permission_level,
             reading_permission_level=body.reading_permission_level,
+            board_type=body.board_type,
         )
         try:
             board = self.board_repository.create(board)
@@ -47,7 +50,7 @@ class BoardService:
             raise HTTPException(status_code=409, detail="unique field already exists")
 
         logger.info(
-            f"info_type=board_create ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
+            f"info_type=board_create ; board_id={board.id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; board_type={body.board_type} ; executor={current_user.id}"
         )
         return board
 
@@ -80,6 +83,8 @@ class BoardService:
             board.writing_permission_level = body.writing_permission_level
         if body.reading_permission_level is not None:
             board.reading_permission_level = body.reading_permission_level
+        if body.board_type is not None:
+            board.board_type = body.board_type
         board.updated_at = utcnow()
 
         try:
@@ -91,7 +96,7 @@ class BoardService:
             raise HTTPException(status_code=409, detail="unique field already exists")
 
         logger.info(
-            f"info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; executor={current_user.id}"
+            f"info_type=board_update ; board_id={id} ; name={body.name} ; description={body.description} ; writing_permission={body.writing_permission_level} ; reading_permission={body.reading_permission_level} ; board_type={body.board_type} ; executor={current_user.id}"
         )
 
     def delete_board(self, id: int, current_user: User) -> None:

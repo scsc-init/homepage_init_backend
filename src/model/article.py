@@ -32,6 +32,7 @@ class Board(Base):
         onupdate=utcnow,
         nullable=False,
     )
+    board_type: Mapped[str] = mapped_column(String, nullable=False)
 
 
 class Article(Base):
