@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from .base import BaseResponse
 from src.model import BoardType
+
+from .base import BaseResponse
 
 
 class BoardResponse(BaseResponse):

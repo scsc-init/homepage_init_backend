@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.core import logger
-from src.model import Board, User, BoardType
+from src.model import Board, BoardType, User
 from src.repositories import BoardRepositoryDep
 from src.util import utcnow
 
