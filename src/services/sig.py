@@ -9,6 +9,7 @@ from src.core import logger
 from src.db import get_user_role_level
 from src.model import (
     SIG,
+    RollingAdmission,
     SCSCGlobalStatus,
     SCSCStatus,
     SIGMember,
@@ -17,7 +18,6 @@ from src.model import (
     Tag,
     User,
 )
-from src.model.sig import RollingAdmission
 from src.repositories import (
     SigMemberRepositoryDep,
     SigRepositoryDep,
@@ -399,7 +399,7 @@ class SigService:
         elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
             allowed = ctrl_status_available.join_sigpig
         else:
-            allowed = []
+            raise HTTPException(400, "해당 시그는 탈퇴를 받지 않는 상태입니다.")
         if sig.status not in allowed:
             raise HTTPException(
                 400,

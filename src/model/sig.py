@@ -18,14 +18,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.util import utcnow
 
 from .base import Base
+from .pig import RollingAdmission
 from .scsc_global_status import SCSCStatus
 from .user import UserSummary
-
-
-class RollingAdmission(str, PythonEnum):
-    ALWAYS = "always"
-    NEVER = "never"
-    DURING_RECRUITING = "during_recruiting"
 
 
 class SIG(Base):

@@ -32,7 +32,7 @@ CREATE TABLE sig (
 - status 중 'surveying'은 더 이상 사용하지 않습니다. 기존 'surveying'은 모두 'recruiting'으로 변경됩니다. 
 - `created_year`, `created_semester`: SIG가 **처음 생성된 학기**. 이후 변경되지 않습니다.  
 - `year`, `semester`: SIG가 **현재 속한 학기(운영/종료 학기)**. 학기 이월 시 이 값만 업데이트됩니다.  
-- is_rolling_admission의 type를 pig와 동일하게 str로 수정하고 3가지 상태로 바꾸었습니다.
+- is_rolling_admission의 타입을 pig와 동일하게 str로 수정하고 3가지 상태로 바꾸었습니다.
 
 
 ```sql
@@ -386,6 +386,10 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 * **Status Codes**:
 
   * `204 No Content`
+   * `400 Bad Request`: sig 상태가 탈퇴 가능한 상태가 아닐 때
+    * sig의 `is_rolling_admission`이 `always`이면 `recruiting`, `active`일 때 탈퇴 가능
+    * sig의 `is_rolling_admission`이 `during_recruiting`이면 `recruiting`일 때 탈퇴 가능
+    * sig의 `is_rolling_admission`이 `never`이면 탈퇴 불가능
   * `401 Unauthorized`
   * `404 Not Found`: 가입되어 있지 않음
   * `409 Conflict`: 시그장 탈퇴 불가
