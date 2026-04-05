@@ -145,10 +145,6 @@ class ArticleService:
                 )
             else:
                 content = article.content
-                if content is None:
-                    content = self._read_file(
-                        path.join(get_settings().article_dir, f"{article.id}.md")
-                    )
                 result.append(
                     ArticleResponse.model_validate(article).model_copy(
                         update={"content": content}
@@ -181,10 +177,6 @@ class ArticleService:
             )
 
         content = article.content
-        if content is None:
-            content = self._read_file(
-                path.join(get_settings().article_dir, f"{article.id}.md")
-            )
         attachments = self.attachment_repository.select_by_article_id(article.id)
         return ArticleWithAttachmentResponse.model_validate(
             {
