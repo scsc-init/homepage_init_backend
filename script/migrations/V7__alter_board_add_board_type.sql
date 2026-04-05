@@ -4,7 +4,7 @@ ADD CONSTRAINT match_constraint CHECK (board_type IN ('IMAGE', 'TEXT', 'NONE', '
 
 UPDATE public.board
 SET
-    board_type = CASE id
+    board_type = CASE
         WHEN name = 'Album' THEN 'IMAGE'
         WHEN name IN ('Sig', 'Pig') THEN 'NONE'
         ELSE 'TEXT'

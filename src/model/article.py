@@ -40,7 +40,9 @@ class Board(Base):
         onupdate=utcnow,
         nullable=False,
     )
-    board_type: Mapped[BoardType] = mapped_column(Enum(BoardType), nullable=False)
+    board_type: Mapped[BoardType] = mapped_column(
+        Enum(BoardType), nullable=False, default="TEXT"
+    )
 
 
 class Article(Base):
