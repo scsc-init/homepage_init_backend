@@ -9,5 +9,6 @@ class BoardResponse(BaseResponse):
     description: str
     writing_permission_level: int
     reading_permission_level: int
+    board_type: str
     created_at: datetime
     updated_at: datetime
