@@ -8,6 +8,7 @@ from src.util import utcnow
 
 from .base import Base
 
+
 class BoardType(str, enum):
     text = "TEXT"
     none = "NONE"
