@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 
 from src.core import logger
-from src.model import Board, User
+from src.model import Board, User, BoardType
 from src.repositories import BoardRepositoryDep
 from src.util import utcnow
 
@@ -15,7 +15,7 @@ class BodyCreateBoard(BaseModel):
     description: str
     writing_permission_level: int
     reading_permission_level: int
-    board_type: str
+    board_type: BoardType
 
 
 class BodyUpdateBoard(BaseModel):
@@ -23,7 +23,7 @@ class BodyUpdateBoard(BaseModel):
     description: Optional[str] = None
     writing_permission_level: Optional[int] = None
     reading_permission_level: Optional[int] = None
-    board_type: Optional[str] = None
+    board_type: Optional[BoardType] = None
 
 
 class BoardService:
