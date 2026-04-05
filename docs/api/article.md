@@ -26,6 +26,7 @@ CREATE TABLE "article" (
   "title" TEXT NOT NULL,
   "author_id" TEXT NOT NULL,
   "board_id" INTEGER NOT NULL,
+  "content" TEXT,
   "is_deleted" BOOLEAN NOT NULL DEFAULT false,
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
