@@ -83,7 +83,8 @@ CREATE TABLE attachment (
   "name": "자유 게시판",
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
-  "reading_permission_level": 0
+  "reading_permission_level": 0,
+  "board_type": "TEXT"
 }
 ```
 - **Response**:
@@ -94,6 +95,7 @@ CREATE TABLE attachment (
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0,
+  "board_type": "TEXT",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00"
 }
@@ -120,6 +122,7 @@ CREATE TABLE attachment (
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0,
+  "board_type": "TEXT",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00"
 }
@@ -146,6 +149,7 @@ CREATE TABLE attachment (
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
   "reading_permission_level": 0,
+  "board_type": "TEXT",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00"
   }
@@ -169,7 +173,8 @@ CREATE TABLE attachment (
   "name": "자유 게시판",
   "description": "누구나 자유롭게 글을 쓸 수 있는 공간입니다.",
   "writing_permission_level": 0,
-  "reading_permission_level": 0
+  "reading_permission_level": 0,
+  "board_type": "TEXT",
 }
 ```
 

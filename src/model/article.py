@@ -1,11 +1,19 @@
 from datetime import datetime
+from enum import Enum as enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.util import utcnow
 
 from .base import Base
+
+
+class BoardType(str, enum):
+    TEXT = "TEXT"
+    NONE = "NONE"
+    FILE = "FILE"
+    IMAGE = "IMAGE"
 
 
 class Board(Base):
@@ -31,6 +39,9 @@ class Board(Base):
         default_factory=utcnow,
         onupdate=utcnow,
         nullable=False,
+    )
+    board_type: Mapped[BoardType] = mapped_column(
+        Enum(BoardType), nullable=False, default="TEXT"
     )
 
 
