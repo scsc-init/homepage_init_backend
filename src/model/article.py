@@ -10,10 +10,10 @@ from .base import Base
 
 
 class BoardType(str, enum):
-    text = "TEXT"
-    none = "NONE"
-    file = "FILE"
-    image = "IMAGE"
+    TEXT = "TEXT"
+    NONE = "NONE"
+    FILE = "FILE"
+    IMAGE = "IMAGE"
 
 
 class Board(Base):

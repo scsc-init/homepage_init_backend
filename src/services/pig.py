@@ -248,10 +248,10 @@ class PigService:
         if not is_executive and pig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
 
-        if pig.status == SCSCStatus.inactive:
+        if pig.status == SCSCStatus.INACTIVE:
             raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
 
-        pig.status = SCSCStatus.inactive
+        pig.status = SCSCStatus.INACTIVE
         self.pig_repository.update(pig)
 
         if mq_client:

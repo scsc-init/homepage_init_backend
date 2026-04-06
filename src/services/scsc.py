@@ -26,10 +26,10 @@ from .key_value import KvServiceDep
 from .user import OldboyServiceDep, UserServiceDep
 
 _valid_scsc_global_status_update = (
-    (SCSCStatus.inactive, SCSCStatus.recruiting),
-    (SCSCStatus.recruiting, SCSCStatus.active),
-    (SCSCStatus.active, SCSCStatus.recruiting),
-    (SCSCStatus.active, SCSCStatus.inactive),
+    (SCSCStatus.INACTIVE, SCSCStatus.RECRUITING),
+    (SCSCStatus.RECRUITING, SCSCStatus.ACTIVE),
+    (SCSCStatus.ACTIVE, SCSCStatus.RECRUITING),
+    (SCSCStatus.ACTIVE, SCSCStatus.INACTIVE),
 )
 
 
@@ -41,9 +41,9 @@ class _CtrlStatusAvailable:
 
 
 ctrl_status_available = _CtrlStatusAvailable(
-    create_sigpig=frozenset({SCSCStatus.recruiting, SCSCStatus.active}),
-    join_sigpig=frozenset({SCSCStatus.recruiting}),
-    join_sigpig_rolling_admission=frozenset({SCSCStatus.recruiting, SCSCStatus.active}),
+    create_sigpig=frozenset({SCSCStatus.RECRUITING, SCSCStatus.ACTIVE}),
+    join_sigpig=frozenset({SCSCStatus.RECRUITING}),
+    join_sigpig_rolling_admission=frozenset({SCSCStatus.RECRUITING, SCSCStatus.ACTIVE}),
 )
 
 
@@ -103,12 +103,12 @@ class SCSCService:
             .where(
                 model.year == scsc_global_status.year,
                 model.semester == scsc_global_status.semester,
-                model.status != SCSCStatus.inactive,
+                model.status != SCSCStatus.INACTIVE,
             )
             .values(
                 status=case(
-                    (model.should_extend.is_(True), SCSCStatus.recruiting),
-                    else_=SCSCStatus.inactive,
+                    (model.should_extend.is_(True), SCSCStatus.RECRUITING),
+                    else_=SCSCStatus.INACTIVE,
                 ),
                 year=case(
                     (model.should_extend.is_(True), next_year),
@@ -155,7 +155,7 @@ class SCSCService:
         ) not in _valid_scsc_global_status_update:
             raise HTTPException(400, "invalid sig global status update")
 
-        if scsc_global_status.status == SCSCStatus.active:
+        if scsc_global_status.status == SCSCStatus.ACTIVE:
             enrollment_grant_until = self.kv_service.get_enrollment_grant_until()
             if (
                 scsc_global_status.year,
@@ -178,7 +178,7 @@ class SCSCService:
             ) from exc
 
         # start of recruiting
-        if new_status == SCSCStatus.recruiting:
+        if new_status == SCSCStatus.RECRUITING:
             if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
                     action_code=3002,
@@ -195,23 +195,23 @@ class SCSCService:
                 )
 
         # start of active
-        if new_status == SCSCStatus.active:
+        if new_status == SCSCStatus.ACTIVE:
             self.session.execute(
                 update(SIG)
-                .where(SIG.status == SCSCStatus.recruiting)
-                .values(status=SCSCStatus.active)
+                .where(SIG.status == SCSCStatus.RECRUITING)
+                .values(status=SCSCStatus.ACTIVE)
                 .execution_options(synchronize_session=False)
             )
 
             self.session.execute(
                 update(PIG)
-                .where(PIG.status == SCSCStatus.recruiting)
-                .values(status=SCSCStatus.active)
+                .where(PIG.status == SCSCStatus.RECRUITING)
+                .values(status=SCSCStatus.ACTIVE)
                 .execution_options(synchronize_session=False)
             )
 
         # end of active
-        if scsc_global_status.status == SCSCStatus.active:
+        if scsc_global_status.status == SCSCStatus.ACTIVE:
             if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
                     action_code=3008,
@@ -271,7 +271,7 @@ class SCSCService:
             self.standby_repository.delete_all()
 
         # start of inactive (regular semester starts)
-        if new_status == SCSCStatus.inactive:
+        if new_status == SCSCStatus.INACTIVE:
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 try:
@@ -292,7 +292,7 @@ class SCSCService:
             )
 
         # update the scsc global status
-        if scsc_global_status.status == SCSCStatus.active:
+        if scsc_global_status.status == SCSCStatus.ACTIVE:
             scsc_global_status.year, scsc_global_status.semester = (
                 get_next_year_semester(
                     scsc_global_status.year, scsc_global_status.semester
