@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum as enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, Enum
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.util import utcnow

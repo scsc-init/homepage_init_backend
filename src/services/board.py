@@ -15,7 +15,7 @@ class BodyCreateBoard(BaseModel):
     description: str
     writing_permission_level: int
     reading_permission_level: int
-    board_type: BoardType
+    board_type: Optional[BoardType] = None
 
 
 class BodyUpdateBoard(BaseModel):
