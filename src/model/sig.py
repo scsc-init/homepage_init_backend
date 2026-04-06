@@ -54,7 +54,15 @@ class SIG(Base):
     content_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("article.id"), nullable=False, unique=True
     )
-    status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    status: Mapped[SCSCStatus] = mapped_column(
+        Enum(
+            SCSCStatus,
+            name="scsc_status_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
     created_year: Mapped[int] = mapped_column(Integer, nullable=False)
     created_semester: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
