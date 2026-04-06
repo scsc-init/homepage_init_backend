@@ -1,5 +1,4 @@
-DO $$ 
-BEGIN 
+BEGIN;
     ALTER TABLE public.board 
     ADD COLUMN board_type varchar(5) NOT NULL DEFAULT 'TEXT';
 
@@ -12,4 +11,4 @@ BEGIN
         WHEN name IN ('Sig', 'Pig') THEN 'NONE' 
         ELSE 'TEXT' 
     END;
-END $$;
+COMMIT;
