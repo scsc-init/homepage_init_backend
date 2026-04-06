@@ -112,7 +112,7 @@ uv pip compile pyproject.toml -o requirements.txt --no-deps
 
 DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파일을 다시 생성할 필요가 있습니다. 단, docker compose 실행 시에는 DB 파일을 체크하고 없을 시 자동으로 entry에서 생성하므로, 수동으로 파일을 생성할 필요는 없습니다.)  
 
-`./script/clear_db.sh`를 실행합니다. MacOS의 경우 대신 `./script/clear_db_mac.sh`를 실행합니다. 
+`./script/clear_db.sh`를 실행합니다. macOS의 경우 대신 `./script/clear_db_mac.sh`를 실행합니다. 
 
 ## Tests
 Pytest는 파이썬 테스트 러너로, 이 프로젝트의 모든 API/서비스 시나리오를 자동으로 검증합니다. 다음 명령어를 통해 pytest를 실행시킵니다.
