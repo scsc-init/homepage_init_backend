@@ -41,7 +41,14 @@ class Board(Base):
         nullable=False,
     )
     board_type: Mapped[BoardType] = mapped_column(
-        Enum(BoardType), nullable=False, default="TEXT"
+        Enum(
+            BoardType,
+            name="board_type_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        default="TEXT",
     )
 
 

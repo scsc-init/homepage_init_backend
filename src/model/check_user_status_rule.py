@@ -17,7 +17,15 @@ class CheckUserStatusRule(Base):
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True, init=False
     )
-    method: Mapped[HTTPMethod] = mapped_column(Enum(HTTPMethod), nullable=False)
+    method: Mapped[HTTPMethod] = mapped_column(
+        Enum(
+            HTTPMethod,
+            name="http_method_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
     path: Mapped[str] = mapped_column(String, nullable=False)
 
     __table_args__ = (UniqueConstraint("method", "path", name="uq_method_path"),)
