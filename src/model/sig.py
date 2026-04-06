@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.util import utcnow
 
 from .base import Base
+from .pig import RollingAdmission
 from .scsc_global_status import SCSCStatus
 from .user import UserSummary
 
@@ -60,8 +61,15 @@ class SIG(Base):
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     owner: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     should_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    is_rolling_admission: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
+    is_rolling_admission: Mapped[RollingAdmission] = mapped_column(
+        Enum(
+            RollingAdmission,
+            name="rolling_admission_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        default=RollingAdmission.DURING_RECRUITING,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
