@@ -7,8 +7,15 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
-from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
-from src.model.pig import RollingAdmission
+from src.model import (
+    PIG,
+    PIGMember,
+    PIGWebsite,
+    RollingAdmission,
+    SCSCGlobalStatus,
+    SCSCStatus,
+    User,
+)
 from src.repositories import (
     PigMemberRepositoryDep,
     PigRepositoryDep,
@@ -377,11 +384,12 @@ class PigService:
 
     async def leave_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+        if pig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            raise HTTPException(400, "해당 피그는 탈퇴를 받지 않는 상태입니다.")
         if pig.status not in allowed:
             raise HTTPException(
                 400,

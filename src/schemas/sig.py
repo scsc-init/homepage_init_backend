@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from src.model import SCSCStatus
+from src.model.sig import RollingAdmission
 
 from .base import BaseResponse
 from .user import UserSummaryResponse
@@ -43,7 +44,7 @@ class SigResponse(BaseResponse):
     semester: int
     owner: str
     should_extend: bool
-    is_rolling_admission: bool
+    is_rolling_admission: RollingAdmission
     created_at: datetime
     updated_at: datetime
     owner_user: UserSummaryResponse
