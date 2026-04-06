@@ -29,7 +29,15 @@ class SCSCGlobalStatus(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    status: Mapped[SCSCStatus] = mapped_column(
+        Enum(
+            SCSCStatus,
+            name="scsc_status_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
