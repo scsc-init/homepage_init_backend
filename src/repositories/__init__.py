@@ -8,7 +8,14 @@ from .key_value import KeyValueRepositoryDep
 from .major import MajorRepositoryDep
 from .pig import PigMemberRepositoryDep, PigRepositoryDep, PigWebsiteRepositoryDep
 from .scsc import SCSCGlobalStatusRepositoryDep
-from .sig import SigMemberRepositoryDep, SigRepositoryDep
+from .sig import (
+    SigMemberRepositoryDep,
+    SigRepositoryDep,
+    SigTagRepositoryDep,
+    SigWebsiteRepositoryDep,
+    TagRepository,
+    TagRepositoryDep,
+)
 from .user import (
     EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,

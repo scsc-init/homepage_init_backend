@@ -1,9 +1,9 @@
-from typing import Optional, Sequence
+﻿from typing import Optional, Sequence
 
 from fastapi import APIRouter, Depends, UploadFile
 
 from src.dependencies import UserDep, api_secret
-from src.schemas import PublicUserResponse, UserResponse
+from src.schemas import PublicUserResponse, UserResponse, UserSummaryResponse
 from src.services import (
     BodyCreateUser,
     BodyLogin,
@@ -52,6 +52,7 @@ async def get_public_executives(
 
 @user_router.get("/executive/users")
 async def get_users(
+    current_user: UserDep,
     user_service: UserServiceDep,
     email: Optional[str] = None,
     name: Optional[str] = None,
@@ -65,6 +66,7 @@ async def get_users(
     major_id: Optional[int] = None,
 ) -> Sequence[UserResponse]:
     return user_service.get_users(
+        current_user,
         email,
         name,
         phone,
@@ -78,12 +80,23 @@ async def get_users(
     )
 
 
-@user_router.get("/executive/user/{id}", response_model=UserResponse)
+@user_router.get("/executive/users/summary")
+async def get_user_summaries(
+    current_user: UserDep,
+    user_service: UserServiceDep,
+) -> Sequence[UserSummaryResponse]:
+    return UserSummaryResponse.model_validate_list(
+        user_service.get_user_summaries(current_user)
+    )
+
+
+@user_router.get("/executive/user/{id}", response_model=UserResponse)  # noqa: A002
 async def get_user_by_id(
     id: str,
+    current_user: UserDep,
     user_service: UserServiceDep,
 ) -> UserResponse:
-    return user_service.get_user_by_id(id)
+    return user_service.get_user_by_id(current_user, id)
 
 
 @user_router.get("/role_names")

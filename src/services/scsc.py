@@ -26,10 +26,10 @@ from .key_value import KvServiceDep
 from .user import OldboyServiceDep, UserServiceDep
 
 _valid_scsc_global_status_update = (
-    (SCSCStatus.inactive, SCSCStatus.recruiting),
-    (SCSCStatus.recruiting, SCSCStatus.active),
-    (SCSCStatus.active, SCSCStatus.recruiting),
-    (SCSCStatus.active, SCSCStatus.inactive),
+    (SCSCStatus.INACTIVE, SCSCStatus.RECRUITING),
+    (SCSCStatus.RECRUITING, SCSCStatus.ACTIVE),
+    (SCSCStatus.ACTIVE, SCSCStatus.RECRUITING),
+    (SCSCStatus.ACTIVE, SCSCStatus.INACTIVE),
 )
 
 
@@ -41,9 +41,9 @@ class _CtrlStatusAvailable:
 
 
 ctrl_status_available = _CtrlStatusAvailable(
-    create_sigpig=frozenset({SCSCStatus.recruiting, SCSCStatus.active}),
-    join_sigpig=frozenset({SCSCStatus.recruiting}),
-    join_sigpig_rolling_admission=frozenset({SCSCStatus.recruiting, SCSCStatus.active}),
+    create_sigpig=frozenset({SCSCStatus.RECRUITING, SCSCStatus.ACTIVE}),
+    join_sigpig=frozenset({SCSCStatus.RECRUITING}),
+    join_sigpig_rolling_admission=frozenset({SCSCStatus.RECRUITING, SCSCStatus.ACTIVE}),
 )
 
 
@@ -88,33 +88,57 @@ class SCSCService:
         action_code, name_key = (
             (4002, "sig_name") if model == SIG else (4004, "pig_name")
         )
-
         repo = self.sig_repository if model == SIG else self.pig_repository
+
         igs = repo.get_by_year_semester_not_inactive(
             scsc_global_status.year, scsc_global_status.semester
         )
 
+        next_year, next_semester = get_next_year_semester(
+            scsc_global_status.year, scsc_global_status.semester
+        )
+
+        self.session.execute(
+            update(model)
+            .where(
+                model.year == scsc_global_status.year,
+                model.semester == scsc_global_status.semester,
+                model.status != SCSCStatus.INACTIVE,
+            )
+            .values(
+                status=case(
+                    (model.should_extend.is_(True), SCSCStatus.RECRUITING),
+                    else_=SCSCStatus.INACTIVE,
+                ),
+                year=case(
+                    (model.should_extend.is_(True), next_year),
+                    else_=model.year,
+                ),
+                semester=case(
+                    (model.should_extend.is_(True), next_semester),
+                    else_=model.semester,
+                ),
+            )
+            .execution_options(synchronize_session=False)
+        )
+
         for ig in igs:
             try:
-                if ig.should_extend:
-                    ig.year, ig.semester = get_next_year_semester(
-                        scsc_global_status.year, scsc_global_status.semester
-                    )
-                    ig.status = SCSCStatus.recruiting
-                    self.session.add(ig)
-                else:
-                    ig.status = SCSCStatus.inactive
-                    self.session.add(ig)
+                if not ig.should_extend and mq_client:
                     await mq_client.send_discord_bot_request_no_reply(
                         action_code=action_code,
                         body={
                             name_key: ig.title,
-                            "previous_semester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}",
+                            "previous_semester": (
+                                f"{scsc_global_status.year}-"
+                                f"{map_semester_name.get(scsc_global_status.semester)}"
+                            ),
                         },
                     )
             except Exception as e:
                 logger.error(
-                    f"err_type=process_igs ; ig_id={ig.id} ; ig_title={ig.title} ; msg=error processing {model.__name__}: {e}",
+                    f"err_type=process_igs ; ig_id={ig.id} ; ig_title={ig.title} ; "
+                    f"msg=error processing {model.__name__}: {e}",
                     exc_info=True,
                 )
 
@@ -131,7 +155,7 @@ class SCSCService:
         ) not in _valid_scsc_global_status_update:
             raise HTTPException(400, "invalid sig global status update")
 
-        if scsc_global_status.status == SCSCStatus.active:
+        if scsc_global_status.status == SCSCStatus.ACTIVE:
             enrollment_grant_until = self.kv_service.get_enrollment_grant_until()
             if (
                 scsc_global_status.year,
@@ -154,68 +178,75 @@ class SCSCService:
             ) from exc
 
         # start of recruiting
-        if new_status == SCSCStatus.recruiting:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3002,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                },
-            )
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3004,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                },
-            )
-
-        # start of active
-        if new_status == SCSCStatus.active:
-            recruiting_sigs = self.sig_repository.get_by_status(SCSCStatus.recruiting)
-            for sig in recruiting_sigs:
-                sig.status = SCSCStatus.active
-                self.session.add(sig)
-
-            recruiting_pigs = self.pig_repository.get_by_status(SCSCStatus.recruiting)
-            for pig in recruiting_pigs:
-                pig.status = SCSCStatus.active
-                self.session.add(pig)
-
-        # end of active
-        if scsc_global_status.status == SCSCStatus.active:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=3008,
-                body={
-                    "data": {
-                        "previousSemester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"
-                    }
-                },
-            )
-            sig_res = await mq_client.send_discord_bot_request(
-                action_code=3005,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                },
-            )
-            pig_res = await mq_client.send_discord_bot_request(
-                action_code=3005,
-                body={
-                    "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                },
-            )
-            if not sig_res:
+        if new_status == SCSCStatus.RECRUITING:
+            if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
                     action_code=3002,
                     body={
                         "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
                     },
                 )
-            if not pig_res:
+            if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
                     action_code=3004,
                     body={
                         "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
                     },
                 )
+
+        # start of active
+        if new_status == SCSCStatus.ACTIVE:
+            self.session.execute(
+                update(SIG)
+                .where(SIG.status == SCSCStatus.RECRUITING)
+                .values(status=SCSCStatus.ACTIVE)
+                .execution_options(synchronize_session=False)
+            )
+
+            self.session.execute(
+                update(PIG)
+                .where(PIG.status == SCSCStatus.RECRUITING)
+                .values(status=SCSCStatus.ACTIVE)
+                .execution_options(synchronize_session=False)
+            )
+
+        # end of active
+        if scsc_global_status.status == SCSCStatus.ACTIVE:
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3008,
+                    body={
+                        "data": {
+                            "previousSemester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"
+                        }
+                    },
+                )
+                sig_res = await mq_client.send_discord_bot_request(
+                    action_code=3005,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                    },
+                )
+                pig_res = await mq_client.send_discord_bot_request(
+                    action_code=3005,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                    },
+                )
+                if not sig_res:
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=3002,
+                        body={
+                            "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                        },
+                    )
+                if not pig_res:
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=3004,
+                        body={
+                            "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                        },
+                    )
 
             await self._process_igs_change_semester(SIG, scsc_global_status)
             await self._process_igs_change_semester(PIG, scsc_global_status)
@@ -240,7 +271,7 @@ class SCSCService:
             self.standby_repository.delete_all()
 
         # start of inactive (regular semester starts)
-        if new_status == SCSCStatus.inactive:
+        if new_status == SCSCStatus.INACTIVE:
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 try:
@@ -261,7 +292,7 @@ class SCSCService:
             )
 
         # update the scsc global status
-        if scsc_global_status.status == SCSCStatus.active:
+        if scsc_global_status.status == SCSCStatus.ACTIVE:
             scsc_global_status.year, scsc_global_status.semester = (
                 get_next_year_semester(
                     scsc_global_status.year, scsc_global_status.semester

@@ -7,22 +7,43 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
-from src.model import SIG, SCSCGlobalStatus, SCSCStatus, SIGMember, User
-from src.repositories import SigMemberRepositoryDep, SigRepositoryDep, UserRepositoryDep
-from src.schemas import SigMemberResponse, SigResponse, UserResponse
-from src.util import (
-    map_semester_name,
+from src.model import (
+    SIG,
+    RollingAdmission,
+    SCSCGlobalStatus,
+    SCSCStatus,
+    SIGMember,
+    SIGTag,
+    SIGWebsite,
+    Tag,
+    User,
 )
+from src.repositories import (
+    SigMemberRepositoryDep,
+    SigRepositoryDep,
+    SigTagRepositoryDep,
+    SigWebsiteRepositoryDep,
+    TagRepositoryDep,
+    UserRepositoryDep,
+)
+from src.util import map_semester_name
 
 from .article import ArticleServiceDep, BodyCreateArticle
 from .scsc import ctrl_status_available
+
+
+class BodySigWebsite(BaseModel):
+    label: str
+    url: str
+    sort_order: Optional[int] = None
 
 
 class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
-    is_rolling_admission: bool = False
+    is_rolling_admission: RollingAdmission = RollingAdmission.DURING_RECRUITING
+    websites: Optional[list[BodySigWebsite]] = None
 
 
 class BodyUpdateSIG(BaseModel):
@@ -31,7 +52,8 @@ class BodyUpdateSIG(BaseModel):
     content: Optional[str] = None
     status: Optional[SCSCStatus] = None
     should_extend: Optional[bool] = None
-    is_rolling_admission: Optional[bool] = None
+    is_rolling_admission: Optional[RollingAdmission] = None
+    websites: Optional[list[BodySigWebsite]] = None
 
 
 class BodyHandoverSIG(BaseModel):
@@ -52,12 +74,21 @@ class SigService:
         article_service: ArticleServiceDep,
         sig_repository: SigRepositoryDep,
         sig_member_repository: SigMemberRepositoryDep,
+        sig_website_repository: SigWebsiteRepositoryDep,
+        sig_tag_repository: SigTagRepositoryDep,
+        tag_repository: TagRepositoryDep,
         user_repository: UserRepositoryDep,
     ) -> None:
         self.article_service = article_service
         self.sig_repository = sig_repository
         self.sig_member_repository = sig_member_repository
+        self.sig_website_repository = sig_website_repository
+        self.sig_tag_repository = sig_tag_repository
+        self.tag_repository = tag_repository
         self.user_repository = user_repository
+
+    def _is_executive(self, user: User) -> bool:
+        return user.role >= get_user_role_level("executive")
 
     async def create_sig(
         self,
@@ -98,6 +129,8 @@ class SigService:
         if sig.id is None:
             raise HTTPException(503, detail="sig primary key does not exist")
 
+        self._replace_websites(sig.id, body.websites)
+
         sig_member = SIGMember(ig_id=sig.id, user_id=current_user.id)
         try:
             self.sig_member_repository.create(sig_member)
@@ -108,14 +141,15 @@ class SigService:
             ) from exc
 
         if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=4001,
-                body={
-                    "sig_name": sig.title,
-                    "user_id_list": [current_user.discord_id],
-                    "sig_description": sig.description,
-                },
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=4001,
+                    body={
+                        "sig_name": sig.title,
+                        "user_id_list": [current_user.discord_id],
+                        "sig_description": sig.description,
+                    },
+                )
 
         logger.info(
             f"info_type=sig_created ; sig_id={sig.id} ; title={sig.title} ; owner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
@@ -123,6 +157,9 @@ class SigService:
         return sig
 
     def get_by_id(self, id: int) -> SIG:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
         sig = self.sig_repository.get_by_id(id)
         if not sig:
             raise HTTPException(404, detail="해당 id의 시그/피그가 없습니다")
@@ -133,7 +170,8 @@ class SigService:
         year: Optional[int] = None,
         semester: Optional[int] = None,
         status: Optional[SCSCStatus] = None,
-    ) -> Sequence[SigResponse]:
+        tags: Sequence[str] | None = None,
+    ) -> Sequence[SIG]:
         filters = {}
         if year is not None:
             filters["year"] = year
@@ -142,8 +180,7 @@ class SigService:
         if status:
             filters["status"] = status
 
-        sigs = self.sig_repository.get_by_filters(filters)
-        return SigResponse.model_validate_list(sigs)
+        return self.sig_repository.get_by_filters(filters, tags)
 
     async def update_sig(
         self,
@@ -191,6 +228,9 @@ class SigService:
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
+        if body.websites is not None:
+            self._replace_websites(id, body.websites)
+
         bot_body = {}
         bot_body["sig_name"] = old_title
         if body.title:
@@ -198,9 +238,10 @@ class SigService:
         if body.description:
             bot_body["new_topic"] = body.description
         if len(bot_body) > 1:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=4005, body=bot_body
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=4005, body=bot_body
+                )
 
         logger.info(
             f"info_type=sig_updated ; sig_id={id} ; title={sig.title} ; revisioner_id={current_user.id} ; year={sig.year} ; semester={sig.semester} ; is_rolling_admission={sig.is_rolling_admission}"
@@ -217,19 +258,20 @@ class SigService:
         if not is_executive and sig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
 
-        if sig.status == SCSCStatus.inactive:
+        if sig.status == SCSCStatus.INACTIVE:
             raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
 
-        sig.status = SCSCStatus.inactive
+        sig.status = SCSCStatus.INACTIVE
         self.sig_repository.update(sig)
 
-        await mq_client.send_discord_bot_request_no_reply(
-            action_code=4002,
-            body={
-                "sig_name": sig.title,
-                "previous_semester": f"{sig.year}-{map_semester_name.get(sig.semester)}",
-            },
-        )
+        if mq_client:
+            await mq_client.send_discord_bot_request_no_reply(
+                action_code=4002,
+                body={
+                    "sig_name": sig.title,
+                    "previous_semester": f"{sig.year}-{map_semester_name.get(sig.semester)}",
+                },
+            )
 
         logger.info(
             f"info_type=sig_deleted ; sig_id={sig.id} ; remover_id={current_user.id}"
@@ -283,36 +325,23 @@ class SigService:
             raise HTTPException(403, detail="타인의 시그/피그를 변경할 수 없습니다")
         self._handover_sig_ctrl(sig, body.new_owner, current_user.id, is_executive)
 
-    def get_members(self, id: int) -> Sequence[SigMemberResponse]:
-        self.get_by_id(id)
-
-        members = self.sig_member_repository.get_members_by_sig_id(id)
-        res: list[SigMemberResponse] = []
-        for member in members:
-            user = self.user_repository.get_by_id(member.user_id)
-
-            user_response = None
-            if user:
-                user_response = UserResponse.model_validate(user)
-
-            member_response = SigMemberResponse(
-                id=member.id,
-                ig_id=member.ig_id,
-                user_id=member.user_id,
-                created_at=member.created_at,
-                user=user_response,
-            )
-            res.append(member_response)
-
-        return res
+    def get_members(self, id: int) -> Sequence[SIGMember]:
+        """
+        Throws HTTPException with status 404 when no sig corresponding to the id found
+        """
+        sig = self.get_by_id(id)
+        return sig.members
 
     async def join_sig(self, id: int, current_user: User) -> None:
         sig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if sig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+
+        if sig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            raise HTTPException(400, "해당 시그는 가입을 받지 않습니다")
+
         if sig.status not in allowed:
             raise HTTPException(
                 400, f"시그/피그 상태가 {allowed}일 때만 시그/피그에 가입할 수 있습니다"
@@ -325,10 +354,11 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": current_user.discord_id, "role_name": sig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2001,
+                    body={"user_id": current_user.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
             f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
@@ -352,52 +382,55 @@ class SigService:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
         if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2001,
-                body={"user_id": user.discord_id, "role_name": sig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2001,
+                    body={"user_id": user.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
             f"info_type=sig_join ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; joined_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
         )
 
-    async def leave_sig(self, id: int, current_user: User) -> None:
+    async def leave_sig(self, id: int, executor: User) -> None:
         sig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if sig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+        if sig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            raise HTTPException(400, "해당 시그는 탈퇴를 받지 않는 상태입니다.")
         if sig.status not in allowed:
             raise HTTPException(
                 400,
                 f"시그/피그 상태가 {allowed}일 때만 시그/피그에서 탈퇴할 수 있습니다",
             )
-        if sig.owner == current_user.id:
+        if sig.owner == executor.id:
             raise HTTPException(
                 409, detail="시그/피그장은 해당 시그/피그를 탈퇴할 수 없습니다"
             )
 
-        member = self.sig_member_repository.get_by_sig_and_user_id(id, current_user.id)
+        member = self.sig_member_repository.get_by_sig_and_user_id(id, executor.id)
         if not member:
             raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
 
         self.sig_member_repository.delete(member)
 
-        if current_user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": current_user.discord_id, "role_name": sig.title},
-            )
+        if executor.discord_id:
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2002,
+                    body={"user_id": executor.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
-            f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={current_user.id} ; year={sig.year} ; semester={sig.semester}"
+            f"info_type=sig_leave ; {sig.id=} ; {sig.title=} ; {executor.id=} ; left_user_id={executor.id} ; {sig.year=} ; {sig.semester=}"
         )
 
     async def executive_leave_sig(
         self,
         id: int,
-        current_user: User,
+        executor: User,
         body: BodyExecutiveLeaveSIG,
     ) -> None:
         sig = self.get_by_id(id)
@@ -417,13 +450,160 @@ class SigService:
         self.sig_member_repository.delete(member)
 
         if user.discord_id:
-            await mq_client.send_discord_bot_request_no_reply(
-                action_code=2002,
-                body={"user_id": user.discord_id, "role_name": sig.title},
-            )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=2002,
+                    body={"user_id": user.discord_id, "role_name": sig.title},
+                )
 
         logger.info(
-            f"info_type=sig_leave ; sig_id={sig.id} ; title={sig.title} ; executor_id={current_user.id} ; left_user_id={body.user_id} ; year={sig.year} ; semester={sig.semester}"
+            f"info_type=sig_leave ; {sig.id=} ; {sig.title=} ; {executor.id=} ; left_user_id={body.user_id} ; {sig.year=} ; {sig.semester=}"
+        )
+
+    def _replace_websites(
+        self, sig_id: int, websites: Optional[Sequence[BodySigWebsite]]
+    ) -> None:
+        if websites is None:
+            return
+        website_models = self._prepare_website_models(sig_id, websites)
+        self.sig_website_repository.replace_for_sig(sig_id, website_models)
+
+    def _prepare_website_models(
+        self, sig_id: int, websites: Sequence[BodySigWebsite]
+    ) -> list[SIGWebsite]:
+        if not websites:
+            return []
+        if len(websites) > 10:
+            raise HTTPException(
+                400, detail="웹사이트는 최대 10개까지 등록할 수 있습니다"
+            )
+
+        prepared: list[SIGWebsite] = []
+        for idx, website in enumerate(websites):
+            label = website.label.strip()
+            url = website.url.strip()
+            if not url:
+                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
+            if not label:
+                label = url
+            sort_order = website.sort_order if website.sort_order is not None else idx
+            prepared.append(
+                SIGWebsite(
+                    sig_id=sig_id,
+                    label=label,
+                    url=url,
+                    sort_order=sort_order,
+                )
+            )
+        return prepared
+
+    def add_sig_tag(self, sig_id: int, tag_id: int, executor: User) -> SIGTag:
+        sig = self.sig_repository.get_by_id(sig_id)
+        if sig is None:
+            raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
+
+        is_executive = self._is_executive(executor)
+        if not is_executive and sig.owner != executor.id:
+            raise HTTPException(403, detail="타인의 시그에 태그를 추가할 수 없습니다")
+
+        tag = self.tag_repository.get_by_id(tag_id)
+        if tag is None:
+            raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
+
+        if tag.is_major and not is_executive:
+            raise HTTPException(403, detail="major 태그는 운영진만 추가할 수 있습니다")
+
+        try:
+            sig_tag = self.sig_tag_repository.create(
+                SIGTag(sig_id=sig_id, tag_id=tag_id)
+            )
+        except IntegrityError:
+            raise HTTPException(409, detail="이미 추가된 태그입니다") from None
+
+        logger.info(
+            f"info_type=add_sig_tag ; sig_id={sig_id} ; tag_id={tag_id} ; executor_id={executor.id}"
+        )
+        return sig_tag
+
+    def get_sig_tags(self, sig_id: int) -> Sequence[Tag]:
+        sig = self.sig_repository.get_by_id(sig_id)
+        if sig is None:
+            raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
+
+        return sorted(
+            sig.tags,
+            key=lambda tag: (not tag.is_major, tag.text),
+        )
+
+    def remove_sig_tag(self, sig_id: int, tag_id: int, executor: User) -> None:
+        sig = self.sig_repository.get_by_id(sig_id)
+        if sig is None:
+            raise HTTPException(404, detail=f"시그({sig_id=})가 존재하지 않습니다")
+
+        is_executive = self._is_executive(executor)
+        if not is_executive and sig.owner != executor.id:
+            raise HTTPException(403, detail="타인의 시그 태그를 삭제할 수 없습니다")
+
+        tag = self.tag_repository.get_by_id(tag_id)
+        if tag is None:
+            raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
+
+        if tag.is_major and not is_executive:
+            raise HTTPException(403, detail="major 태그는 운영진만 삭제할 수 있습니다")
+
+        sig_tag = self.sig_tag_repository.get_by_sig_id_and_tag_id(sig_id, tag_id)
+        if sig_tag is None:
+            raise HTTPException(404, detail="해당 시그에 연결된 태그가 없습니다")
+
+        self.sig_tag_repository.delete(sig_tag)
+
+        if not tag.is_major and self.sig_tag_repository.count_by_tag_id(tag_id) == 0:
+            self.sig_tag_repository.delete_by_tag_id(tag_id)
+            self.tag_repository.delete(tag)
+
+        logger.info(
+            f"info_type=remove_sig_tag ; sig_id={sig_id} ; tag_id={tag_id} ; executor_id={executor.id}"
+        )
+
+    def get_tags(self) -> Sequence[Tag]:
+        return self.tag_repository.get_all()
+
+    def _create_tag(self, text: str, is_major: bool, executor: User) -> Tag:
+        normalized_text = text.strip()
+        if not normalized_text:
+            raise HTTPException(422, detail="태그명은 비어 있을 수 없습니다")
+
+        existing = self.tag_repository.get_by_text(normalized_text)
+        if existing is not None:
+            raise HTTPException(409, detail="이미 존재하는 태그입니다")
+
+        try:
+            tag = self.tag_repository.create(
+                Tag(text=normalized_text, is_major=is_major)
+            )
+        except IntegrityError:
+            raise HTTPException(409, detail="이미 존재하는 태그입니다") from None
+
+        logger.info(
+            f"info_type=create_tag ; tag_id={tag.id} ; text={tag.text} ; is_major={tag.is_major} ; executor_id={executor.id}"
+        )
+        return tag
+
+    def create_tag_by_user(self, text: str, executor: User) -> Tag:
+        return self._create_tag(text, False, executor)
+
+    def create_tag_by_executive(self, text: str, is_major: bool, executor: User) -> Tag:
+        return self._create_tag(text, is_major, executor)
+
+    def delete_tag(self, tag_id: int, executor: User) -> None:
+        tag = self.tag_repository.get_by_id(tag_id)
+        if tag is None:
+            raise HTTPException(404, detail=f"태그({tag_id=})가 존재하지 않습니다")
+
+        self.tag_repository.delete(tag)
+
+        logger.info(
+            f"info_type=delete_tag ; tag_id={tag_id} ; executor_id={executor.id}"
         )
 
 

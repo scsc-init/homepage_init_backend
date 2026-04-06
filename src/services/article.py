@@ -58,7 +58,12 @@ class ArticleService:
                 detail="You are not allowed to write this article",
             )
 
-        article = Article(title=body.title, author_id=user_id, board_id=body.board_id)
+        article = Article(
+            title=body.title,
+            author_id=user_id,
+            board_id=body.board_id,
+            content=body.content,
+        )
         try:
             article = self.article_repository.create(article)
         except IntegrityError as exc:
@@ -89,22 +94,23 @@ class ArticleService:
         )
 
         try:
-            if body.board_id == 5:  # notice
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=1002,
-                    body={
-                        "channel_id": get_settings().notice_channel_id,
-                        "content": f"{body.title}\n\n{body.content}",
-                    },
-                )
-            elif body.board_id == 6:  # grant
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=1002,
-                    body={
-                        "channel_id": get_settings().grant_channel_id,
-                        "content": body.content,
-                    },
-                )
+            if mq_client:
+                if body.board_id == 5:  # notice
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=1002,
+                        body={
+                            "channel_id": get_settings().notice_channel_id,
+                            "content": f"{body.title}\n\n{body.content}",
+                        },
+                    )
+                elif body.board_id == 6:  # grant
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=1002,
+                        body={
+                            "channel_id": get_settings().grant_channel_id,
+                            "content": body.content,
+                        },
+                    )
         except Exception:
             logger.error(
                 f"err_type=create_article ; error occurred during connecting to discord ; {body=}",
@@ -138,9 +144,7 @@ class ArticleService:
                     )
                 )
             else:
-                content = self._read_file(
-                    path.join(get_settings().article_dir, f"{article.id}.md")
-                )
+                content = article.content
                 result.append(
                     ArticleResponse.model_validate(article).model_copy(
                         update={"content": content}
@@ -172,9 +176,7 @@ class ArticleService:
                 {**article.__dict__, "content": DELETED, "attachments": []}
             )
 
-        content = self._read_file(
-            path.join(get_settings().article_dir, f"{article.id}.md")
-        )
+        content = article.content
         attachments = self.attachment_repository.select_by_article_id(article.id)
         return ArticleWithAttachmentResponse.model_validate(
             {
@@ -216,6 +218,7 @@ class ArticleService:
 
         article.title = body.title
         article.board_id = body.board_id
+        article.content = body.content
         article.updated_at = utcnow()
         try:
             article = self.article_repository.update(article)
