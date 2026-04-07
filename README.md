@@ -3,7 +3,7 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2026-02-27  
+> 최신개정일: 2026-04-07  
 > 최신개정자: 이한경  
 > 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com), [최정원](jwchoi915@snu.ac.kr)  
 
@@ -70,7 +70,13 @@ docker compose up --build
 
 ### 개발 환경 설정
 
-package manager로 uv를 사용합니다.  
+package manager로 uv를 사용합니다. uv가 설치되지 않았다면 설치합니다.  
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+설치 후 새 터미널을 엽니다.  
 
 uv로 파이썬 가상환경을 만듭니다. 가상환경을 실행 후 `uv.lock`에서 명시된 dependency를 모두 설치합니다.  
 
@@ -106,7 +112,7 @@ uv pip compile pyproject.toml -o requirements.txt --no-deps
 
 DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파일을 다시 생성할 필요가 있습니다. 단, docker compose 실행 시에는 DB 파일을 체크하고 없을 시 자동으로 entry에서 생성하므로, 수동으로 파일을 생성할 필요는 없습니다.)  
 
-`./script/clear_db.sh`를 실행합니다.
+`./script/clear_db.sh`를 실행합니다. macOS의 경우 대신 `./script/clear_db_mac.sh`를 실행합니다. 
 
 ## Tests
 Pytest는 파이썬 테스트 러너로, 이 프로젝트의 모든 API/서비스 시나리오를 자동으로 검증합니다. 다음 명령어를 통해 pytest를 실행시킵니다.
@@ -125,8 +131,9 @@ uv run env PYTHONPATH=. pytest
 | `/.env`             | 환경 변수 설정 파일 |
 | `/logs/`            | 로그 파일이 저장되는 폴더 |
 | `/docs/`            | API 문서 등 프로젝트 관련 문서 |
-| ├── `common.md`     | 여러 라우터에서 사용되거나 중요한 로직 관련 문서 |
-| ├── `majors.csv`    | `2025학년도 대학 신입학생 입학전형 시행계획(첨단융합학부 반영).pdf` 문서 기준 서울대학교 학부 신입생 전공 자료 |
+| ├── `api/`          | API 문서 |
+| ├── `design/`       | 프로젝트의 핵심 로직 관련 문서 |
+| ├── `manual/`       | 개발자 등을 위한 문서 |
 | `/script/`          | 프로젝트 관련 명령어 |
 | ├── `migrations/`   | sql 관련 명령어 |
 | `/static/`          | 업로드된 파일 보관 폴더 |
@@ -141,73 +148,3 @@ uv run env PYTHONPATH=. pytest
 | ├── `model/`        | DB 테이블 정의 및 ORM 모델 |
 | ├── `routes/`       | API 라우터 모음 |
 | ├──├── `__init__.py` | 루트 라우터 |
-
-## Migration details for devs
-
-### Migration: conda + pip -> uv
-
-package manager을 **conda + pip** 을 **[uv](https://github.com/astral-sh/uv)** 로 변경합니다.([via Pull#121](https://github.com/scsc-init/homepage_init_backend/pull/121))
-
-**배경**  
-
-- 속도가 빠름
-- homepage_init_backend venv는 이 레포지토리 단 하나에서만 쓰일 것이므로 uv로 관리하여도 충분함
-- pyproject.toml을 쓰기 용이하다
-
-**설명**
-
-1. conda 환경 제거
-
-```bash
-conda deactivate
-conda env remove -n homepage_init_backend # or whatever your env name is
-```
-
-2. uv 설치 및 설정
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh # might need to restart shell after installation
-uv venv
-source .venv/bin/activate # or .venv\Scripts\activate on Windows
-uv lock
-uv sync --locked
-```
-
-**기타**
-
-- As of now, **live edits inside the docker container do not work** as the code files are not mounted. Therefore, to apply updates to the code into the container image, devs must rebuild the container.
-
-- In `./Dockerfile`, we setup a nonroot user to execute the application and modify static files. At production, we encourage the devs to add gid and uid that is appropriate for the host server, so that they have access to static files at host machine.
-
-### Migration: Add black, isort, pre-commit
-
-[`black`](https://github.com/psf/black), [`isort`](https://github.com/PyCQA/isort), [`pre-commit`](https://github.com/pre-commit/pre-commit)을 도입합니다.  
-
-**배경**  
-
-- 좋은 포맷
-- 코드의 통일성
-- 버그, 충돌 방지
-
-**설명**
-
-1. deps 변경 (dev deps 추가)
-
-```bash
-uv lock
-uv sync --locked
-```
-
-2. pre-commit 설치
-
-```bash
-uv run pre-commit install
-```
-
-3. (선택) pre-commit 테스트
-
-**주의**: 이 명령은 설정된 모든 파일을 변경합니다.
-
-```bash
-uv run pre-commit run --all-files
-```
