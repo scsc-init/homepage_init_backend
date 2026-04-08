@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.util import utcnow
 
 from .base import Base
+from .pig import RollingAdmission
 from .scsc_global_status import SCSCStatus
 from .user import UserSummary
 
@@ -53,15 +54,30 @@ class SIG(Base):
     content_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("article.id"), nullable=False, unique=True
     )
-    status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    status: Mapped[SCSCStatus] = mapped_column(
+        Enum(
+            SCSCStatus,
+            name="scsc_status_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
     created_year: Mapped[int] = mapped_column(Integer, nullable=False)
     created_semester: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     owner: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
     should_extend: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    is_rolling_admission: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False
+    is_rolling_admission: Mapped[RollingAdmission] = mapped_column(
+        Enum(
+            RollingAdmission,
+            name="rolling_admission_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+        default=RollingAdmission.DURING_RECRUITING,
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
@@ -78,6 +94,9 @@ class SIG(Base):
     )
     members: Mapped[list[SIGMember]] = relationship(
         "SIGMember", lazy="selectin", init=False, viewonly=True
+    )
+    websites: Mapped[list[SIGWebsite]] = relationship(
+        "SIGWebsite", lazy="selectin", init=False, viewonly=True
     )
     tags: Mapped[list[Tag]] = relationship(
         "Tag", secondary="sig_tag", lazy="selectin", init=False, viewonly=True
@@ -102,6 +121,27 @@ class SIGMember(Base):
 
     user: Mapped[UserSummary] = relationship(
         "UserSummary", lazy="selectin", init=False, viewonly=True
+    )
+
+
+class SIGWebsite(Base):
+    __tablename__ = "sig_website"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    sig_id: Mapped[int] = mapped_column(Integer, ForeignKey("sig.id"), nullable=False)
+    label: Mapped[str] = mapped_column(String, nullable=False)
+    url: Mapped[str] = mapped_column(String, nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+        onupdate=utcnow,
     )
 
 

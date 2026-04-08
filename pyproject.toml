@@ -3,7 +3,7 @@ name = "homepage-init-backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12.12,<3.13"
 dependencies = [
     "aio-pika==9.5.5",
     "aiohappyeyeballs==2.6.1",
@@ -65,6 +65,7 @@ dependencies = [
     "wheel==0.45.1",
     "yarl==1.20.1",
     "psycopg2-binary>=2.9.11",
+    "psycopg[binary]>=3.3.3",
 ]
 
 [dependency-groups]

@@ -15,9 +15,9 @@ from .base import Base
 
 
 class SCSCStatus(str, enum):
-    recruiting = "recruiting"
-    active = "active"
-    inactive = "inactive"  # sig, pig status로 사용됨
+    RECRUITING = "recruiting"
+    ACTIVE = "active"
+    INACTIVE = "inactive"
 
 
 class SCSCGlobalStatus(Base):
@@ -29,7 +29,15 @@ class SCSCGlobalStatus(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    status: Mapped[SCSCStatus] = mapped_column(
+        Enum(
+            SCSCStatus,
+            name="scsc_status_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     semester: Mapped[int] = mapped_column(Integer, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

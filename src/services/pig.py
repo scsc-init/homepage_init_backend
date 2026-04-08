@@ -7,8 +7,15 @@ from sqlalchemy.exc import IntegrityError
 from src.amqp import mq_client
 from src.core import logger
 from src.db import get_user_role_level
-from src.model import PIG, PIGMember, PIGWebsite, SCSCGlobalStatus, SCSCStatus, User
-from src.model.pig import RollingAdmission
+from src.model import (
+    PIG,
+    PIGMember,
+    PIGWebsite,
+    RollingAdmission,
+    SCSCGlobalStatus,
+    SCSCStatus,
+    User,
+)
 from src.repositories import (
     PigMemberRepositoryDep,
     PigRepositoryDep,
@@ -241,10 +248,10 @@ class PigService:
         if not is_executive and pig.owner != current_user.id:
             raise HTTPException(403, detail="타인의 시그/피그를 삭제할 수 없습니다")
 
-        if pig.status == SCSCStatus.inactive:
+        if pig.status == SCSCStatus.INACTIVE:
             raise HTTPException(400, detail="해당 시그/피그는 이미 비활성 상태입니다")
 
-        pig.status = SCSCStatus.inactive
+        pig.status = SCSCStatus.INACTIVE
         self.pig_repository.update(pig)
 
         if mq_client:
@@ -377,11 +384,12 @@ class PigService:
 
     async def leave_pig(self, id: int, current_user: User) -> None:
         pig = self.get_by_id(id)
-        allowed = (
-            ctrl_status_available.join_sigpig_rolling_admission
-            if pig.is_rolling_admission
-            else ctrl_status_available.join_sigpig
-        )
+        if pig.is_rolling_admission == RollingAdmission.ALWAYS:
+            allowed = ctrl_status_available.join_sigpig_rolling_admission
+        elif pig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
+            allowed = ctrl_status_available.join_sigpig
+        else:
+            raise HTTPException(400, "해당 피그는 탈퇴를 받지 않는 상태입니다.")
         if pig.status not in allowed:
             raise HTTPException(
                 400,
@@ -462,10 +470,10 @@ class PigService:
 
         prepared: list[PIGWebsite] = []
         for idx, website in enumerate(websites):
-            label = (website.label or "").strip()
-            url = (website.url or "").strip()
+            label = website.label.strip()
+            url = website.url.strip()
             if not url:
-                raise HTTPException(400, detail="웹사이트 주소는 필수입니다")
+                raise HTTPException(400, detail="URL이 비어 있습니다")
             if not label:
                 label = url
             sort_order = website.sort_order if website.sort_order is not None else idx

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum as PythonEnum
+from enum import Enum as enum
 
 from sqlalchemy import (
     Boolean,
@@ -22,7 +22,7 @@ from .scsc_global_status import SCSCStatus
 from .user import UserSummary
 
 
-class RollingAdmission(str, PythonEnum):
+class RollingAdmission(str, enum):
     ALWAYS = "always"
     NEVER = "never"
     DURING_RECRUITING = "during_recruiting"
@@ -60,7 +60,15 @@ class PIG(Base):
     content_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("article.id"), nullable=False, unique=True
     )
-    status: Mapped[SCSCStatus] = mapped_column(Enum(SCSCStatus), nullable=False)
+    status: Mapped[SCSCStatus] = mapped_column(
+        Enum(
+            SCSCStatus,
+            name="scsc_status_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
     created_year: Mapped[int] = mapped_column(Integer, nullable=False)
     created_semester: Mapped[int] = mapped_column(Integer, nullable=False)
     year: Mapped[int] = mapped_column(Integer, nullable=False)

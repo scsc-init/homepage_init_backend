@@ -1,9 +1,9 @@
 from typing import Annotated, Any, Optional, Sequence
 
 from fastapi import Depends
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, insert, select
 
-from src.model import SIG, SCSCStatus, SIGMember, SIGTag, Tag
+from src.model import SIG, SCSCStatus, SIGMember, SIGTag, SIGWebsite, Tag
 
 from .crud_repository import CRUDRepository
 
@@ -19,7 +19,7 @@ class SigRepository(CRUDRepository[SIG, int]):
         stmt = select(SIG).where(
             SIG.year == year,
             SIG.semester == semester,
-            SIG.status != SCSCStatus.inactive,
+            SIG.status != SCSCStatus.INACTIVE,
         )
         return self.session.scalars(stmt).all()
 
@@ -58,6 +58,44 @@ class SigMemberRepository(CRUDRepository[SIGMember, int]):
     def get_members_by_sig_id(self, SIG_id: int) -> Sequence[SIGMember]:
         stmt = select(SIGMember).where(SIGMember.ig_id == SIG_id)
         return self.session.scalars(stmt).all()
+
+
+class SigWebsiteRepository(CRUDRepository[SIGWebsite, int]):
+    @property
+    def model(self) -> type[SIGWebsite]:
+        return SIGWebsite
+
+    def get_by_sig_id(self, sig_id: int) -> Sequence[SIGWebsite]:
+        stmt = (
+            select(SIGWebsite)
+            .where(SIGWebsite.sig_id == sig_id)
+            .order_by(SIGWebsite.sort_order, SIGWebsite.id)
+        )
+        return self.session.scalars(stmt).all()
+
+    def replace_for_sig(self, sig_id: int, websites: Sequence[SIGWebsite]) -> None:
+        with self.transaction:
+            self.session.execute(delete(SIGWebsite).where(SIGWebsite.sig_id == sig_id))
+
+            if not websites:
+                return
+
+            self.session.execute(
+                insert(SIGWebsite),
+                [
+                    {
+                        "sig_id": website.sig_id,
+                        "label": website.label,
+                        "url": website.url,
+                        "sort_order": website.sort_order,
+                    }
+                    for website in websites
+                ],
+            )
+
+    def delete_by_sig_id(self, sig_id: int) -> None:
+        with self.transaction:
+            self.session.execute(delete(SIGWebsite).where(SIGWebsite.sig_id == sig_id))
 
 
 class SigTagRepository(CRUDRepository[SIGTag, int]):
@@ -105,5 +143,6 @@ class TagRepository(CRUDRepository[Tag, int]):
 
 SigRepositoryDep = Annotated[SigRepository, Depends()]
 SigMemberRepositoryDep = Annotated[SigMemberRepository, Depends()]
+SigWebsiteRepositoryDep = Annotated[SigWebsiteRepository, Depends()]
 SigTagRepositoryDep = Annotated[SigTagRepository, Depends()]
 TagRepositoryDep = Annotated[TagRepository, Depends()]

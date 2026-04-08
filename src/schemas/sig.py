@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from src.model import SCSCStatus
+from src.model.sig import RollingAdmission
 
 from .base import BaseResponse
 from .user import UserSummaryResponse
@@ -21,6 +22,16 @@ class SigMemberResponse(BaseResponse):
     user: UserSummaryResponse
 
 
+class SigWebsiteResponse(BaseResponse):
+    id: int
+    sig_id: int
+    label: str
+    url: str
+    sort_order: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class SigResponse(BaseResponse):
     id: int
     title: str
@@ -33,11 +44,12 @@ class SigResponse(BaseResponse):
     semester: int
     owner: str
     should_extend: bool
-    is_rolling_admission: bool
+    is_rolling_admission: RollingAdmission
     created_at: datetime
     updated_at: datetime
     owner_user: UserSummaryResponse
     members: list[SigMemberResponse]
+    websites: list[SigWebsiteResponse]
     tags: list[TagResponse]
 
 

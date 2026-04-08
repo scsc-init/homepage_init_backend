@@ -12,6 +12,7 @@ from .sig import (
     SigMemberRepositoryDep,
     SigRepositoryDep,
     SigTagRepositoryDep,
+    SigWebsiteRepositoryDep,
     TagRepository,
     TagRepositoryDep,
 )
