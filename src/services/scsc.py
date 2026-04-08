@@ -214,18 +214,39 @@ class SCSCService:
         if scsc_global_status.status == SCSCStatus.ACTIVE:
             if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3002,
+                    action_code=3008,
+                    body={
+                        "data": {
+                            "previousSemester": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)}"
+                        }
+                    },
+                )
+                sig_res = await mq_client.send_discord_bot_request(
+                    action_code=3005,
                     body={
                         "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
                     },
                 )
-            if not pig_res:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3004,
+                pig_res = await mq_client.send_discord_bot_request(
+                    action_code=3005,
                     body={
                         "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
                     },
                 )
+                if not sig_res:
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=3002,
+                        body={
+                            "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                        },
+                    )
+                if not pig_res:
+                    await mq_client.send_discord_bot_request_no_reply(
+                        action_code=3004,
+                        body={
+                            "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                        },
+                    )
 
             await self._process_igs_change_semester(SIG, scsc_global_status)
             await self._process_igs_change_semester(PIG, scsc_global_status)
