@@ -86,7 +86,6 @@ class ArticleService:
             f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
 
-        self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
         article = self.article_repository.get_by_id(article.id)
         article_response = ArticleResponse.model_validate(article)
 
@@ -134,19 +133,15 @@ class ArticleService:
         articles = self.article_repository.get_articles_by_board_id(board_id)
         result: list[ArticleResponse] = []
         for article in articles:
+            response = ArticleResponse.model_validate(article)
+
             if article.is_deleted:
-                result.append(
-                    ArticleResponse.model_validate(article).model_copy(
-                        update={"content": DELETED}
-                    )
-                )
+                response.content = DELETED
+                response.attachments = []
             else:
-                content = article.content
-                result.append(
-                    ArticleResponse.model_validate(article).model_copy(
-                        update={"content": content}
-                    )
-                )
+                response.content = article.content
+
+            result.append(response)
 
         return result
 

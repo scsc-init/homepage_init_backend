@@ -105,5 +105,4 @@ class Article(Base):
         lazy="selectin",
         init=False,
         viewonly=True,
-        cascade="all, delete-orphan",
     )
