@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum as enum
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
 
@@ -98,4 +98,12 @@ class Article(Base):
         DateTime(timezone=False),
         nullable=True,
         default=None,
+    )
+
+    attachments: Mapped[list["Attachment"]] = relationship(
+        "Attachment",
+        lazy="selectin",
+        init=False,
+        viewonly=True,
+        cascade="all, delete-orphan",
     )
