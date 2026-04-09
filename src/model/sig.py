@@ -102,7 +102,7 @@ class SIG(Base):
     tags: Mapped[list[Tag]] = relationship(
         "Tag", secondary="sig_tag", lazy="selectin", init=False, viewonly=True
     )
-    article: Mapped["Article"] = relationship(
+    content: Mapped["Article"] = relationship(
         "Article", lazy="selectin", init=False, viewonly=True
     )
 
