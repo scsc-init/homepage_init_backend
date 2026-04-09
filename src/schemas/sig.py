@@ -3,6 +3,7 @@ from datetime import datetime
 from src.model import SCSCStatus
 from src.model.sig import RollingAdmission
 
+from .article import ArticleResponse
 from .base import BaseResponse
 from .user import UserSummaryResponse
 
@@ -36,7 +37,7 @@ class SigResponse(BaseResponse):
     id: int
     title: str
     description: str
-    content_id: int
+    content: ArticleResponse
     status: SCSCStatus
     created_year: int
     created_semester: int
