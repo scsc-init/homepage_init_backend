@@ -105,7 +105,7 @@ class PIG(Base):
     websites: Mapped[list[PIGWebsite]] = relationship(
         "PIGWebsite", lazy="selectin", init=False, viewonly=True
     )
-    content: Mapped["Article"] = relationship(
+    content: Mapped[Article] = relationship(
         "Article", lazy="selectin", init=False, viewonly=True
     )
 
