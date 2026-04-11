@@ -155,16 +155,9 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
   "semester": 1,
   "is_rolling_admission": "during_recruiting",
   "websites": [],
-  "attachments": [
-    {
-      "id": 1,
-      "article_id": 10,
-      "file_id": "file_uuid_abc123"
-    }
-  ],
   "created_at": "2026-02-12T10:00:00",
   "updated_at": "2026-02-12T10:00:00"
-}
+  }
 ```
 
 * **Status Codes**:
@@ -745,14 +738,16 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 {
   "id": 1,
   "title": "AI PIG",
-  ... (중략) ...
-  "attachments": [
-    {
-      "id": 5,
-      "article_id": 20,
-      "file_id": "pig_file_uuid_456"
-    }
-  ]
+  "description": "...",
+  "content": "...",
+  "owner": "user_hash",
+  "status": "active",
+  "year": 2026,
+  "semester": 1,
+  "is_rolling_admission": "always",
+  "websites": [],
+  "created_at": "2026-02-12T10:00:00",
+  "updated_at": "2026-02-12T10:00:00"
 }
 ```
 

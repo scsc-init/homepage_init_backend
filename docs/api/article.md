@@ -217,13 +217,7 @@ CREATE TABLE attachment (
   "title": "안녕하세요",
   "content": "## Hello?",
   "board_id": 1,
-  "attachments": [
-    {
-      "id": 1,
-      "article_id": 1,
-      "file_id": "file_id"
-    }
-  ]
+  "attachments": ["file_id_1", "file_id_2"]
 }
 ```
 - **Response**:
@@ -318,16 +312,10 @@ CREATE TABLE attachment (
   - attachments: optional; 없으면 빈 리스트로 처리된다. **수정 성공 시 응답은 업데이트된 Attachment 객체 리스트를 반환한다.
 ```json
 {
-  "title": "안녕하세요",
-  "content": "## Hello?",
+  "title": "수정된 제목",
+  "content": "수정된 본문 내용입니다.",
   "board_id": 1,
-  "attachments": [
-    {
-      "id": 1,
-      "article_id": 1,
-      "file_id": "file_id"
-    }
-  ]
+  "attachments": ["file_id_A", "file_id_B"]
 }
 ```
 - **Status Codes**:
