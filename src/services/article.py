@@ -15,7 +15,7 @@ from src.repositories import (
     AttachmentRepositoryDep,
     BoardRepositoryDep,
 )
-from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
+from src.schemas import ArticleResponse
 from src.util import DELETED, utcnow
 
 
@@ -46,7 +46,7 @@ class ArticleService:
 
     async def create_article(
         self, body: BodyCreateArticle, user_id: str, user_role: int
-    ) -> ArticleWithAttachmentResponse:
+    ) -> ArticleResponse:
         board = self.board_repository.get_by_id(body.board_id)
         if not board:
             raise HTTPException(
@@ -85,13 +85,9 @@ class ArticleService:
         logger.info(
             f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
-        article_response = ArticleWithAttachmentResponse.model_validate(
-            {
-                **article.__dict__,
-                "content": body.content,
-                "attachments": attach_inserted,
-            }
-        )
+
+        article = self.article_repository.get_by_id(article.id)
+        article_response = ArticleResponse.model_validate(article)
 
         try:
             if mq_client:
@@ -137,25 +133,21 @@ class ArticleService:
         articles = self.article_repository.get_articles_by_board_id(board_id)
         result: list[ArticleResponse] = []
         for article in articles:
+            response = ArticleResponse.model_validate(article)
+
             if article.is_deleted:
-                result.append(
-                    ArticleResponse.model_validate(article).model_copy(
-                        update={"content": DELETED}
-                    )
-                )
+                response.content = DELETED
+                response.attachments = []
             else:
-                content = article.content
-                result.append(
-                    ArticleResponse.model_validate(article).model_copy(
-                        update={"content": content}
-                    )
-                )
+                response.content = article.content
+
+            result.append(response)
 
         return result
 
     def get_article_by_id(
         self, id: int, current_user: Optional[User]
-    ) -> ArticleWithAttachmentResponse:
+    ) -> ArticleResponse:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(404, detail="Article not found")
@@ -172,19 +164,14 @@ class ArticleService:
                 )
 
         if article.is_deleted:
-            return ArticleWithAttachmentResponse.model_validate(
-                {**article.__dict__, "content": DELETED, "attachments": []}
-            )
+            response = ArticleResponse.model_validate(article)
+            response.content = DELETED
+            response.attachments = []
+            return response
 
         content = article.content
         attachments = self.attachment_repository.select_by_article_id(article.id)
-        return ArticleWithAttachmentResponse.model_validate(
-            {
-                **article.__dict__,
-                "content": content,
-                "attachments": [a.file_id for a in attachments],
-            }
-        )
+        return ArticleResponse.model_validate(article)
 
     @staticmethod
     def _read_file(file_path: str) -> str:

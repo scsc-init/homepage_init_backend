@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from src.dependencies import NullableUserDep, UserDep
-from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
+from src.schemas import ArticleResponse
 from src.services import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
 
 article_router = APIRouter(tags=["article"])
@@ -14,7 +14,7 @@ async def create_article(
     article_service: ArticleServiceDep,
     current_user: UserDep,
     body: BodyCreateArticle,
-) -> ArticleWithAttachmentResponse:
+) -> ArticleResponse:
     return await article_service.create_article(
         body, current_user.id, current_user.role
     )
@@ -35,7 +35,7 @@ async def get_article_by_id(
     id: int,
     article_service: ArticleServiceDep,
     current_user: NullableUserDep,
-) -> ArticleWithAttachmentResponse:
+) -> ArticleResponse:
     return article_service.get_article_by_id(id, current_user)
 
 
