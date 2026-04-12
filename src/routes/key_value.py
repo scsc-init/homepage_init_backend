@@ -23,7 +23,7 @@ async def get_kv_value(
 async def get_kv_values(
     current_user: NullableUserDep,
     kv_service: KvServiceDep,
-    keys: Optional[list[str]] = Query(None, alias="q")
+    keys: Optional[list[str]] = Query(None, alias="q"),
 ) -> Sequence[KvResponse]:
     role = current_user.role if current_user else 0
     if keys:

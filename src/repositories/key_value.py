@@ -15,7 +15,7 @@ class KeyValueRepository(CRUDRepository[KeyValue, str]):
 
     def get_kv_values_by_role(self, keys: Optional[list[str]], user_role: int):
         stmt = select(KeyValue).where(KeyValue.writing_permission_level <= user_role)
-        if keys:
+        if keys is not None:
             stmt = stmt.where(KeyValue.key.in_(keys))
         return self.session.scalars(stmt).all()
 
