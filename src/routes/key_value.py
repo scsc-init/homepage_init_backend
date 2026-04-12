@@ -1,6 +1,6 @@
-from typing import Sequence
+from typing import Sequence, Optional
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from src.dependencies import NullableUserDep, UserDep
 from src.schemas import KvResponse
@@ -23,9 +23,13 @@ async def get_kv_value(
 async def get_all_kv_values(
     current_user: NullableUserDep,
     kv_service: KvServiceDep,
+    keys: Optional[list[str]] = Query(None, alias="q")
 ) -> Sequence[KvResponse]:
     role = current_user.role if current_user else 0
-    kvs = kv_service.get_all_kv_values(role)
+    if keys:
+        kvs = kv_service.get_kv_values_by_keys(keys, role)
+    else:
+        kvs = kv_service.get_all_kv_values(role)
     return KvResponse.model_validate_list(kvs)
 
 

@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import Depends
 from sqlalchemy import select
@@ -13,8 +13,10 @@ class KeyValueRepository(CRUDRepository[KeyValue, str]):
     def model(self) -> type[KeyValue]:
         return KeyValue
 
-    def get_kv_values_by_role(self, user_role: int):
+    def get_kv_values_by_role(self, keys: Optional[list[str]], user_role: int):
         stmt = select(KeyValue).where(KeyValue.writing_permission_level <= user_role)
+        if keys:
+            stmt = stmt.where(KeyValue.key.in_(keys))
         return self.session.scalars(stmt).all()
 
 
