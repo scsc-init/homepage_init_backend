@@ -20,7 +20,7 @@ async def get_kv_value(
 
 # This works as "api/kv" + "s" (="api/kvs")
 @kv_router.get("s")
-async def get_all_kv_values(
+async def get_kv_values(
     current_user: NullableUserDep,
     kv_service: KvServiceDep,
     keys: Optional[list[str]] = Query(None, alias="q")
