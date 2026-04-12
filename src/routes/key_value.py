@@ -26,10 +26,7 @@ async def get_kv_values(
     keys: Optional[list[str]] = Query(None, alias="q"),
 ) -> Sequence[KvResponse]:
     role = current_user.role if current_user else 0
-    if keys:
-        kvs = kv_service.get_kv_values_by_keys(keys, role)
-    else:
-        kvs = kv_service.get_all_kv_values(role)
+    kvs = kv_service.get_kv_values_by_keys(keys, role)
     return KvResponse.model_validate_list(kvs)
 
 

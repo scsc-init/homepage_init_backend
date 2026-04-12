@@ -23,12 +23,9 @@ class KvService:
         return entry
 
     def get_kv_values_by_keys(
-        self, keys: list[str], user_role: int
+        self, keys: Optional[list[str]], user_role: int
     ) -> Sequence[KeyValue]:
         return self.kv_repository.get_kv_values_by_role(keys, user_role)
-
-    def get_all_kv_values(self, user_role: int) -> Sequence[KeyValue]:
-        return self.kv_repository.get_kv_values_by_role(None, user_role)
 
     def update_kv_value(
         self, key: str, current_user: User, body: KvUpdateBody
