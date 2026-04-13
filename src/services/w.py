@@ -1,5 +1,5 @@
 import re
-from os import path
+from os import name, path
 from typing import Annotated, Sequence
 
 import aiofiles
@@ -98,6 +98,16 @@ class WService:
             f"info_type=w_html_updated ; {name=} ; file_size={len(content)} ; executer_id={current_user.id}"
         )
         return w_meta
+
+    def download_w_by_name(self, name: str, current_user: User) -> FileResponse:
+        w_meta = self.w_repository.get_by_id(name)
+        if not w_meta:
+            raise HTTPException(404, detail="file not found")
+        return FileResponse(
+            path.join(get_settings().w_html_dir, f"{name}.html"),
+            media_type="text/html",
+            filename=f"{name}.html",
+        )
 
     async def delete_w_by_name(self, name: str, current_user: User) -> None:
         w_meta = self.w_repository.get_by_id(name)
