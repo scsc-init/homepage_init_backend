@@ -84,6 +84,9 @@ END;
   ]
   ```
 
+- query가 없으면 전부 반환
+- query가 있으면 이름이 일치하는 것만 반환
+
 ### post 
 - **Method**: `POST`
 - **URL**: `/api/kv/{key}/update`
