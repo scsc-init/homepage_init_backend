@@ -68,12 +68,20 @@ END;
 - **URL**: `/api/kvs?q=key1&q=key2...`
 - **Response 예시**:
   ```json
-  {
-    "footer-message": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com",
-    "president": "<hash-of-main-president>",
-    "vice-president": "<hash-of-vice-president>",
-    ...
-  }
+  [
+    {
+      "key": "footer-message",
+      "value": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com"
+    },
+    {
+      "key": "president",
+     "value": "<hash-of-main-president>"
+    },
+    {
+      "key": "vice-president",
+      "value": "<hash-of-vice-president>"
+    }
+  ]
   ```
 
 ### post 
