@@ -175,25 +175,6 @@ class SCSCService:
                 detail="failed to back up database before status change",
             ) from exc
 
-        # start of recruiting
-        if new_status == SCSCStatus.RECRUITING:
-            (year, semester) = (scsc_global_status.year, scsc_global_status.semester)
-            if semester % 2 == 0:
-                (year, semester) = get_next_year_semester(year, semester)
-            if mq_client:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3002,
-                    body={
-                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                    },
-                )
-            if mq_client:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3004,
-                    body={
-                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                    },
-                )
 
         # start of active (recruiting -> active)
         if new_status == SCSCStatus.ACTIVE:
@@ -248,6 +229,23 @@ class SCSCService:
                             "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
                         },
                     )
+                
+                next_year, next_semester = get_next_year_semester(
+                    scsc_global_status.year, scsc_global_status.semester
+                )
+
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3002,
+                    body={
+                        "category_name": f"{next_year}-{map_semester_name.get(next_semester)} SIG Archive"
+                    },
+                )
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3004,
+                    body={
+                        "category_name": f"{next_year}-{map_semester_name.get(next_semester)} PIG Archive"
+                    },
+                )
 
             await self._process_igs_change_semester(SIG, scsc_global_status)
             await self._process_igs_change_semester(PIG, scsc_global_status)
