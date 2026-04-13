@@ -103,8 +103,11 @@ class WService:
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
+        file_path = path.join(get_settings().w_html_dir, f"{name}.html")
+        if not path.isfile(file_path):
+            raise HTTPException(404, detail="file not found")
         return FileResponse(
-            path.join(get_settings().w_html_dir, f"{name}.html"),
+            file_path,
             media_type="text/html",
             filename=f"{name}.html",
         )
