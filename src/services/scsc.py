@@ -252,7 +252,10 @@ class SCSCService:
             self.standby_repository.delete_all()
 
         # start of regular semester
-        if scsc_global_status.status == SCSCStatus.ACTIVE and scsc_global_status.semester % 2 == 0:
+        if (
+            scsc_global_status.status == SCSCStatus.ACTIVE
+            and scsc_global_status.semester % 2 == 0
+        ):
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 try:
