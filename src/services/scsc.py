@@ -175,6 +175,26 @@ class SCSCService:
                 detail="failed to back up database before status change",
             ) from exc
 
+        # start of recruiting
+        if new_status == SCSCStatus.RECRUITING:
+            (year, semester) = (scsc_global_status.year, scsc_global_status.semester)
+            if semester % 2 == 0:
+                (year, semester) = get_next_year_semester(year, semester)
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3002,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
+                    },
+                )
+            if mq_client:
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3004,
+                    body={
+                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
+                    },
+                )
+
         # start of active (recruiting -> active)
         if new_status == SCSCStatus.ACTIVE:
             self.session.execute(
