@@ -51,3 +51,12 @@ async def delete_w_by_name(
     w_service: WServiceDep,
 ) -> None:
     await w_service.delete_w_by_name(name, current_user)
+
+
+@w_router.get("/executive/w/{name}/download")
+async def download_w_by_name(
+    name: str,
+    current_user: UserDep,
+    w_service: WServiceDep,
+):
+    return w_service.download_w_by_name(name, current_user)
