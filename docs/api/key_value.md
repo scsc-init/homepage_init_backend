@@ -65,7 +65,7 @@ END;
   - `404 Not Found`: 존재하지 않는 키
 
 - **Method**: `GET`
-- **URL**: `/api/kvs`
+- **URL**: `/api/kvs?q=key1&q=key2...`
 - **Response 예시**:
   ```json
   {
