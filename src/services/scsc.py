@@ -175,7 +175,6 @@ class SCSCService:
                 detail="failed to back up database before status change",
             ) from exc
 
-
         # start of active (recruiting -> active)
         if new_status == SCSCStatus.ACTIVE:
             self.session.execute(
@@ -229,7 +228,7 @@ class SCSCService:
                             "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
                         },
                     )
-                
+
                 next_year, next_semester = get_next_year_semester(
                     scsc_global_status.year, scsc_global_status.semester
                 )
