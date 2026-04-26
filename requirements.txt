@@ -18,8 +18,6 @@ anyio==4.9.0
     # via homepage-init-backend (pyproject.toml)
 attrs==25.3.0
     # via homepage-init-backend (pyproject.toml)
-black==26.3.1
-    # via homepage-init-backend (pyproject.toml)
 certifi==2025.4.26
     # via homepage-init-backend (pyproject.toml)
 charset-normalizer==3.4.3
@@ -67,6 +65,8 @@ multidict==6.4.4
 pamqp==3.3.0
     # via homepage-init-backend (pyproject.toml)
 propcache==0.3.2
+    # via homepage-init-backend (pyproject.toml)
+psycopg2-binary==2.9.12
     # via homepage-init-backend (pyproject.toml)
 pydantic==2.11.4
     # via homepage-init-backend (pyproject.toml)
