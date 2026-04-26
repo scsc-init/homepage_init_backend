@@ -1,8 +1,5 @@
-import os
-from os import path
 from typing import Annotated, Optional
 
-import aiofiles
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
@@ -70,15 +67,6 @@ class ArticleService:
             raise HTTPException(
                 status_code=409, detail="unique field already exists"
             ) from exc
-        try:
-            file_path = path.join(get_settings().article_dir, f"{article.id}.md")
-            async with aiofiles.open(file_path, "w", encoding="utf-8") as fp:
-                await fp.write(body.content)
-        except Exception:
-            logger.error(
-                f"err_type=create_article_ctrl ; failed to write file ; {article.id=}",
-                exc_info=True,
-            )
         attach_inserted = self.attachment_repository.insert_or_ignore_list(
             article.id, body.attachments
         )
@@ -173,25 +161,6 @@ class ArticleService:
         attachments = self.attachment_repository.select_by_article_id(article.id)
         return ArticleResponse.model_validate(article)
 
-    @staticmethod
-    def _read_file(file_path: str) -> str:
-        if os.path.exists(file_path):
-            try:
-                with open(
-                    file_path,
-                    "r",
-                    encoding="utf-8",
-                ) as fp:
-                    return fp.read()
-            except OSError:
-                logger.error(
-                    f"err_type=get_article_by_id ; error occurred during reading a file ; {file_path=}",
-                    exc_info=True,
-                )
-                return "Error reading content."
-        logger.warning(f"Article file missing: {file_path=}")
-        return "Content currently unavailable."
-
     async def _update_article(
         self, article: Article, body: BodyUpdateArticle, current_user: User
     ) -> None:
@@ -216,15 +185,6 @@ class ArticleService:
         logger.info(
             f"info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}"
         )
-        try:
-            file_path = path.join(get_settings().article_dir, f"{article.id}.md")
-            async with aiofiles.open(file_path, "w", encoding="utf-8") as fp:
-                await fp.write(body.content)
-        except Exception:
-            logger.error(
-                f"err_type=update_article_by_author ; failed to write file ; {article.id=}",
-                exc_info=True,
-            )
         self.attachment_repository.delete_by_article_id(article.id)
         self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
 
