@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     image_dir: str = "static/image/photo/"
     file_dir: str = "static/download/"
     file_max_size: int = 10000000
-    article_dir: str = "static/article/"
     user_check: bool = True
     enrollment_fee: int = 25000
     cors_all_accept: bool = False
