@@ -13,7 +13,7 @@ from src.repositories import (
     BoardRepositoryDep,
 )
 from src.schemas import ArticleResponse
-from src.util import DELETED, utcnow
+from src.util import utcnow
 
 
 class BodyCreateArticle(BaseModel):
@@ -67,9 +67,7 @@ class ArticleService:
             raise HTTPException(
                 status_code=409, detail="unique field already exists"
             ) from exc
-        attach_inserted = self.attachment_repository.insert_or_ignore_list(
-            article.id, body.attachments
-        )
+        self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
         logger.info(
             f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
@@ -79,7 +77,7 @@ class ArticleService:
 
         try:
             if mq_client:
-                if body.board_id == 5:  # notice
+                if body.board_id == 5:
                     await mq_client.send_discord_bot_request_no_reply(
                         action_code=1002,
                         body={
@@ -87,7 +85,7 @@ class ArticleService:
                             "content": f"{body.title}\n\n{body.content}",
                         },
                     )
-                elif body.board_id == 6:  # grant
+                elif body.board_id == 6:
                     await mq_client.send_discord_bot_request_no_reply(
                         action_code=1002,
                         body={
@@ -119,19 +117,7 @@ class ArticleService:
                 )
 
         articles = self.article_repository.get_articles_by_board_id(board_id)
-        result: list[ArticleResponse] = []
-        for article in articles:
-            response = ArticleResponse.model_validate(article)
-
-            if article.is_deleted:
-                response.content = DELETED
-                response.attachments = []
-            else:
-                response.content = article.content
-
-            result.append(response)
-
-        return result
+        return [ArticleResponse.model_validate(article) for article in articles]
 
     def get_article_by_id(
         self, id: int, current_user: Optional[User]
@@ -151,14 +137,6 @@ class ArticleService:
                     403, detail="You are not allowed to read this article"
                 )
 
-        if article.is_deleted:
-            response = ArticleResponse.model_validate(article)
-            response.content = DELETED
-            response.attachments = []
-            return response
-
-        content = article.content
-        attachments = self.attachment_repository.select_by_article_id(article.id)
         return ArticleResponse.model_validate(article)
 
     async def _update_article(
@@ -193,17 +171,12 @@ class ArticleService:
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if article is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
+            raise HTTPException(status_code=404, detail="Article not found")
         if current_user.id != article.author_id:
             raise HTTPException(
                 status_code=403,
                 detail="You are not the author of this article",
             )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
         await self._update_article(article, body, current_user)
 
     async def update_article_by_executive(
@@ -211,37 +184,24 @@ class ArticleService:
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
+            raise HTTPException(status_code=404, detail="Article not found")
         await self._update_article(article, body, current_user)
 
     def delete_article_by_author(self, id: int, current_user: User) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
+            raise HTTPException(status_code=404, detail="Article not found")
         if current_user.id != article.author_id:
             raise HTTPException(
                 status_code=403,
                 detail="You are not the author of this article",
             )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
         if article.board_id in (1, 2):
             raise HTTPException(
                 status_code=400, detail="cannot delete article of sig/pig"
             )
 
-        article.is_deleted = True
-        article.deleted_at = utcnow()
-
-        article = self.article_repository.update(article)
+        self.article_repository.delete(article)
 
         logger.info(
             f"info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}"
@@ -250,17 +210,9 @@ class ArticleService:
     def delete_article_by_executive(self, id: int, current_user: User) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
+            raise HTTPException(status_code=404, detail="Article not found")
 
-        article.is_deleted = True
-        article.deleted_at = utcnow()
-
-        article = self.article_repository.update(article)
+        self.article_repository.delete(article)
 
         logger.info(
             f"info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}"
