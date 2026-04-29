@@ -41,8 +41,15 @@ CREATE INDEX idx_board_id ON article(board_id);
 
 2026-04-28 migration:
 ```sql
-ALTER TABLE public.article DROP COLUMN is_deleted;
-ALTER TABLE public.article DROP COLUMN deleted_at;
+DELETE FROM article
+WHERE is_deleted = true
+  AND id NOT IN (
+    SELECT content_id FROM sig
+    UNION
+    SELECT content_id FROM pig
+  );
+ALTER TABLE article DROP COLUMN is_deleted;
+ALTER TABLE article DROP COLUMN deleted_at;
 ```
 
 ## 첨부파일 DB
