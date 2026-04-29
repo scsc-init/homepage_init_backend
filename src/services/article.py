@@ -67,7 +67,9 @@ class ArticleService:
             raise HTTPException(
                 status_code=409, detail="unique field already exists"
             ) from exc
-        self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
+        attach_inserted = self.attachment_repository.insert_or_ignore_list(
+            article.id, body.attachments
+        )
         logger.info(
             f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
@@ -77,7 +79,7 @@ class ArticleService:
 
         try:
             if mq_client:
-                if body.board_id == 5:
+                if body.board_id == 5:  # notice
                     await mq_client.send_discord_bot_request_no_reply(
                         action_code=1002,
                         body={
@@ -85,7 +87,7 @@ class ArticleService:
                             "content": f"{body.title}\n\n{body.content}",
                         },
                     )
-                elif body.board_id == 6:
+                elif body.board_id == 6:  # grant
                     await mq_client.send_discord_bot_request_no_reply(
                         action_code=1002,
                         body={
@@ -117,7 +119,7 @@ class ArticleService:
                 )
 
         articles = self.article_repository.get_articles_by_board_id(board_id)
-        return [ArticleResponse.model_validate(article) for article in articles]
+        return [ArticleResponse.model_validate_list(article) for article in articles]
 
     def get_article_by_id(
         self, id: int, current_user: Optional[User]

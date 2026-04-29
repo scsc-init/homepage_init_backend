@@ -39,19 +39,6 @@ CREATE INDEX idx_board_id ON article(board_id);
 ```
 - article의 content는 `ARTICLE_DIR(static/article/)`에 md 파일로 저장된다. 
 
-2026-04-28 migration:
-```sql
-DELETE FROM article
-WHERE is_deleted = true
-  AND id NOT IN (
-    SELECT content_id FROM sig
-    UNION
-    SELECT content_id FROM pig
-  );
-ALTER TABLE article DROP COLUMN is_deleted;
-ALTER TABLE article DROP COLUMN deleted_at;
-```
-
 ## 첨부파일 DB
 ```sql
 CREATE TABLE attachment (
