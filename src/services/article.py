@@ -213,6 +213,10 @@ class ArticleService:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
+        if article.board_id in (1, 2):
+            raise HTTPException(
+                status_code=400, detail="cannot delete article of sig/pig"
+            )
 
         self.article_repository.delete(article)
 
