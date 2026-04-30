@@ -119,7 +119,7 @@ class ArticleService:
                 )
 
         articles = self.article_repository.get_articles_by_board_id(board_id)
-        return [ArticleResponse.model_validate_list(article) for article in articles]
+        return ArticleResponse.model_validate_list(articles)
 
     def get_article_by_id(
         self, id: int, current_user: Optional[User]
