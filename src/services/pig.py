@@ -26,7 +26,7 @@ from src.util import (
     map_semester_name,
 )
 
-from .article import ArticleServiceDep, BodyCreateArticle
+from .article import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
 from .scsc import ctrl_status_available
 
 
@@ -196,12 +196,16 @@ class PigService:
             pig.description = body.description
 
         if body.content:
-            pig_article = await self.article_service.create_article(
-                BodyCreateArticle(title=pig.title, content=body.content, board_id=1),
-                current_user.id,
-                get_user_role_level("president"),
+            await self.article_service.update_article_by_executive(
+                id=pig.content_id,
+                current_user=current_user,
+                body=BodyUpdateArticle(
+                    title=pig.title,
+                    content=body.content,
+                    board_id=pig.content.board_id,
+                    attachments=[attachment.file_id for attachment in pig.content.attachments]
+                ),
             )
-            pig.content_id = pig_article.id
 
         if body.status:
             if not is_executive:
