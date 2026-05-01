@@ -17,7 +17,7 @@ class KeyValueRepository(CRUDRepository[KeyValue, str]):
         stmt = select(KeyValue).where(KeyValue.key == key)
         return self.session.scalars(stmt).first()
 
-    def get_kv_values_by_role(self, keys: Optional[list[str]], user_role: int):
+    def get_kv_values_by_keys(self, keys: Optional[list[str]]):
         stmt = select(KeyValue)
         if keys is not None:
             stmt = stmt.where(KeyValue.key.in_(keys))
