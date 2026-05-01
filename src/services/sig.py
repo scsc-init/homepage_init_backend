@@ -213,7 +213,9 @@ class SigService:
                     title=sig.title,
                     content=body.content,
                     board_id=sig.content.board_id,
-                    attachments=[attachment.file_id for attachment in sig.content.attachments]
+                    attachments=[
+                        attachment.file_id for attachment in sig.content.attachments
+                    ],
                 ),
             )
 

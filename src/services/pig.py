@@ -203,7 +203,9 @@ class PigService:
                     title=pig.title,
                     content=body.content,
                     board_id=pig.content.board_id,
-                    attachments=[attachment.file_id for attachment in pig.content.attachments]
+                    attachments=[
+                        attachment.file_id for attachment in pig.content.attachments
+                    ],
                 ),
             )
 
