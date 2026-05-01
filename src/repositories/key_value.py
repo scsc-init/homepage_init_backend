@@ -13,8 +13,12 @@ class KeyValueRepository(CRUDRepository[KeyValue, str]):
     def model(self) -> type[KeyValue]:
         return KeyValue
 
+    def get_by_id(self, key: str) -> Optional[KeyValue]:
+        stmt = select(KeyValue).where(KeyValue.key == key)
+        return self.session.scalars(stmt).first()
+
     def get_kv_values_by_role(self, keys: Optional[list[str]], user_role: int):
-        stmt = select(KeyValue).where(KeyValue.writing_permission_level <= user_role)
+        stmt = select(KeyValue)
         if keys is not None:
             stmt = stmt.where(KeyValue.key.in_(keys))
         return self.session.scalars(stmt).all()
