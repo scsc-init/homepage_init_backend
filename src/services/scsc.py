@@ -11,7 +11,6 @@ from src.core import logger
 from src.db import (
     SessionDep,
     backup_db_before_status_change,
-    backup_db_for_manual_download,
     get_user_role_level,
 )
 from src.dependencies import SCSCGlobalStatusDep
@@ -94,7 +93,7 @@ class SCSCService:
             )
 
         try:
-            return backup_db_for_manual_download(self.scsc_global_status)
+            return backup_db_before_status_change(self.scsc_global_status)
         except Exception as exc:
             logger.error(
                 "err_type=db_backup ; msg=failed to back up database by manual request",
