@@ -4,4 +4,3 @@ VALUES
   ('TEXT_DISCORD_INVITE_LINK', 'https://discord.gg/SmXFDxA7XE', 500),
   ('TEXT_KAKAO_INVITE_LINK', 'https://invite.kakao.com/tc/II2yiLsQhY', 500)
 ON CONFLICT (key) DO NOTHING;
- 
