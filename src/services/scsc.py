@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated, Type
 
 from fastapi import Depends, HTTPException
@@ -7,7 +8,11 @@ from sqlalchemy import case, exists, select, update
 
 from src.amqp import mq_client
 from src.core import logger
-from src.db import SessionDep, backup_db_before_status_change, get_user_role_level
+from src.db import (
+    SessionDep,
+    backup_db_before_status_change,
+    get_user_role_level,
+)
 from src.dependencies import SCSCGlobalStatusDep
 from src.model import PIG, SIG, Enrollment, SCSCGlobalStatus, SCSCStatus, User
 from src.repositories import (
@@ -79,6 +84,25 @@ class SCSCService:
 
     def get_all_statuses(self) -> dict[str, list[str]]:
         return {"statuses": ["recruiting", "active"]}
+
+    def backup_current_db(self, current_user: User) -> Path:
+        if current_user.role < get_user_role_level("president"):
+            raise HTTPException(
+                403,
+                detail="permission denied: president role required",
+            )
+
+        try:
+            return backup_db_before_status_change(self.scsc_global_status)
+        except Exception as exc:
+            logger.error(
+                "err_type=db_backup ; msg=failed to back up database by manual request",
+                exc_info=True,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="failed to back up database",
+            ) from exc
 
     async def _process_igs_change_semester(
         self, model: Type[SIG | PIG], scsc_global_status: SCSCGlobalStatus
