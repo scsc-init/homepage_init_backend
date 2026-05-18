@@ -62,11 +62,6 @@ INSERT INTO public.sig_tag (sig_id, tag_id)
 SELECT s.id, t.id
 FROM public.sig s
 JOIN public.tag t ON t.text = 'SIG'
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM public.pig p
-    WHERE p.content_id = s.content_id
-)
 ON CONFLICT (sig_id, tag_id) DO NOTHING;
 
 WITH inserted_sig AS (
