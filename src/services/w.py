@@ -4,7 +4,7 @@ from typing import Annotated, Sequence
 
 import aiofiles
 from aiofiles import os as aiofiles_os
-from fastapi import Depends, HTTPException, UploadFile
+from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.exc import IntegrityError
 
@@ -56,14 +56,47 @@ class WService:
             f"info_type=w_html_created ; {basename=} ; file_size={len(content)} ; executer_id={current_user.id}"
         )
         return w_meta
+    
+    def _is_bot(self, user_agent: str) -> bool:
+        bot_patterns = [
+            r"googlebot",
+            r"bingbot",
+            r"slurp",
+            r"duckduckbot",
+            r"baiduspider",
+            r"yandexbot",
+            r"sogou",
+            r"exabot",
+            r"facebookexternalhit",
+            r"twitterbot",
+            r"linkedinbot",
+            r"whatsapp",
+            r"telegrambot",
+            r"discordbot",
+            r"slackbot",
+            r"crawler",
+            r"spider",
+            r"bot",
+        ]
+        user_agent_lower = user_agent.lower()
+        return any(re.search(pattern, user_agent_lower) for pattern in bot_patterns)
 
-    def get_w_by_name(self, name: str) -> FileResponse:
+    def get_w_by_name(self, name: str, request: Request) -> FileResponse:
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
+
+        user_agent = request.headers.get("User-Agent", "")
+        if not self._is_bot(user_agent):
+            w_meta.view_cnt += 1
+            self.w_repository.update(w_meta)
+
+        logger.info("info_type=debug ; " + " ; ".join(f"{k}={v}" for k, v in request.headers.items()))
+
         return FileResponse(
             path.join(get_settings().w_html_dir, f"{name}.html"),
             media_type="text/html",
+            headers={"X-View-Count": str(w_meta.view_cnt)},
         )
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:
