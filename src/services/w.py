@@ -81,23 +81,29 @@ class WService:
         user_agent_lower = user_agent.lower()
         return any(re.search(pattern, user_agent_lower) for pattern in bot_patterns)
 
-    def get_w_by_name(self, name: str, request: Request) -> FileResponse:
+    def get_w_by_name(self, name: str) -> FileResponse:
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
-
-        user_agent = request.headers.get("User-Agent", "")
-        if not self._is_bot(user_agent):
-            w_meta.view_cnt += 1
-            self.w_repository.update(w_meta)
-
-        logger.info("info_type=debug ; " + " ; ".join(f"{k}={v}" for k, v in request.headers.items()))
-
+        
         return FileResponse(
             path.join(get_settings().w_html_dir, f"{name}.html"),
             media_type="text/html",
             headers={"X-View-Count": str(w_meta.view_cnt)},
         )
+
+    async def record_view(self, name: str, request: Request) -> None:
+        w_meta = self.w_repository.get_by_id(name)
+        if not w_meta:
+            raise HTTPException(404, detail="file not found")
+        
+        user_agent = request.headers.get('X-Forwarded-User-Agent', '')
+        if self._is_bot(user_agent):
+            return
+        try:
+            self.w_repository.increase_view_count(name)
+        except Exception:
+            logger.error("err_type=w_view_increment_failed", exc_info=True)
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:
         results = self.w_repository.get_all_with_creator_name()
