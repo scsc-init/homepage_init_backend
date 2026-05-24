@@ -13,6 +13,7 @@ CREATE TABLE w_html_metadata (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     creator TEXT,
+    view_cnt INTEGER NOT NULL DEFAULT 0 CHECK (view_cnt >= 0),
 
     FOREIGN KEY (creator) REFERENCES user(id) ON DELETE SET NULL
 );
@@ -93,6 +94,18 @@ END;
 
   * `200 OK` - 다운로드 성공
   * `404 Not Found` - 존재하지 않는 파일 `name`
+
+---
+
+## Record View
+- **Method**: `POST`
+- **URL**: `/api/w/:name/view`
+- **설명**: bot, crawler 여부를 판별하고, `name` 파일의 조회수를 1 증가시킨다.
+
+* **Status Codes**:
+
+  * `204 No Content`
+  * `404 Not Found`: `name`에 해당하는 값이 없음.
 
 ---
 
