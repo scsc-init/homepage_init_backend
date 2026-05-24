@@ -53,7 +53,8 @@ END;
   "size": 23000,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "creator": "hash_of_creator_user"
+  "creator": "hash_of_creator_user",
+  "view_cnt": 0
 }
 ```
 
@@ -123,7 +124,8 @@ END;
         "updated_at": "2025-09-24T08:38:05.318387",
         "name": "SCPC2",
         "created_at": "2025-09-24T08:38:05.318370",
-        "creator": "hash_of_creator_user"
+        "creator": "hash_of_creator_user",
+        "view_cnt": 43
     },
     "name_of_creator_user"
   ],
@@ -153,7 +155,8 @@ END;
   "size": 23000,
   "created_at": "2025-03-01T10:00:00Z",
   "updated_at": "2025-04-01T12:00:00Z",
-  "creator": "hash_of_creator_user"
+  "creator": "hash_of_creator_user",
+  "view_cnt": 17
 }
 ```
 

@@ -56,7 +56,7 @@ class WService:
             f"info_type=w_html_created ; {basename=} ; file_size={len(content)} ; executer_id={current_user.id}"
         )
         return w_meta
-    
+
     def _is_bot(self, user_agent: str) -> bool:
         bot_patterns = [
             r"googlebot",
@@ -85,7 +85,6 @@ class WService:
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
-        
         return FileResponse(
             path.join(get_settings().w_html_dir, f"{name}.html"),
             media_type="text/html",
@@ -96,8 +95,8 @@ class WService:
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
-        
-        user_agent = request.headers.get('X-Forwarded-User-Agent', '')
+
+        user_agent = request.headers.get("X-Forwarded-User-Agent", "")
         if self._is_bot(user_agent):
             return
         try:
