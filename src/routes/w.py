@@ -1,6 +1,6 @@
 from typing import Sequence
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from src.dependencies import UserDep
@@ -22,8 +22,10 @@ async def upload_file(
 
 
 @w_router.get("/w/{name}")
-async def get_w_by_name(name: str, w_service: WServiceDep) -> FileResponse:
-    return w_service.get_w_by_name(name)
+async def get_w_by_name(
+    name: str, request: Request, w_service: WServiceDep
+) -> FileResponse:
+    return w_service.get_w_by_name(name, request)
 
 
 @w_router.get("/executive/ws")
