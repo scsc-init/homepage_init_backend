@@ -81,17 +81,7 @@ class WService:
         user_agent_lower = user_agent.lower()
         return any(re.search(pattern, user_agent_lower) for pattern in bot_patterns)
 
-    def get_w_by_name(self, name: str) -> FileResponse:
-        w_meta = self.w_repository.get_by_id(name)
-        if not w_meta:
-            raise HTTPException(404, detail="file not found")
-        return FileResponse(
-            path.join(get_settings().w_html_dir, f"{name}.html"),
-            media_type="text/html",
-            headers={"X-View-Count": str(w_meta.view_cnt)},
-        )
-
-    async def record_view(self, name: str, request: Request) -> None:
+    def get_w_by_name(self, name: str, request: Request) -> FileResponse:
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
@@ -99,13 +89,22 @@ class WService:
         user_agent = request.headers.get(
             "X-Forwarded-User-Agent"
         ) or request.headers.get("User-Agent", "")
-        if self._is_bot(user_agent):
-            return
-        try:
-            self.w_repository.increase_view_count(name)
-        except SQLAlchemyError:
-            self.w_repository.session.rollback()
-            logger.error("err_type=w_view_increment_failed", exc_info=True)
+        sec_fetch_mode = request.headers.get(
+            "X-Forwarded-Sec-Fetch-Mode"
+        ) or request.headers.get("Sec-Fetch-Mode")
+
+        if sec_fetch_mode == "navigate" and not self._is_bot(user_agent):
+            try:
+                self.w_repository.increase_view_count(name)
+            except SQLAlchemyError:
+                self.w_repository.session.rollback()
+                logger.error("err_type=w_view_increment_failed", exc_info=True)
+
+        return FileResponse(
+            path.join(get_settings().w_html_dir, f"{name}.html"),
+            media_type="text/html",
+            headers={"X-View-Count": str(w_meta.view_cnt)},
+        )
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:
         results = self.w_repository.get_all_with_creator_name()

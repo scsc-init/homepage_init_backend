@@ -88,6 +88,8 @@ END;
 
 * **Response**:
   * **Content-Type**: `text/html`
+  * **Headers**:
+    - 'X-View-Count': 파일의 조회수 (string)
   * 파일 바이너리 스트림
 
 
@@ -95,24 +97,6 @@ END;
 
   * `200 OK` - 다운로드 성공
   * `404 Not Found` - 존재하지 않는 파일 `name`
-
----
-
-## Record View
-- **Method**: `POST`
-- **URL**: `/api/w/:name/view`
-- **설명**: `name` 파일의 조회수를 기록한다. User-Agent를 기반으로 bot/crawler를 판별하여, 봇이 아닌 경우에만 조회수를 1 증가시킨다.
-
-* **Path Parameters**:
-
-  | 파라미터명 | 타입   | 설명               |
-  | ----- | ---- | ---------------- |
-  | `name`  | TEXT | 파일 이름 |
-
-* **Status Codes**:
-
-  * `204 No Content`
-  * `404 Not Found`: `name`에 해당하는 값이 없음.
 
 ---
 

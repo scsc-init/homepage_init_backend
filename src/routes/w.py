@@ -22,14 +22,10 @@ async def upload_file(
 
 
 @w_router.get("/w/{name}")
-async def get_w_by_name(name: str, w_service: WServiceDep) -> FileResponse:
-    return w_service.get_w_by_name(name)
-
-
-@w_router.post("/w/{name}/view", status_code=204)
-async def record_view(name: str, request: Request, w_service: WServiceDep) -> None:
-    await w_service.record_view(name, request)
-    return None
+async def get_w_by_name(
+    name: str, request: Request, w_service: WServiceDep
+) -> FileResponse:
+    return w_service.get_w_by_name(name, request)
 
 
 @w_router.get("/executive/ws")
