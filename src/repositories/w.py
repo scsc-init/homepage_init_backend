@@ -1,7 +1,7 @@
 from typing import Annotated, Sequence, Tuple
 
 from fastapi import Depends
-from sqlalchemy import Row, select
+from sqlalchemy import Row, select, update
 
 from src.model import User, WHTMLMetadata
 
@@ -18,6 +18,15 @@ class WRepository(CRUDRepository[WHTMLMetadata, str]):
             User, WHTMLMetadata.creator == User.id
         )
         return self.session.execute(stmt).all()
+
+    def increase_view_count(self, name: str) -> None:
+        stmt = (
+            update(WHTMLMetadata)
+            .where(WHTMLMetadata.name == name)
+            .values(view_cnt=WHTMLMetadata.view_cnt + 1)
+        )
+        self.session.execute(stmt)
+        self.session.commit()
 
 
 WRepositoryDep = Annotated[WRepository, Depends()]

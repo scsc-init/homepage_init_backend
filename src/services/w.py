@@ -4,9 +4,9 @@ from typing import Annotated, Sequence
 
 import aiofiles
 from aiofiles import os as aiofiles_os
-from fastapi import Depends, HTTPException, UploadFile
+from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.core import get_settings, logger
 from src.model import User, WHTMLMetadata
@@ -53,14 +53,54 @@ class WService:
         )
         return w_meta
 
-    def get_w_by_name(self, name: str) -> FileResponse:
+    def _is_bot(self, user_agent: str) -> bool:
+        bot_patterns = [
+            r"googlebot",
+            r"bingbot",
+            r"slurp",
+            r"duckduckbot",
+            r"baiduspider",
+            r"yandexbot",
+            r"sogou",
+            r"exabot",
+            r"facebookexternalhit",
+            r"twitterbot",
+            r"linkedinbot",
+            r"whatsapp",
+            r"telegrambot",
+            r"discordbot",
+            r"slackbot",
+            r"crawler",
+            r"spider",
+            r"bot",
+        ]
+        user_agent_lower = user_agent.lower()
+        return any(re.search(pattern, user_agent_lower) for pattern in bot_patterns)
+
+    def get_w_by_name(self, name: str, request: Request) -> FileResponse:
         name = self._normalize_name(name)
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
+
         file_path = self._build_file_path(name)
         if not os.path.isfile(file_path):
             raise HTTPException(404, detail="file not found")
+
+        user_agent = request.headers.get(
+            "X-Forwarded-User-Agent"
+        ) or request.headers.get("User-Agent", "")
+        sec_fetch_mode = request.headers.get(
+            "X-Forwarded-Sec-Fetch-Mode"
+        ) or request.headers.get("Sec-Fetch-Mode")
+
+        if sec_fetch_mode == "navigate" and not self._is_bot(user_agent):
+            try:
+                self.w_repository.increase_view_count(name)
+            except SQLAlchemyError:
+                self.w_repository.session.rollback()
+                logger.error("err_type=w_view_increment_failed", exc_info=True)
+
         return FileResponse(
             file_path,
             media_type="text/html",
