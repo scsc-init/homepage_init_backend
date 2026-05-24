@@ -88,8 +88,6 @@ END;
 
 * **Response**:
   * **Content-Type**: `text/html`
-  * **Headers**:
-    - 'X-View-Count': 파일의 조회수 (string)
   * 파일 바이너리 스트림
 
 

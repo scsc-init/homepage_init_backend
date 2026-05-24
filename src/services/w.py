@@ -103,7 +103,6 @@ class WService:
         return FileResponse(
             path.join(get_settings().w_html_dir, f"{name}.html"),
             media_type="text/html",
-            headers={"X-View-Count": str(w_meta.view_cnt)},
         )
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:
