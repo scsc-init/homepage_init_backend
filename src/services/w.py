@@ -6,7 +6,7 @@ import aiofiles
 from aiofiles import os as aiofiles_os
 from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.core import get_settings, logger
 from src.model import User, WHTMLMetadata
@@ -96,12 +96,15 @@ class WService:
         if not w_meta:
             raise HTTPException(404, detail="file not found")
 
-        user_agent = request.headers.get("X-Forwarded-User-Agent", "")
+        user_agent = request.headers.get(
+            "X-Forwarded-User-Agent"
+        ) or request.headers.get("User-Agent", "")
         if self._is_bot(user_agent):
             return
         try:
             self.w_repository.increase_view_count(name)
-        except Exception:
+        except SQLAlchemyError:
+            self.w_repository.session.rollback()
             logger.error("err_type=w_view_increment_failed", exc_info=True)
 
     def get_all_metadata(self) -> Sequence[tuple[WHTMLMetadata, str]]:

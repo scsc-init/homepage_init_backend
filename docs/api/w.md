@@ -101,7 +101,13 @@ END;
 ## Record View
 - **Method**: `POST`
 - **URL**: `/api/w/:name/view`
-- **설명**: bot, crawler 여부를 판별하고, `name` 파일의 조회수를 1 증가시킨다.
+- **설명**: `name` 파일의 조회수를 기록한다. User-Agent를 기반으로 bot/crawler를 판별하여, 봇이 아닌 경우에만 조회수를 1 증가시킨다.
+
+* **Path Parameters**:
+
+  | 파라미터명 | 타입   | 설명               |
+  | ----- | ---- | ---------------- |
+  | `name`  | TEXT | 파일 이름 |
 
 * **Status Codes**:
 
