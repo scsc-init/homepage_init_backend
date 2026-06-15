@@ -1,4 +1,4 @@
-from typing import Annotated, Optional, Sequence
+from typing import Annotated, Literal, Optional, Sequence
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -42,6 +42,7 @@ class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
+    major_tag: Literal["SIG", "PIG"]
     is_rolling_admission: RollingAdmission = RollingAdmission.DURING_RECRUITING
     websites: Optional[list[BodySigWebsite]] = None
 
@@ -128,6 +129,19 @@ class SigService:
 
         if sig.id is None:
             raise HTTPException(503, detail="sig primary key does not exist")
+
+        major_tag = self.tag_repository.get_by_text(body.major_tag)
+        if major_tag is None or not major_tag.is_major:
+            raise HTTPException(
+                503, detail=f"major tag '{body.major_tag}' is not configured"
+            )
+
+        try:
+            self.sig_tag_repository.create(SIGTag(sig_id=sig.id, tag_id=major_tag.id))
+        except IntegrityError:
+            raise HTTPException(
+                409, detail=f"major tag '{body.major_tag}' is already attached"
+            ) from None
 
         self._replace_websites(sig.id, body.websites)
 

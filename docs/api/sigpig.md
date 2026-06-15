@@ -132,6 +132,7 @@ END;
 ```json
 {
   "title": "AI SIG",
+  "major_tag": "SIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
   "is_rolling_admission": "during_recruiting",
@@ -719,6 +720,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 ```json
 {
   "title": "AI PIG",
+  "major_tag": "PIG",
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
   "is_rolling_admission": "during_recruiting",
