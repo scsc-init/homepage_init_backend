@@ -42,6 +42,7 @@ class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
+    tags: list[str]
     is_rolling_admission: RollingAdmission = RollingAdmission.DURING_RECRUITING
     websites: Optional[list[BodySigWebsite]] = None
 
@@ -128,6 +129,24 @@ class SigService:
 
         if sig.id is None:
             raise HTTPException(503, detail="sig primary key does not exist")
+
+        normalized_tags = [
+            tag.strip() for tag in body.tags if isinstance(tag, str) and tag.strip()
+        ]
+        if not normalized_tags:
+            raise HTTPException(422, detail="at least one tag is required")
+
+        for tag_text in normalized_tags:
+            tag = self.tag_repository.get_by_text(tag_text)
+            if tag is None:
+                raise HTTPException(404, detail=f"tag '{tag_text}' does not exist")
+
+            try:
+                self.sig_tag_repository.create(SIGTag(sig_id=sig.id, tag_id=tag.id))
+            except IntegrityError:
+                raise HTTPException(
+                    409, detail=f"tag '{tag_text}' is already attached"
+                ) from None
 
         self._replace_websites(sig.id, body.websites)
 
