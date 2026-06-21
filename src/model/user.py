@@ -86,6 +86,25 @@ class UserSummary(Base):
     )
 
 
+class UserActivityLog(Base):
+    __tablename__ = "user_activity_log"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
+    activity_type: Mapped[str] = mapped_column(String, nullable=False)
+    created_by: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("user.id"), default=None, nullable=True
+    )
+    detail: Mapped[Optional[str]] = mapped_column(String, default=None, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+        nullable=False,
+    )
+
+
 class StandbyReqTbl(Base):
     __tablename__ = "standby_req_tbl"
 

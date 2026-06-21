@@ -14,6 +14,7 @@ from .user import (
     OldboyApplicant,
     StandbyReqTbl,
     User,
+    UserActivityLog,
     UserRole,
     UserSummary,
 )

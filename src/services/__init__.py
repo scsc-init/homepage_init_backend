@@ -44,6 +44,7 @@ from .user import (
     ProcessStandbyListResponse,
     ResponseLogin,
     StandbyServiceDep,
+    UserActivityLogResponse,
     UserService,
     UserServiceDep,
 )
