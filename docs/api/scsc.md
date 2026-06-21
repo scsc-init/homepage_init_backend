@@ -83,3 +83,27 @@ status는 ('recruiting', 'active', 'inactive') 중 하나
   * `412 Precondition Failed` - 등록 정책이 유효하지 않게 될 예정인 경우
 
 ---
+
+## Backup Current SCSC DB
+
+* **Method**: `POST`
+* **URL**: `/api/executive/scsc/global/status/backup`
+* **설명**: 현재 DB 상태를 백업한 뒤 `.sql` 파일로 내려받습니다.
+
+* **Status Codes**:
+  * `200 OK` - 백업 파일 다운로드 성공
+  * `401 Unauthorized` - 인증 실패
+  * `403 Forbidden` - 권한 없음 (`president` 권한 필요)
+  * `500 Internal Server Error` - DB 백업 실패
+
+* **응답 형식**:
+
+```http
+Content-Type: application/sql
+```
+
+* **백업 파일 위치**:
+  * 서버 내부 `logs/db_backups` 디렉터리에 생성됩니다.
+  * 파일명에는 DB 이름, 연도, 학기, 상태, 생성 시각이 포함됩니다.
+
+---

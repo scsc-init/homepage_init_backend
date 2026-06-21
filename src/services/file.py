@@ -22,7 +22,7 @@ class FileService:
         self, current_user: User, file: UploadFile = File(...)
     ) -> FileMetadata:
         content, basename, ext, mime_type = await validate_and_read_file(
-            file, valid_ext=frozenset({"pdf", "docx", "pptx"})
+            file, valid_ext=frozenset({"pdf", "docx", "pptx", "hwp", "hwpx"})
         )
         uuid = create_uuid()
         with open(path.join(get_settings().file_dir, f"{uuid}.{ext}"), "wb") as fp:
