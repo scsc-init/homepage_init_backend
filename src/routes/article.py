@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from fastapi import APIRouter
 
 from src.dependencies import NullableUserDep, UserDep
@@ -26,7 +28,7 @@ async def get_article_list_by_board(
     board_id: int,
     article_service: ArticleServiceDep,
     current_user: NullableUserDep,
-) -> list[ArticleResponse]:
+) -> Sequence[ArticleResponse]:
     return article_service.get_article_list_by_board(board_id, current_user)
 
 

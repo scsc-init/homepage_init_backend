@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
@@ -67,9 +67,7 @@ class ArticleService:
             raise HTTPException(
                 status_code=409, detail="unique field already exists"
             ) from exc
-        attach_inserted = self.attachment_repository.insert_or_ignore_list(
-            article.id, body.attachments
-        )
+        self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
         logger.info(
             f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
@@ -105,7 +103,7 @@ class ArticleService:
 
     def get_article_list_by_board(
         self, board_id: int, current_user: Optional[User]
-    ) -> list[ArticleResponse]:
+    ) -> Sequence[ArticleResponse]:
         board = self.board_repository.get_by_id(board_id)
         if board is None:
             raise HTTPException(404, detail="Board not found")
@@ -147,10 +145,6 @@ class ArticleService:
         board = self.board_repository.get_by_id(article.board_id)
         if not board:
             raise HTTPException(503, detail="board does not exist")
-        if current_user.role < board.writing_permission_level:
-            raise HTTPException(
-                403, detail="You are not allowed to write to this board"
-            )
 
         article.title = body.title
         article.board_id = body.board_id

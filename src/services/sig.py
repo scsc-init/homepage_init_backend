@@ -55,6 +55,8 @@ class BodyUpdateSIG(BaseModel):
     should_extend: Optional[bool] = None
     is_rolling_admission: Optional[RollingAdmission] = None
     websites: Optional[list[BodySigWebsite]] = None
+    year: Optional[int] = None
+    semester: Optional[int] = None
 
 
 class BodyHandoverSIG(BaseModel):
@@ -219,6 +221,10 @@ class SigService:
 
         old_title = sig.title
 
+        if body.year:
+            sig.year = body.year
+        if body.semester:
+            sig.semester = body.semester
         if body.title:
             sig.title = body.title
         if body.description:
