@@ -42,8 +42,6 @@ class CommentService:
             raise HTTPException(
                 status_code=404, detail=f"Article {body.article_id} does not exist"
             )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
         board = self.board_repository.get_by_id(article.board_id)
         if not board:
             raise HTTPException(503, detail="board does not exist")
