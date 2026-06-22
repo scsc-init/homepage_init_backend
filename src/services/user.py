@@ -274,7 +274,7 @@ class UserService:
             user = self.user_repository.get_by_id(user_id)
             if user is None:
                 raise HTTPException(404, detail="user not found")
-            logs = self.user_activity_log_repository.get_by_user_id(user_id)
+            logs = self.user_activity_log_repository.get_by_user_id(user_id, limit)
         else:
             logs = self.user_activity_log_repository.list_recent(limit)
 

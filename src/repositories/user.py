@@ -172,11 +172,23 @@ class UserActivityLogRepository(CRUDRepository[UserActivityLog, int]):
         )
         return self.create(log)
 
-    def get_by_user_id(self, user_id: str) -> Sequence[UserActivityLog]:
+    def update(self, *_: Any, **__: Any) -> None:
+        raise NotImplementedError("User activity logs are append-only")
+
+    def delete(self, *_: Any, **__: Any) -> None:
+        raise NotImplementedError("User activity logs are append-only")
+
+    def delete_all(self, *_: Any, **__: Any) -> None:
+        raise NotImplementedError("User activity logs are append-only")
+
+    def get_by_user_id(
+        self, user_id: str, limit: int = 100
+    ) -> Sequence[UserActivityLog]:
         return self.session.scalars(
             select(UserActivityLog)
             .where(UserActivityLog.user_id == user_id)
             .order_by(desc(UserActivityLog.created_at))
+            .limit(limit)
         ).all()
 
     def list_recent(self, limit: int = 100) -> Sequence[UserActivityLog]:

@@ -118,7 +118,7 @@ CREATE TABLE user_activity_log (
         FOREIGN KEY (user_id) REFERENCES "user"(id) ON DELETE RESTRICT,
 
     CONSTRAINT fk_user_activity_log_created_by
-        FOREIGN KEY (created_by) REFERENCES "user"(id) ON DELETE SET NULL,
+        FOREIGN KEY (created_by) REFERENCES "user"(id) ON DELETE RESTRICT,
 
     CONSTRAINT chk_user_activity_log_activity_type
         CHECK (
