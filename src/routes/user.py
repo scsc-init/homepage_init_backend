@@ -93,12 +93,12 @@ async def get_user_summaries(
 
 @user_router.get("/executive/users/activity-logs")
 async def get_user_activity_logs(
-    current_user: UserDep,
     user_service: UserServiceDep,
     user_id: Optional[str] = None,
     limit: int = 100,
+    next_id: Optional[int] = None,
 ) -> Sequence[UserActivityLogResponse]:
-    return user_service.get_user_activity_logs(current_user, user_id, limit)
+    return user_service.get_user_activity_logs(user_id, limit, next_id)
 
 
 @user_router.get("/executive/user/{id}", response_model=UserResponse)  # noqa: A002

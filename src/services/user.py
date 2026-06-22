@@ -258,25 +258,25 @@ class UserService:
 
     def get_user_activity_logs(
         self,
-        current_user: User,
         user_id: Optional[str] = None,
         limit: int = 100,
+        next_id: Optional[int] = None,
     ) -> list[UserActivityLogResponse]:
-        if current_user.role < get_user_role_level("executive"):
-            raise HTTPException(
-                403, detail="permission denied: executive role required"
-            )
-
         if limit < 1 or limit > 500:
             raise HTTPException(422, detail="limit must be between 1 and 500")
+
+        if next_id is not None and next_id < 1:
+            raise HTTPException(422, detail="next_id must be greater than 0")
 
         if user_id is not None:
             user = self.user_repository.get_by_id(user_id)
             if user is None:
                 raise HTTPException(404, detail="user not found")
-            logs = self.user_activity_log_repository.get_by_user_id(user_id, limit)
+            logs = self.user_activity_log_repository.get_by_user_id(
+                user_id, limit, next_id
+            )
         else:
-            logs = self.user_activity_log_repository.list_recent(limit)
+            logs = self.user_activity_log_repository.list_recent(limit, next_id)
 
         return [UserActivityLogResponse.model_validate(log) for log in logs]
 

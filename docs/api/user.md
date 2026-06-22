@@ -134,13 +134,6 @@ CREATE TABLE user_activity_log (
 ```
 - 유저 활동 기록은 생성 이후 수정하거나 삭제하지 않아야 하므로 update/delete 함수는 의도적으로 제공하지 않는다.
 
-### SQL 관련
-
-```sql
-CREATE INDEX idx_user_activity_log_user_id ON user_activity_log(user_id);
-CREATE INDEX idx_user_activity_log_created_at ON user_activity_log(created_at);
-CREATE INDEX idx_user_activity_log_activity_type ON user_activity_log(activity_type);
-```
 
 # API 구조
 
@@ -347,10 +340,12 @@ CREATE INDEX idx_user_activity_log_activity_type ON user_activity_log(activity_t
 - **Query Parameters**:
   - `user_id`: optional. 특정 유저의 활동 기록만 조회한다.
   - `limit`: optional, default `100`. 최근 활동 기록 조회 개수이다. `1` 이상 `500` 이하만 허용한다.
+  - `next_id`: optional. 해당 id보다 작은 활동 기록 중에서 `limit`개를 조회한다.
 - **Example Request**:
   - `/api/executive/users/activity-logs`
   - `/api/executive/users/activity-logs?limit=50`
   - `/api/executive/users/activity-logs?user_id=b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514`
+  - `/api/executive/users/activity-logs?next_id=100&limit=50`
 - **Response**:
 
 ```json
@@ -371,7 +366,7 @@ CREATE INDEX idx_user_activity_log_activity_type ON user_activity_log(activity_t
   - `401 Unauthorized`
   - `403 Forbidden`
   - `404 Not Found`: `user_id`에 해당하는 유저가 없는 경우
-  - `422 Unprocessable Content`: `limit` 값이 유효하지 않은 경우
+  - `422 Unprocessable Content`: `limit` 또는 `next_id` 값이 유효하지 않은 경우
 
 ---
 

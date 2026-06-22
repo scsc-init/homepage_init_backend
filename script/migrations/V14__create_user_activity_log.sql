@@ -23,12 +23,3 @@ CREATE TABLE user_activity_log (
             )
         )
 );
-
-CREATE INDEX idx_user_activity_log_user_id
-    ON user_activity_log(user_id);
-
-CREATE INDEX idx_user_activity_log_created_at
-    ON user_activity_log(created_at);
-
-CREATE INDEX idx_user_activity_log_activity_type
-    ON user_activity_log(activity_type);

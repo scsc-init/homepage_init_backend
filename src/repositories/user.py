@@ -182,20 +182,32 @@ class UserActivityLogRepository(CRUDRepository[UserActivityLog, int]):
         raise NotImplementedError("User activity logs are append-only")
 
     def get_by_user_id(
-        self, user_id: str, limit: int = 100
+        self,
+        user_id: str,
+        limit: int = 100,
+        next_id: Optional[int] = None,
     ) -> Sequence[UserActivityLog]:
+        query = select(UserActivityLog).where(UserActivityLog.user_id == user_id)
+
+        if next_id is not None:
+            query = query.where(UserActivityLog.id < next_id)
+
         return self.session.scalars(
-            select(UserActivityLog)
-            .where(UserActivityLog.user_id == user_id)
-            .order_by(desc(UserActivityLog.created_at))
-            .limit(limit)
+            query.order_by(desc(UserActivityLog.id)).limit(limit)
         ).all()
 
-    def list_recent(self, limit: int = 100) -> Sequence[UserActivityLog]:
+    def list_recent(
+        self,
+        limit: int = 100,
+        next_id: Optional[int] = None,
+    ) -> Sequence[UserActivityLog]:
+        query = select(UserActivityLog)
+
+        if next_id is not None:
+            query = query.where(UserActivityLog.id < next_id)
+
         return self.session.scalars(
-            select(UserActivityLog)
-            .order_by(desc(UserActivityLog.created_at))
-            .limit(limit)
+            query.order_by(desc(UserActivityLog.id)).limit(limit)
         ).all()
 
 
