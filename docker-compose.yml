@@ -20,7 +20,7 @@ services:
       -c '
       set -e
 
-      mkdir -p  /app/logs /app/static/article /app/static/image/photo /app/static/image/pfps /app/static/download /app/static/w;
+      mkdir -p  /app/logs /app/static/image/photo /app/static/image/pfps /app/static/download /app/static/w;
       chown -R nonroot:nonroot  /app/logs /app/static || true;
       chmod -R u+rwX  /app/logs /app/static;
 

@@ -27,6 +27,7 @@ class UserResponse(BaseResponse):
 class UserSummaryResponse(BaseResponse):
     id: str
     name: str
+    email: str
     major_id: int
     role: int
     is_active: bool

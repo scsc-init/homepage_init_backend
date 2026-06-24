@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum as enum
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
 
@@ -75,12 +75,6 @@ class Article(Base):
 
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    is_deleted: Mapped[bool] = mapped_column(
-        Boolean,
-        default=False,
-        nullable=False,
-    )
-
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),
         default_factory=utcnow,
@@ -94,8 +88,9 @@ class Article(Base):
         nullable=False,
     )
 
-    deleted_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=False),
-        nullable=True,
-        default=None,
+    attachments: Mapped[list["Attachment"]] = relationship(
+        "Attachment",
+        lazy="selectin",
+        init=False,
+        viewonly=True,
     )

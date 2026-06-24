@@ -1,5 +1,5 @@
 # Key-Value 설정 DB & API 가이드
-**최신개정일:** 2026-02-21
+**최신개정일:** 2026-05-15
 
 ## DB 구조
 
@@ -40,6 +40,9 @@ END;
 | president-phone | `010-xxxx-xxxx` | 회장 전화번호 |
 | vice-president-phone | `010-xxxx-xxxx;010-xxxx-xxxx` | 부회장의 전화번호를 세미콜론으로 concat한 값 |
 | enrollment_grant_until | `year-semester` | 지금 등록 시 부여할 마지막 등록 학기. 예를 들어, 2026 여름학기로 설정하려면 `2026-2`로 설정한다.  |
+| TEXT_DEPOSIT_ACC | `국민은행 942902-02-054136 (강명석)` | 회비 입금 계좌 안내 문구 |
+| TEXT_DISCORD_INVITE_LINK | `https://discord.gg/SmXFDxA7XE` | 디스코드 초대 링크 |
+| TEXT_KAKAO_INVITE_LINK | `https://invite.kakao.com/tc/II2yiLsQhY` | 카카오톡 오픈채팅 초대 링크 |
 
 ## API 구조
 
@@ -65,16 +68,27 @@ END;
   - `404 Not Found`: 존재하지 않는 키
 
 - **Method**: `GET`
-- **URL**: `/api/kvs`
+- **URL**: `/api/kvs?q=key1&q=key2...`
 - **Response 예시**:
   ```json
-  {
-    "footer-message": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com",
-    "president": "<hash-of-main-president>",
-    "vice-president": "<hash-of-vice-president>",
-    ...
-  }
+  [
+    {
+      "key": "footer-message",
+      "value": "서울대학교 컴퓨터 연구회\n회장 XXX 010-xxxx-xxxx\nscsc.snu@gmail.com"
+    },
+    {
+      "key": "president",
+     "value": "<hash-of-main-president>"
+    },
+    {
+      "key": "vice-president",
+      "value": "<hash-of-vice-president>"
+    }
+  ]
   ```
+
+- query가 없으면 전부 반환
+- query가 있으면 이름이 일치하는 것만 반환
 
 ### post 
 - **Method**: `POST`

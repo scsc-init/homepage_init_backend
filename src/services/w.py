@@ -1,12 +1,12 @@
+import os
 import re
-from os import path
 from typing import Annotated, Sequence
 
 import aiofiles
 from aiofiles import os as aiofiles_os
-from fastapi import Depends, HTTPException, UploadFile
+from fastapi import Depends, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from src.core import get_settings, logger
 from src.model import User, WHTMLMetadata
@@ -18,19 +18,17 @@ class WService:
     def __init__(self, w_repository: WRepositoryDep) -> None:
         self.w_repository = w_repository
 
-    async def upload_file(self, current_user: User, file: UploadFile) -> WHTMLMetadata:
+    async def upload_file(
+        self, current_user: User, file: UploadFile, name: str | None = None
+    ) -> WHTMLMetadata:
         content, basename, _, _ = await validate_and_read_file(
             file, valid_mime_type="text/html", valid_ext=frozenset({"html"})
         )
-        if not re.fullmatch(r"^[a-zA-Z0-9_-]+$", basename):
-            raise HTTPException(
-                400,
-                detail="filename should consist of alphabets, numbers, underscores, and hyphens",
-            )
+        basename = self._normalize_name(name or basename)
+        file_path = self._build_file_path(basename)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        async with aiofiles.open(
-            path.join(get_settings().w_html_dir, f"{basename}.html"), "wb"
-        ) as fp:
+        async with aiofiles.open(file_path, "wb") as fp:
             await fp.write(content)
 
         w_meta = WHTMLMetadata(
@@ -41,9 +39,7 @@ class WService:
             w_meta = self.w_repository.create(w_meta)
         except IntegrityError as err:
             try:
-                await aiofiles_os.remove(
-                    path.join(get_settings().w_html_dir, f"{basename}.html")
-                )
+                await aiofiles_os.remove(file_path)
             except OSError:
                 logger.warning(
                     "warn_type=w_html_create_cleanup_failed ; %s",
@@ -57,12 +53,56 @@ class WService:
         )
         return w_meta
 
-    def get_w_by_name(self, name: str) -> FileResponse:
+    def _is_bot(self, user_agent: str) -> bool:
+        bot_patterns = [
+            r"googlebot",
+            r"bingbot",
+            r"slurp",
+            r"duckduckbot",
+            r"baiduspider",
+            r"yandexbot",
+            r"sogou",
+            r"exabot",
+            r"facebookexternalhit",
+            r"twitterbot",
+            r"linkedinbot",
+            r"whatsapp",
+            r"telegrambot",
+            r"discordbot",
+            r"slackbot",
+            r"crawler",
+            r"spider",
+            r"bot",
+        ]
+        user_agent_lower = user_agent.lower()
+        return any(re.search(pattern, user_agent_lower) for pattern in bot_patterns)
+
+    def get_w_by_name(self, name: str, request: Request) -> FileResponse:
+        name = self._normalize_name(name)
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
+
+        file_path = self._build_file_path(name)
+        if not os.path.isfile(file_path):
+            raise HTTPException(404, detail="file not found")
+
+        user_agent = request.headers.get(
+            "X-Forwarded-User-Agent"
+        ) or request.headers.get("User-Agent", "")
+        sec_fetch_mode = request.headers.get(
+            "X-Forwarded-Sec-Fetch-Mode"
+        ) or request.headers.get("Sec-Fetch-Mode")
+
+        if sec_fetch_mode == "navigate" and not self._is_bot(user_agent):
+            try:
+                self.w_repository.increase_view_count(name)
+            except SQLAlchemyError:
+                self.w_repository.session.rollback()
+                logger.error("err_type=w_view_increment_failed", exc_info=True)
+
         return FileResponse(
-            path.join(get_settings().w_html_dir, f"{name}.html"),
+            file_path,
             media_type="text/html",
         )
 
@@ -76,6 +116,7 @@ class WService:
     async def update_w_by_name(
         self, name: str, current_user: User, file: UploadFile
     ) -> WHTMLMetadata:
+        name = self._normalize_name(name)
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
@@ -89,9 +130,9 @@ class WService:
 
         w_meta = self.w_repository.update(w_meta)
 
-        async with aiofiles.open(
-            path.join(get_settings().w_html_dir, f"{name}.html"), "wb"
-        ) as fp:
+        file_path = self._build_file_path(name)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        async with aiofiles.open(file_path, "wb") as fp:
             await fp.write(content)
 
         logger.info(
@@ -99,7 +140,22 @@ class WService:
         )
         return w_meta
 
+    def download_w_by_name(self, name: str, current_user: User) -> FileResponse:
+        name = self._normalize_name(name)
+        w_meta = self.w_repository.get_by_id(name)
+        if not w_meta:
+            raise HTTPException(404, detail="file not found")
+        file_path = self._build_file_path(name)
+        if not os.path.isfile(file_path):
+            raise HTTPException(404, detail="file not found")
+        return FileResponse(
+            file_path,
+            media_type="text/html",
+            filename=f"{name.replace('/', '__')}.html",
+        )
+
     async def delete_w_by_name(self, name: str, current_user: User) -> None:
+        name = self._normalize_name(name)
         w_meta = self.w_repository.get_by_id(name)
         if not w_meta:
             raise HTTPException(404, detail="file not found")
@@ -113,9 +169,7 @@ class WService:
             raise
 
         try:
-            await aiofiles_os.remove(
-                path.join(get_settings().w_html_dir, f"{name}.html")
-            )
+            await aiofiles_os.remove(self._build_file_path(name))
         except OSError:
             logger.error(
                 f"err_type=delete_w_by_name ; {name=} ; executer_id={current_user.id} ; msg=failed to remove file from disk"
@@ -124,6 +178,32 @@ class WService:
         logger.info(
             f"info_type=w_html_deleted ; {name=} ; executer_id={current_user.id}"
         )
+
+    def _normalize_name(self, raw_name: str) -> str:
+        normalized = raw_name.strip().replace("\\", "/")
+        if normalized.endswith(".html"):
+            normalized = normalized[:-5]
+        if not normalized:
+            raise HTTPException(400, detail="name cannot be empty")
+        if normalized.startswith("/") or normalized.endswith("/"):
+            raise HTTPException(400, detail="name cannot start or end with slash")
+
+        segments = normalized.split("/")
+        if any(segment in {"", ".", ".."} for segment in segments):
+            raise HTTPException(400, detail="invalid path segment")
+        if any(not re.fullmatch(r"[a-zA-Z0-9_-]+", segment) for segment in segments):
+            raise HTTPException(
+                400,
+                detail="name segments should consist of alphabets, numbers, underscores, and hyphens",
+            )
+        return "/".join(segments)
+
+    def _build_file_path(self, name: str) -> str:
+        root = os.path.abspath(get_settings().w_html_dir)
+        target = os.path.abspath(os.path.join(root, *name.split("/")) + ".html")
+        if os.path.commonpath([root, target]) != root:
+            raise HTTPException(400, detail="invalid file path")
+        return target
 
 
 WServiceDep = Annotated[WService, Depends()]

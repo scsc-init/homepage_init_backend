@@ -22,8 +22,8 @@ class KvService:
             raise HTTPException(status_code=404, detail="unknown kv key")
         return entry
 
-    def get_all_kv_values(self, user_role: int) -> Sequence[KeyValue]:
-        return self.kv_repository.get_kv_values_by_role(user_role)
+    def get_kv_values_by_keys(self, keys: Optional[list[str]]) -> Sequence[KeyValue]:
+        return self.kv_repository.get_kv_values_by_keys(keys)
 
     def update_kv_value(
         self, key: str, current_user: User, body: KvUpdateBody

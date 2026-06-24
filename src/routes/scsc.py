@@ -1,4 +1,6 @@
 from fastapi import APIRouter
+from fastapi.responses import FileResponse
+from starlette.concurrency import run_in_threadpool
 
 from src.dependencies import UserDep
 from src.schemas import SCSCGlobalStatusResponse
@@ -29,3 +31,19 @@ async def update_scsc_global_status(
     scsc_service: SCSCServiceDep,
 ):
     await scsc_service.update_global_status(current_user.id, body.status)
+
+
+@scsc_router.post("/executive/scsc/global/status/backup")
+async def download_scsc_global_status_backup(
+    current_user: UserDep,
+    scsc_service: SCSCServiceDep,
+) -> FileResponse:
+    backup_path = await run_in_threadpool(
+        scsc_service.backup_current_db,
+        current_user,
+    )
+    return FileResponse(
+        path=backup_path,
+        filename=backup_path.name,
+        media_type="application/sql",
+    )

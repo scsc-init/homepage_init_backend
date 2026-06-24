@@ -9,3 +9,4 @@ class WHTMLMetadataResponse(BaseResponse):
     creator: str | None = None
     created_at: datetime
     updated_at: datetime
+    view_cnt: int

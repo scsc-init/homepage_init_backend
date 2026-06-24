@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Annotated, Type
 
 from fastapi import Depends, HTTPException
@@ -7,7 +8,11 @@ from sqlalchemy import case, exists, select, update
 
 from src.amqp import mq_client
 from src.core import logger
-from src.db import SessionDep, backup_db_before_status_change, get_user_role_level
+from src.db import (
+    SessionDep,
+    backup_db_before_status_change,
+    get_user_role_level,
+)
 from src.dependencies import SCSCGlobalStatusDep
 from src.model import PIG, SIG, Enrollment, SCSCGlobalStatus, SCSCStatus, User
 from src.repositories import (
@@ -26,10 +31,8 @@ from .key_value import KvServiceDep
 from .user import OldboyServiceDep, UserServiceDep
 
 _valid_scsc_global_status_update = (
-    (SCSCStatus.INACTIVE, SCSCStatus.RECRUITING),
     (SCSCStatus.RECRUITING, SCSCStatus.ACTIVE),
     (SCSCStatus.ACTIVE, SCSCStatus.RECRUITING),
-    (SCSCStatus.ACTIVE, SCSCStatus.INACTIVE),
 )
 
 
@@ -80,7 +83,26 @@ class SCSCService:
         return self.scsc_global_status
 
     def get_all_statuses(self) -> dict[str, list[str]]:
-        return {"statuses": ["recruiting", "active", "inactive"]}
+        return {"statuses": ["recruiting", "active"]}
+
+    def backup_current_db(self, current_user: User) -> Path:
+        if current_user.role < get_user_role_level("president"):
+            raise HTTPException(
+                403,
+                detail="permission denied: president role required",
+            )
+
+        try:
+            return backup_db_before_status_change(self.scsc_global_status)
+        except Exception as exc:
+            logger.error(
+                "err_type=db_backup ; msg=failed to back up database by manual request",
+                exc_info=True,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="failed to back up database",
+            ) from exc
 
     async def _process_igs_change_semester(
         self, model: Type[SIG | PIG], scsc_global_status: SCSCGlobalStatus
@@ -177,24 +199,7 @@ class SCSCService:
                 detail="failed to back up database before status change",
             ) from exc
 
-        # start of recruiting
-        if new_status == SCSCStatus.RECRUITING:
-            if mq_client:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3002,
-                    body={
-                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} SIG Archive"
-                    },
-                )
-            if mq_client:
-                await mq_client.send_discord_bot_request_no_reply(
-                    action_code=3004,
-                    body={
-                        "category_name": f"{scsc_global_status.year}-{map_semester_name.get(scsc_global_status.semester)} PIG Archive"
-                    },
-                )
-
-        # start of active
+        # start of active (recruiting -> active)
         if new_status == SCSCStatus.ACTIVE:
             self.session.execute(
                 update(SIG)
@@ -210,7 +215,7 @@ class SCSCService:
                 .execution_options(synchronize_session=False)
             )
 
-        # end of active
+        # end of active (active -> recruiting, semester changes)
         if scsc_global_status.status == SCSCStatus.ACTIVE:
             if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
@@ -248,6 +253,23 @@ class SCSCService:
                         },
                     )
 
+                next_year, next_semester = get_next_year_semester(
+                    scsc_global_status.year, scsc_global_status.semester
+                )
+
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3002,
+                    body={
+                        "category_name": f"{next_year}-{map_semester_name.get(next_semester)} SIG Archive"
+                    },
+                )
+                await mq_client.send_discord_bot_request_no_reply(
+                    action_code=3004,
+                    body={
+                        "category_name": f"{next_year}-{map_semester_name.get(next_semester)} PIG Archive"
+                    },
+                )
+
             await self._process_igs_change_semester(SIG, scsc_global_status)
             await self._process_igs_change_semester(PIG, scsc_global_status)
 
@@ -270,8 +292,11 @@ class SCSCService:
             )
             self.standby_repository.delete_all()
 
-        # start of inactive (regular semester starts)
-        if new_status == SCSCStatus.INACTIVE:
+        # start of regular semester
+        if (
+            scsc_global_status.status == SCSCStatus.ACTIVE
+            and scsc_global_status.semester % 2 == 0
+        ):
             unprocessed_applicants = self.oldboy_repository.get_unprocessed()
             for applicant in unprocessed_applicants:
                 try:

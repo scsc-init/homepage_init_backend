@@ -28,7 +28,7 @@ from src.repositories import (
 )
 from src.util import map_semester_name
 
-from .article import ArticleServiceDep, BodyCreateArticle
+from .article import ArticleServiceDep, BodyCreateArticle, BodyUpdateArticle
 from .scsc import ctrl_status_available
 
 
@@ -42,6 +42,7 @@ class BodyCreateSIG(BaseModel):
     title: str
     description: str
     content: str
+    tags: list[str]
     is_rolling_admission: RollingAdmission = RollingAdmission.DURING_RECRUITING
     websites: Optional[list[BodySigWebsite]] = None
 
@@ -54,6 +55,8 @@ class BodyUpdateSIG(BaseModel):
     should_extend: Optional[bool] = None
     is_rolling_admission: Optional[RollingAdmission] = None
     websites: Optional[list[BodySigWebsite]] = None
+    year: Optional[int] = None
+    semester: Optional[int] = None
 
 
 class BodyHandoverSIG(BaseModel):
@@ -129,6 +132,24 @@ class SigService:
         if sig.id is None:
             raise HTTPException(503, detail="sig primary key does not exist")
 
+        normalized_tags = [
+            tag.strip() for tag in body.tags if isinstance(tag, str) and tag.strip()
+        ]
+        if not normalized_tags:
+            raise HTTPException(422, detail="at least one tag is required")
+
+        for tag_text in normalized_tags:
+            tag = self.tag_repository.get_by_text(tag_text)
+            if tag is None:
+                raise HTTPException(404, detail=f"tag '{tag_text}' does not exist")
+
+            try:
+                self.sig_tag_repository.create(SIGTag(sig_id=sig.id, tag_id=tag.id))
+            except IntegrityError:
+                raise HTTPException(
+                    409, detail=f"tag '{tag_text}' is already attached"
+                ) from None
+
         self._replace_websites(sig.id, body.websites)
 
         sig_member = SIGMember(ig_id=sig.id, user_id=current_user.id)
@@ -200,18 +221,28 @@ class SigService:
 
         old_title = sig.title
 
+        if body.year:
+            sig.year = body.year
+        if body.semester:
+            sig.semester = body.semester
         if body.title:
             sig.title = body.title
         if body.description:
             sig.description = body.description
 
         if body.content:
-            sig_article = await self.article_service.create_article(
-                BodyCreateArticle(title=sig.title, content=body.content, board_id=1),
-                current_user.id,
-                get_user_role_level("president"),
+            await self.article_service.update_article_by_executive(
+                id=sig.content_id,
+                current_user=current_user,
+                body=BodyUpdateArticle(
+                    title=sig.title,
+                    content=body.content,
+                    board_id=sig.content.board_id,
+                    attachments=[
+                        attachment.file_id for attachment in sig.content.attachments
+                    ],
+                ),
             )
-            sig.content_id = sig_article.id
 
         if body.status:
             if not is_executive:

@@ -1,5 +1,5 @@
 # SIG/PIG 관련 DB, API 명세서
-**최신개정일:** 2026-02-12
+**최신개정일:** 2026-04-10
 
 # DB 구조
 
@@ -132,6 +132,7 @@ END;
 ```json
 {
   "title": "AI SIG",
+  "tags": ["SIG"],
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
   "is_rolling_admission": "during_recruiting",
@@ -141,7 +142,25 @@ END;
 
 websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운 websites로 대체된다.
 
-* **Response**: `SigResponse`
+* **Response** (JSON):
+
+```json
+{
+  "id": 1,
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_id": 10,
+  "owner": "user_hash_id",
+  "status": "recruiting",
+  "year": 2026,
+  "semester": 1,
+  "is_rolling_admission": "during_recruiting",
+  "websites": [],
+  "created_at": "2026-02-12T10:00:00",
+  "updated_at": "2026-02-12T10:00:00"
+  }
+```
+
 * **Status Codes**:
 
   * `201 Created`
@@ -156,7 +175,32 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 
 * **Method**: `GET`
 * **URL**: `/api/sig/:id`
-* **Response**: `SigResponse`
+* **Response** (JSON):
+
+```json
+{
+  "id": 1,
+  "title": "AI SIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content": "## 안녕하세요",
+  "owner": "user_hash_id",
+  "status": "recruiting",
+  "year": 2026,
+  "semester": 1,
+  "is_rolling_admission": "during_recruiting",
+  "websites": [],
+  "attachments": [
+    {
+      "id": 1,
+      "article_id": 10,
+      "file_id": "file_uuid_abc123"
+    }
+  ],
+  "created_at": "2026-02-12T10:00:00",
+  "updated_at": "2026-02-12T10:00:00"
+}
+```
+
 * **Status Codes**:
 
   * `200 OK`
@@ -176,7 +220,39 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 * **Example Request**:
   * `/api/sigs?year=2025&semester=3&status=active`
   * `/api/sigs?tag=SIG&tag=PS`
-* **Response**: `Sequence[SigResponse]`
+* **Response**: `Sequence[SigResponse]` (json)
+
+```json
+[
+  {
+    "id": 1,
+    "title": "AI SIG",
+    "description": "인공지능 연구 소모임",
+    "status": "active",
+    "year": 2026,
+    "semester": 1,
+    "tags": ["SIG", "AI"],
+    "attachments": [
+      {
+        "id": 10,
+        "article_id": 100,
+        "file_id": "file_uuid_001"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "PS SIG",
+    "description": "알고리즘 문제해결",
+    "status": "active",
+    "year": 2026,
+    "semester": 1,
+    "tags": ["SIG", "PS"],
+    "attachments": []
+  }
+]
+```
+
 * **Status Codes**:
   * `200 OK`
 
@@ -644,6 +720,7 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 ```json
 {
   "title": "AI PIG",
+  "tags": ["PIG"],
   "description": "인공지능을 연구하는 소모임입니다.",
   "content": "## 안녕하세요",
   "is_rolling_admission": "during_recruiting",
@@ -657,7 +734,25 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 }
 ```
 
-* **Response**: `PigResponse`
+* **Response** (json): 
+
+```json
+{
+  "id": 1,
+  "title": "AI PIG",
+  "description": "인공지능을 연구하는 소모임입니다.",
+  "content_id": 20,
+  "owner": "user_hash",
+  "status": "active",
+  "year": 2026,
+  "semester": 1,
+  "is_rolling_admission": "always",
+  "websites": [],
+  "created_at": "2026-02-12T10:00:00",
+  "updated_at": "2026-02-12T10:00:00"
+}
+```
+
 * **Status Codes**:
   * `201 Created`
   * `400 Bad Request`: pig global status가 recruiting이 아닐 때
@@ -671,7 +766,23 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
 
 * **Method**: `GET`
 * **URL**: `/api/pig/:id`
-* **Response**: `PigResponse`
+* **Response** (json): 
+
+```json
+{
+  "id": 1,
+  "title": "AI PIG",
+  ... (중략) ...
+  "attachments": [
+    {
+      "id": 5,
+      "article_id": 20,
+      "file_id": "pig_file_uuid_456"
+    }
+  ]
+}
+```
+
 * **Status Codes**:
   * `200 OK`
   * `404 Not Found`: 해당 PIG가 존재하지 않음
@@ -688,7 +799,37 @@ websites가 포함된다면, 기존의 websites는 모두 삭제되고 새로운
   * `status` `str`
 * **Example Request**:
   * `/api/pigs?year=2025&semester=3&status=active`
-* **Response**: `Sequence[PigResponse]`
+* **Response**: `Sequence[PigResponse]` (json)
+
+```json
+[
+  {
+    "id": 1,
+    "title": "AI PIG",
+    "description": "인공지능 연구 프로젝트 소모임",
+    "status": "active",
+    "year": 2026,
+    "semester": 1,
+    "attachments": [
+      {
+        "id": 20,
+        "article_id": 200,
+        "file_id": "pig_thumb_01.png"
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Web PIG",
+    "description": "웹 서비스 개발 소모임",
+    "status": "active",
+    "year": 2026,
+    "semester": 1,
+    "attachments": []
+  }
+]
+```
+
 * **Status Codes**:
   * `200 OK`
 

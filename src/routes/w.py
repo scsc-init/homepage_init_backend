@@ -1,6 +1,6 @@
-from typing import Sequence
+from typing import Annotated, Sequence
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Form, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from src.dependencies import UserDep
@@ -16,14 +16,17 @@ async def upload_file(
     current_user: UserDep,
     file: UploadFile,
     w_service: WServiceDep,
+    name: Annotated[str | None, Form()] = None,
 ) -> WHTMLMetadataResponse:
-    w_meta = await w_service.upload_file(current_user, file)
+    w_meta = await w_service.upload_file(current_user, file, name)
     return WHTMLMetadataResponse.model_validate(w_meta)
 
 
-@w_router.get("/w/{name}")
-async def get_w_by_name(name: str, w_service: WServiceDep) -> FileResponse:
-    return w_service.get_w_by_name(name)
+@w_router.get("/w/{name:path}")
+async def get_w_by_name(
+    name: str, request: Request, w_service: WServiceDep
+) -> FileResponse:
+    return w_service.get_w_by_name(name, request)
 
 
 @w_router.get("/executive/ws")
@@ -33,7 +36,7 @@ async def get_all_metadata(
     return w_service.get_all_metadata()
 
 
-@w_router.post("/executive/w/{name}/update", status_code=200)
+@w_router.post("/executive/w/{name:path}/update", status_code=200)
 async def update_w_by_name(
     name: str,
     current_user: UserDep,
@@ -44,10 +47,19 @@ async def update_w_by_name(
     return WHTMLMetadataResponse.model_validate(w_meta)
 
 
-@w_router.post("/executive/w/{name}/delete", status_code=204)
+@w_router.post("/executive/w/{name:path}/delete", status_code=204)
 async def delete_w_by_name(
     name: str,
     current_user: UserDep,
     w_service: WServiceDep,
 ) -> None:
     await w_service.delete_w_by_name(name, current_user)
+
+
+@w_router.get("/executive/w/{name:path}/download")
+async def download_w_by_name(
+    name: str,
+    current_user: UserDep,
+    w_service: WServiceDep,
+):
+    return w_service.download_w_by_name(name, current_user)

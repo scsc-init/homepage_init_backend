@@ -16,6 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
 
+from .article import Article
 from .base import Base
 from .pig import RollingAdmission
 from .scsc_global_status import SCSCStatus
@@ -100,6 +101,9 @@ class SIG(Base):
     )
     tags: Mapped[list[Tag]] = relationship(
         "Tag", secondary="sig_tag", lazy="selectin", init=False, viewonly=True
+    )
+    content: Mapped[Article] = relationship(
+        "Article", lazy="selectin", init=False, viewonly=True
     )
 
 

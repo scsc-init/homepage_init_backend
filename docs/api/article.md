@@ -1,5 +1,5 @@
 # 게시글 관련 DB, API 명세서
-**최신개정일:** 2025-11-30
+**최신개정일:** 2026-04-10
 
 # DB 구조
 
@@ -27,10 +27,8 @@ CREATE TABLE "article" (
   "author_id" TEXT NOT NULL,
   "board_id" INTEGER NOT NULL,
   "content" TEXT,
-  "is_deleted" BOOLEAN NOT NULL DEFAULT false,
   "created_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "deleted_at" DATETIME,
   PRIMARY KEY("id" AUTOINCREMENT),
   FOREIGN KEY("author_id") REFERENCES "user"("id") ON DELETE RESTRICT,
   FOREIGN KEY("board_id") REFERENCES "board"("id") ON DELETE CASCADE
@@ -40,12 +38,6 @@ CREATE TABLE "article" (
 CREATE INDEX idx_board_id ON article(board_id);
 ```
 - article의 content는 `ARTICLE_DIR(static/article/)`에 md 파일로 저장된다. 
-
-2025-08-30 migration:
-```sql
-ALTER TABLE article ADD COLUMN "is_deleted" INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE article ADD COLUMN "deleted_at" DATETIME;
-```
 
 ## 첨부파일 DB
 ```sql
@@ -211,13 +203,13 @@ CREATE TABLE attachment (
 - **URL**: `/api/article/create`
 - **설명**: 게시글 생성
 - **Request Body** (JSON):
-  - attachments: optional; 없으면 빈 리스트로 처리된다. 중복되거나 존재하지 않는 파일 ID는 무시된다.
+  - attachments: optional; 없으면 빈 리스트로 처리된다. 중복되거나 존재하지 않는 파일 ID는 무시되며, 응답 시에는 Attachment 객체 리스트로 반환된다.
 ```json
 {
   "title": "안녕하세요",
   "content": "## Hello?",
   "board_id": 1,
-  "attachments": ["file_id"]
+  "attachments": ["file_id_1", "file_id_2"]
 }
 ```
 - **Response**:
@@ -230,7 +222,13 @@ CREATE TABLE attachment (
   "author_id": "",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00",
-  "attachments": ["file_id"]
+  "attachments": [
+    {
+      "id": 1,
+      "article_id": 1,
+      "file_id": "file_id"
+    }
+  ]
 }
 ```
 - **Status Codes**:
@@ -282,7 +280,13 @@ CREATE TABLE attachment (
   "author_id": "",
   "created_at": "2025-04-01T12:00:00",
   "updated_at": "2025-04-01T12:00:00",
-  "attachments": ["file_id"]
+  "attachments": [
+    {
+      "id": 1,
+      "article_id": 1,
+      "file_id": "file_id"
+    }
+  ]
 }
 ```
 - **Status Codes**:
@@ -297,13 +301,13 @@ CREATE TABLE attachment (
 - **URL**: `/api/article/update/:id`
 - **설명**: 게시글 수정
 - **Request Body** (JSON):
-  - attachments: optional; 없으면 빈 리스트로 처리된다(해당 게시글의 attachment가 없어짐). 
+  - attachments: optional; 없으면 빈 리스트로 처리된다. **수정 성공 시 응답은 업데이트된 Attachment 객체 리스트를 반환한다.
 ```json
 {
-  "title": "안녕하세요",
-  "content": "## Hello?",
+  "title": "수정된 제목",
+  "content": "수정된 본문 내용입니다.",
   "board_id": 1,
-  "attachments": ["file_id"]
+  "attachments": ["file_id_A", "file_id_B"]
 }
 ```
 - **Status Codes**:
@@ -327,7 +331,13 @@ CREATE TABLE attachment (
   "title": "안녕하세요",
   "content": "## Hello?",
   "board_id": 1,
-  "attachments": ["file_id"]
+  "attachments": [
+    {
+      "id": 1,
+      "article_id": 1,
+      "file_id": "file_id"
+    }
+  ]
 }
 ```
 - **Status Codes**:
@@ -351,7 +361,6 @@ CREATE TABLE attachment (
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (게시글의 작성자가 아님)
   - `404 Not Found` (게시글이 존재하지 않음)
-  - `410 Gone` (이미 삭제됨)
 
 ---
 
@@ -366,6 +375,5 @@ CREATE TABLE attachment (
   - `401 Unauthorized` (로그인하지 않음)
   - `403 Forbidden` (권한 없음)
   - `404 Not Found` (게시글이 존재하지 않음)
-  - `410 Gone` (이미 삭제됨)
 
 ---

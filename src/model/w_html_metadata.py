@@ -27,3 +27,6 @@ class WHTMLMetadata(Base):
         default_factory=utcnow,
         onupdate=utcnow,
     )
+    view_cnt: Mapped[int] = mapped_column(
+        Integer, CheckConstraint("view_cnt >= 0"), default=0, nullable=False
+    )

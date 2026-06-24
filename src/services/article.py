@@ -1,8 +1,5 @@
-import os
-from os import path
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Sequence
 
-import aiofiles
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
@@ -15,8 +12,8 @@ from src.repositories import (
     AttachmentRepositoryDep,
     BoardRepositoryDep,
 )
-from src.schemas import ArticleResponse, ArticleWithAttachmentResponse
-from src.util import DELETED, utcnow
+from src.schemas import ArticleResponse
+from src.util import utcnow
 
 
 class BodyCreateArticle(BaseModel):
@@ -46,7 +43,7 @@ class ArticleService:
 
     async def create_article(
         self, body: BodyCreateArticle, user_id: str, user_role: int
-    ) -> ArticleWithAttachmentResponse:
+    ) -> ArticleResponse:
         board = self.board_repository.get_by_id(body.board_id)
         if not board:
             raise HTTPException(
@@ -70,28 +67,13 @@ class ArticleService:
             raise HTTPException(
                 status_code=409, detail="unique field already exists"
             ) from exc
-        try:
-            file_path = path.join(get_settings().article_dir, f"{article.id}.md")
-            async with aiofiles.open(file_path, "w", encoding="utf-8") as fp:
-                await fp.write(body.content)
-        except Exception:
-            logger.error(
-                f"err_type=create_article_ctrl ; failed to write file ; {article.id=}",
-                exc_info=True,
-            )
-        attach_inserted = self.attachment_repository.insert_or_ignore_list(
-            article.id, body.attachments
-        )
+        self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
         logger.info(
             f"info_type=article_created ; article_id={article.id} ; title={body.title} ; author_id={user_id} ; board_id={body.board_id}"
         )
-        article_response = ArticleWithAttachmentResponse.model_validate(
-            {
-                **article.__dict__,
-                "content": body.content,
-                "attachments": attach_inserted,
-            }
-        )
+
+        article = self.article_repository.get_by_id(article.id)
+        article_response = ArticleResponse.model_validate(article)
 
         try:
             if mq_client:
@@ -121,7 +103,7 @@ class ArticleService:
 
     def get_article_list_by_board(
         self, board_id: int, current_user: Optional[User]
-    ) -> list[ArticleResponse]:
+    ) -> Sequence[ArticleResponse]:
         board = self.board_repository.get_by_id(board_id)
         if board is None:
             raise HTTPException(404, detail="Board not found")
@@ -135,27 +117,11 @@ class ArticleService:
                 )
 
         articles = self.article_repository.get_articles_by_board_id(board_id)
-        result: list[ArticleResponse] = []
-        for article in articles:
-            if article.is_deleted:
-                result.append(
-                    ArticleResponse.model_validate(article).model_copy(
-                        update={"content": DELETED}
-                    )
-                )
-            else:
-                content = article.content
-                result.append(
-                    ArticleResponse.model_validate(article).model_copy(
-                        update={"content": content}
-                    )
-                )
-
-        return result
+        return ArticleResponse.model_validate_list(articles)
 
     def get_article_by_id(
         self, id: int, current_user: Optional[User]
-    ) -> ArticleWithAttachmentResponse:
+    ) -> ArticleResponse:
         article = self.article_repository.get_by_id(id)
         if not article:
             raise HTTPException(404, detail="Article not found")
@@ -171,39 +137,7 @@ class ArticleService:
                     403, detail="You are not allowed to read this article"
                 )
 
-        if article.is_deleted:
-            return ArticleWithAttachmentResponse.model_validate(
-                {**article.__dict__, "content": DELETED, "attachments": []}
-            )
-
-        content = article.content
-        attachments = self.attachment_repository.select_by_article_id(article.id)
-        return ArticleWithAttachmentResponse.model_validate(
-            {
-                **article.__dict__,
-                "content": content,
-                "attachments": [a.file_id for a in attachments],
-            }
-        )
-
-    @staticmethod
-    def _read_file(file_path: str) -> str:
-        if os.path.exists(file_path):
-            try:
-                with open(
-                    file_path,
-                    "r",
-                    encoding="utf-8",
-                ) as fp:
-                    return fp.read()
-            except OSError:
-                logger.error(
-                    f"err_type=get_article_by_id ; error occurred during reading a file ; {file_path=}",
-                    exc_info=True,
-                )
-                return "Error reading content."
-        logger.warning(f"Article file missing: {file_path=}")
-        return "Content currently unavailable."
+        return ArticleResponse.model_validate(article)
 
     async def _update_article(
         self, article: Article, body: BodyUpdateArticle, current_user: User
@@ -211,10 +145,6 @@ class ArticleService:
         board = self.board_repository.get_by_id(article.board_id)
         if not board:
             raise HTTPException(503, detail="board does not exist")
-        if current_user.role < board.writing_permission_level:
-            raise HTTPException(
-                403, detail="You are not allowed to write to this board"
-            )
 
         article.title = body.title
         article.board_id = body.board_id
@@ -229,15 +159,6 @@ class ArticleService:
         logger.info(
             f"info_type=article_updated ; article_id={article.id} ; title={body.title} ; revisioner_id={current_user.id} ; board_id={body.board_id}"
         )
-        try:
-            file_path = path.join(get_settings().article_dir, f"{article.id}.md")
-            async with aiofiles.open(file_path, "w", encoding="utf-8") as fp:
-                await fp.write(body.content)
-        except Exception:
-            logger.error(
-                f"err_type=update_article_by_author ; failed to write file ; {article.id=}",
-                exc_info=True,
-            )
         self.attachment_repository.delete_by_article_id(article.id)
         self.attachment_repository.insert_or_ignore_list(article.id, body.attachments)
 
@@ -246,17 +167,12 @@ class ArticleService:
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if article is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
+            raise HTTPException(status_code=404, detail="Article not found")
         if current_user.id != article.author_id:
             raise HTTPException(
                 status_code=403,
                 detail="You are not the author of this article",
             )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
         await self._update_article(article, body, current_user)
 
     async def update_article_by_executive(
@@ -264,37 +180,24 @@ class ArticleService:
     ) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
+            raise HTTPException(status_code=404, detail="Article not found")
         await self._update_article(article, body, current_user)
 
     def delete_article_by_author(self, id: int, current_user: User) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
-            raise HTTPException(
-                status_code=404,
-                detail="Article not found",
-            )
+            raise HTTPException(status_code=404, detail="Article not found")
         if current_user.id != article.author_id:
             raise HTTPException(
                 status_code=403,
                 detail="You are not the author of this article",
             )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
         if article.board_id in (1, 2):
             raise HTTPException(
                 status_code=400, detail="cannot delete article of sig/pig"
             )
 
-        article.is_deleted = True
-        article.deleted_at = utcnow()
-
-        article = self.article_repository.update(article)
+        self.article_repository.delete(article)
 
         logger.info(
             f"info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}"
@@ -303,17 +206,13 @@ class ArticleService:
     def delete_article_by_executive(self, id: int, current_user: User) -> None:
         article = self.article_repository.get_by_id(id)
         if not article:
+            raise HTTPException(status_code=404, detail="Article not found")
+        if article.board_id in (1, 2):
             raise HTTPException(
-                status_code=404,
-                detail="Article not found",
+                status_code=400, detail="cannot delete article of sig/pig"
             )
-        if article.is_deleted:
-            raise HTTPException(status_code=410, detail="Article has been deleted")
 
-        article.is_deleted = True
-        article.deleted_at = utcnow()
-
-        article = self.article_repository.update(article)
+        self.article_repository.delete(article)
 
         logger.info(
             f"info_type=article_deleted ; article_id={article.id} ; title={article.title} ; remover_id={current_user.id} ; board_id={article.board_id}"

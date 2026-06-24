@@ -17,6 +17,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
 
+from .article import Article
 from .base import Base
 from .scsc_global_status import SCSCStatus
 from .user import UserSummary
@@ -103,6 +104,9 @@ class PIG(Base):
     )
     websites: Mapped[list[PIGWebsite]] = relationship(
         "PIGWebsite", lazy="selectin", init=False, viewonly=True
+    )
+    content: Mapped[Article] = relationship(
+        "Article", lazy="selectin", init=False, viewonly=True
     )
 
 
