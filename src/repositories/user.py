@@ -10,6 +10,7 @@ from src.model import (
     StandbyReqTbl,
     User,
     UserActivityLog,
+    UserActivityType,
     UserRole,
     UserSummary,
 )
@@ -160,7 +161,7 @@ class UserActivityLogRepository(CRUDRepository[UserActivityLog, int]):
     def create_log(
         self,
         user_id: str,
-        activity_type: str,
+        activity_type: UserActivityType,
         created_by: Optional[str] = None,
         detail: Optional[str] = None,
     ) -> UserActivityLog:
@@ -184,7 +185,7 @@ class UserActivityLogRepository(CRUDRepository[UserActivityLog, int]):
     def get_by_user_id(
         self,
         user_id: str,
-        limit: int = 100,
+        limit: int,
         next_id: Optional[int] = None,
     ) -> Sequence[UserActivityLog]:
         query = select(UserActivityLog).where(UserActivityLog.user_id == user_id)
@@ -198,7 +199,7 @@ class UserActivityLogRepository(CRUDRepository[UserActivityLog, int]):
 
     def list_recent(
         self,
-        limit: int = 100,
+        limit: int,
         next_id: Optional[int] = None,
     ) -> Sequence[UserActivityLog]:
         query = select(UserActivityLog)

@@ -14,7 +14,7 @@ from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserSummary
+from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserActivityType, UserSummary
 from src.repositories import (
     EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
@@ -109,17 +109,15 @@ class ProcessDepositResponse(BaseModel):
 class UserActivityLogResponse(BaseModel):
     id: int
     user_id: str
-    activity_type: str
+    activity_type: UserActivityType
     created_by: Optional[str] = None
     detail: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}  # enables reading from ORM objects
 
-
-USER_ACTIVITY_SIGNED_UP = "SIGNED_UP"
-USER_ACTIVITY_REGISTERED = "REGISTERED"
-
+activity_type=UserActivityType.SIGNED_UP,
+activity_type=UserActivityType.REGISTERED,
 
 class UserService:
     def __init__(
@@ -168,7 +166,7 @@ class UserService:
 
         self.user_activity_log_repository.create_log(
             user_id=user.id,
-            activity_type=USER_ACTIVITY_SIGNED_UP,
+            activity_type=UserActivityType.SIGNED_UP,
             detail="user created",
         )
 
@@ -258,9 +256,9 @@ class UserService:
 
     def get_user_activity_logs(
         self,
-        user_id: Optional[str] = None,
-        limit: int = 100,
-        next_id: Optional[int] = None,
+        user_id: Optional[str],
+        limit: int,
+        next_id: Optional[int],
     ) -> list[UserActivityLogResponse]:
         if limit < 1 or limit > 500:
             raise HTTPException(422, detail="limit must be between 1 and 500")
@@ -627,7 +625,7 @@ class StandbyService:
 
         self.user_activity_log_repository.create_log(
             user_id=user.id,
-            activity_type=USER_ACTIVITY_REGISTERED,
+            activity_type=UserActivityType.REGISTERED,  
             created_by=current_user.id,
             detail="manually processed standby request",
         )
@@ -822,7 +820,7 @@ class StandbyService:
             self.standby_repository.update(stby_user)
             self.user_activity_log_repository.create_log(
                 user_id=user.id,
-                activity_type=USER_ACTIVITY_REGISTERED,
+                activity_type=UserActivityType.REGISTERED,
                 detail=f"deposit processed: {deposit.deposit_name}",
             )
             logger.info(

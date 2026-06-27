@@ -15,6 +15,7 @@ from .user import (
     StandbyReqTbl,
     User,
     UserActivityLog,
+    UserActivityType,
     UserRole,
     UserSummary,
 )

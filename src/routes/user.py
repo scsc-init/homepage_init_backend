@@ -98,7 +98,11 @@ async def get_user_activity_logs(
     limit: int = 100,
     next_id: Optional[int] = None,
 ) -> Sequence[UserActivityLogResponse]:
-    return user_service.get_user_activity_logs(user_id, limit, next_id)
+    return user_service.get_user_activity_logs(
+        user_id=user_id,
+        limit=limit,
+        next_id=next_id,
+    )
 
 
 @user_router.get("/executive/user/{id}", response_model=UserResponse)  # noqa: A002

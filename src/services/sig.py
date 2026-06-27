@@ -17,6 +17,7 @@ from src.model import (
     SIGWebsite,
     Tag,
     User,
+    UserActivityType
 )
 from src.repositories import (
     SigMemberRepositoryDep,
@@ -70,10 +71,9 @@ class BodyExecutiveLeaveSIG(BaseModel):
     user_id: str
 
 
-USER_ACTIVITY_SIG_JOINED = "SIG_JOINED"
-USER_ACTIVITY_SIG_LEFT = "SIG_LEFT"
-USER_ACTIVITY_SIG_LEADER_APPOINTED = "SIG_LEADER_APPOINTED"
-
+activity_type=UserActivityType.SIG_JOINED,
+activity_type=UserActivityType.SIG_LEFT,
+activity_type=UserActivityType.SIG_LEADER_APPOINTED,
 
 class SigService:
     def __init__(
@@ -169,14 +169,14 @@ class SigService:
 
         self.user_activity_log_repository.create_log(
             user_id=current_user.id,
-            activity_type=USER_ACTIVITY_SIG_JOINED,
+            activity_type=UserActivityType.SIG_JOINED,
             created_by=current_user.id,
             detail=f"joined sig {sig.id}: {sig.title}",
         )
 
         self.user_activity_log_repository.create_log(
             user_id=current_user.id,
-            activity_type=USER_ACTIVITY_SIG_LEADER_APPOINTED,
+            activity_type=UserActivityType.SIG_LEADER_APPOINTED,
             created_by=current_user.id,
             detail=f"appointed as leader of sig {sig.id}: {sig.title}",
         )
@@ -352,7 +352,7 @@ class SigService:
         self.sig_repository.update(sig)
         self.user_activity_log_repository.create_log(
             user_id=new_owner_id,
-            activity_type=USER_ACTIVITY_SIG_LEADER_APPOINTED,
+            activity_type=UserActivityType.SIG_LEADER_APPOINTED,
             created_by=executor_id,
             detail=f"appointed as leader of sig {sig.id}: {sig.title}",
         )
@@ -408,7 +408,7 @@ class SigService:
 
         self.user_activity_log_repository.create_log(
             user_id=current_user.id,
-            activity_type=USER_ACTIVITY_SIG_JOINED,
+            activity_type=UserActivityType.SIG_JOINED,
             created_by=current_user.id,
             detail=f"joined sig {sig.id}: {sig.title}",
         )
@@ -443,7 +443,7 @@ class SigService:
 
         self.user_activity_log_repository.create_log(
             user_id=body.user_id,
-            activity_type=USER_ACTIVITY_SIG_JOINED,
+            activity_type=UserActivityType.SIG_JOINED,
             created_by=current_user.id,
             detail=f"joined sig {sig.id}: {sig.title} by executive",
         )
@@ -485,7 +485,7 @@ class SigService:
 
         self.user_activity_log_repository.create_log(
             user_id=executor.id,
-            activity_type=USER_ACTIVITY_SIG_LEFT,
+            activity_type=UserActivityType.SIG_LEFT,
             created_by=executor.id,
             detail=f"left sig {sig.id}: {sig.title}",
         )
@@ -525,7 +525,7 @@ class SigService:
 
         self.user_activity_log_repository.create_log(
             user_id=body.user_id,
-            activity_type=USER_ACTIVITY_SIG_LEFT,
+            activity_type=UserActivityType.SIG_LEFT,
             created_by=executor.id,
             detail=f"left sig {sig.id}: {sig.title} by executive",
         )
