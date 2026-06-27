@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
@@ -10,7 +11,7 @@ from src.util import utcnow
 
 from .base import Base
 from .major import Major
-from enum import StrEnum
+
 
 class UserRole(Base):
     __tablename__ = "user_role"
@@ -85,12 +86,14 @@ class UserSummary(Base):
         "Major", lazy="selectin", init=False, viewonly=True
     )
 
+
 class UserActivityType(StrEnum):
     SIGNED_UP = "SIGNED_UP"
     REGISTERED = "REGISTERED"
     SIG_JOINED = "SIG_JOINED"
     SIG_LEFT = "SIG_LEFT"
-    SIG_LEADER_APPOINTED = "SIG_LEADER_APPOINTED"   
+    SIG_LEADER_APPOINTED = "SIG_LEADER_APPOINTED"
+
 
 class UserActivityLog(Base):
     __tablename__ = "user_activity_log"
@@ -99,7 +102,7 @@ class UserActivityLog(Base):
         Integer, primary_key=True, autoincrement=True, init=False
     )
     user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
-    activity_type: Mapped[UserActivityType] = mapped_column(String, nullable=False)    
+    activity_type: Mapped[UserActivityType] = mapped_column(String, nullable=False)
     created_by: Mapped[Optional[str]] = mapped_column(
         String, ForeignKey("user.id"), default=None, nullable=True
     )

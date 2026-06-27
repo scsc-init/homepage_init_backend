@@ -17,7 +17,7 @@ from src.model import (
     SIGWebsite,
     Tag,
     User,
-    UserActivityType
+    UserActivityType,
 )
 from src.repositories import (
     SigMemberRepositoryDep,
@@ -71,9 +71,10 @@ class BodyExecutiveLeaveSIG(BaseModel):
     user_id: str
 
 
-activity_type=UserActivityType.SIG_JOINED,
-activity_type=UserActivityType.SIG_LEFT,
-activity_type=UserActivityType.SIG_LEADER_APPOINTED,
+activity_type = (UserActivityType.SIG_JOINED,)
+activity_type = (UserActivityType.SIG_LEFT,)
+activity_type = (UserActivityType.SIG_LEADER_APPOINTED,)
+
 
 class SigService:
     def __init__(

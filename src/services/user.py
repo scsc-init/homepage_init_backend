@@ -14,7 +14,14 @@ from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserActivityType, UserSummary
+from src.model import (
+    Enrollment,
+    OldboyApplicant,
+    StandbyReqTbl,
+    User,
+    UserActivityType,
+    UserSummary,
+)
 from src.repositories import (
     EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
@@ -116,8 +123,10 @@ class UserActivityLogResponse(BaseModel):
 
     model_config = {"from_attributes": True}  # enables reading from ORM objects
 
-activity_type=UserActivityType.SIGNED_UP,
-activity_type=UserActivityType.REGISTERED,
+
+activity_type = (UserActivityType.SIGNED_UP,)
+activity_type = (UserActivityType.REGISTERED,)
+
 
 class UserService:
     def __init__(
@@ -625,7 +634,7 @@ class StandbyService:
 
         self.user_activity_log_repository.create_log(
             user_id=user.id,
-            activity_type=UserActivityType.REGISTERED,  
+            activity_type=UserActivityType.REGISTERED,
             created_by=current_user.id,
             detail="manually processed standby request",
         )
