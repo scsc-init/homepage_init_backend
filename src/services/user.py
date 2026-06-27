@@ -830,7 +830,7 @@ class StandbyService:
             self.user_activity_log_repository.create_log(
                 user_id=user.id,
                 activity_type=UserActivityType.REGISTERED,
-                detail=f"deposit processed: {deposit.deposit_name}",
+                detail="deposit processed",
             )
             logger.info(
                 f"info_type=deposit ; deposit={deposit} ; users={matching_users}"
