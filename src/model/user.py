@@ -4,7 +4,15 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
@@ -102,7 +110,15 @@ class UserActivityLog(Base):
         Integer, primary_key=True, autoincrement=True, init=False
     )
     user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
-    activity_type: Mapped[UserActivityType] = mapped_column(String, nullable=False)
+    activity_type: Mapped[UserActivityType] = mapped_column(
+        Enum(
+            UserActivityType,
+            name="user_activity_type_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
     created_by: Mapped[Optional[str]] = mapped_column(
         String, ForeignKey("user.id"), default=None, nullable=True
     )

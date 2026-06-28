@@ -71,11 +71,6 @@ class BodyExecutiveLeaveSIG(BaseModel):
     user_id: str
 
 
-activity_type = (UserActivityType.SIG_JOINED,)
-activity_type = (UserActivityType.SIG_LEFT,)
-activity_type = (UserActivityType.SIG_LEADER_APPOINTED,)
-
-
 class SigService:
     def __init__(
         self,

@@ -124,10 +124,6 @@ class UserActivityLogResponse(BaseModel):
     model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
-activity_type = (UserActivityType.SIGNED_UP,)
-activity_type = (UserActivityType.REGISTERED,)
-
-
 class UserService:
     def __init__(
         self,
