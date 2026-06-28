@@ -15,6 +15,7 @@ from src.services import (
     ProcessStandbyListResponse,
     ResponseLogin,
     StandbyServiceDep,
+    UserActivityLogResponse,
     UserServiceDep,
 )
 from src.util import DepositDTO
@@ -87,6 +88,20 @@ async def get_user_summaries(
 ) -> Sequence[UserSummaryResponse]:
     return UserSummaryResponse.model_validate_list(
         user_service.get_user_summaries(current_user)
+    )
+
+
+@user_router.get("/executive/users/activity-logs")
+async def get_user_activity_logs(
+    user_service: UserServiceDep,
+    user_id: Optional[str] = None,
+    limit: int = 100,
+    next_id: Optional[int] = None,
+) -> Sequence[UserActivityLogResponse]:
+    return user_service.get_user_activity_logs(
+        user_id=user_id,
+        limit=limit,
+        next_id=next_id,
     )
 
 

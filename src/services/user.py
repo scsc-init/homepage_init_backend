@@ -1,6 +1,6 @@
 import asyncio
 import hmac
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Annotated, Optional, Sequence
 
 import aiofiles
@@ -14,11 +14,19 @@ from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserSummary
+from src.model import (
+    Enrollment,
+    OldboyApplicant,
+    StandbyReqTbl,
+    User,
+    UserActivityType,
+    UserSummary,
+)
 from src.repositories import (
     EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
+    UserActivityLogRepositoryDep,
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
@@ -105,16 +113,29 @@ class ProcessDepositResponse(BaseModel):
     model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
+class UserActivityLogResponse(BaseModel):
+    id: int
+    user_id: str
+    activity_type: UserActivityType
+    created_by: Optional[str] = None
+    detail: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
+
+
 class UserService:
     def __init__(
         self,
         user_repository: UserRepositoryDep,
         user_role_repository: UserRoleRepositoryDep,
         standby_repository: StandbyReqTblRepositoryDep,
+        user_activity_log_repository: UserActivityLogRepositoryDep,
     ) -> None:
         self.user_repository = user_repository
         self.user_role_repository = user_role_repository
         self.standby_repository = standby_repository
+        self.user_activity_log_repository = user_activity_log_repository
 
     async def create_user(self, body: BodyCreateUser) -> UserResponse:
         if not is_valid_phone(body.phone):
@@ -147,6 +168,12 @@ class UserService:
             user = self.user_repository.create(user)
         except IntegrityError:
             raise HTTPException(status_code=409, detail="unique field already exists")
+
+        self.user_activity_log_repository.create_log(
+            user_id=user.id,
+            activity_type=UserActivityType.SIGNED_UP,
+            detail="user created",
+        )
 
         logger.info(f"info_type=user_created ; user_id={user.id}")
         return UserResponse.model_validate(user)
@@ -231,6 +258,30 @@ class UserService:
                 403, detail="permission denied: executive role required"
             )
         return self.user_repository.get_all_summary()
+
+    def get_user_activity_logs(
+        self,
+        user_id: Optional[str],
+        limit: int,
+        next_id: Optional[int],
+    ) -> list[UserActivityLogResponse]:
+        if limit < 1 or limit > 500:
+            raise HTTPException(422, detail="limit must be between 1 and 500")
+
+        if next_id is not None and next_id < 1:
+            raise HTTPException(422, detail="next_id must be greater than 0")
+
+        if user_id is not None:
+            user = self.user_repository.get_by_id(user_id)
+            if user is None:
+                raise HTTPException(404, detail="user not found")
+            logs = self.user_activity_log_repository.get_by_user_id(
+                user_id, limit, next_id
+            )
+        else:
+            logs = self.user_activity_log_repository.list_recent(limit, next_id)
+
+        return [UserActivityLogResponse.model_validate(log) for log in logs]
 
     def get_public_executives(self) -> Sequence[PublicUserResponse]:
         return PublicUserResponse.model_validate_list(
@@ -536,12 +587,14 @@ class StandbyService:
         enrollment_repository: EnrollmentRepositoryDep,
         scsc_global_status: SCSCGlobalStatusDep,
         kv_service: KvServiceDep,
+        user_activity_log_repository: UserActivityLogRepositoryDep,
     ):
         self.standby_repository = standby_repository
         self.user_repository = user_repository
         self.enrollment_repository = enrollment_repository
         self.scsc_global_status = scsc_global_status
         self.kv_service = kv_service
+        self.user_activity_log_repository = user_activity_log_repository
 
     def get_standby_list(self) -> Sequence[StandbyReqTbl]:
         return self.standby_repository.list_all()
@@ -574,6 +627,13 @@ class StandbyService:
                 is_checked=True,
             )
             self.standby_repository.create(standbyreq)
+
+        self.user_activity_log_repository.create_log(
+            user_id=user.id,
+            activity_type=UserActivityType.REGISTERED,
+            created_by=current_user.id,
+            detail="manually processed standby request",
+        )
 
     async def process_standby_list(
         self, file: UploadFile
@@ -763,6 +823,11 @@ class StandbyService:
             stby_user.deposit_name = deposit.deposit_name
             stby_user.is_checked = True
             self.standby_repository.update(stby_user)
+            self.user_activity_log_repository.create_log(
+                user_id=user.id,
+                activity_type=UserActivityType.REGISTERED,
+                detail="deposit processed",
+            )
             logger.info(
                 f"info_type=deposit ; deposit={deposit} ; users={matching_users}"
             )

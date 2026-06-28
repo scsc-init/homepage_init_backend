@@ -9,6 +9,8 @@ from src.model import (
     OldboyApplicant,
     StandbyReqTbl,
     User,
+    UserActivityLog,
+    UserActivityType,
     UserRole,
     UserSummary,
 )
@@ -151,8 +153,68 @@ class EnrollmentRepository(CRUDRepository[Enrollment, int]):
         )
 
 
+class UserActivityLogRepository(CRUDRepository[UserActivityLog, int]):
+    @property
+    def model(self) -> type[UserActivityLog]:
+        return UserActivityLog
+
+    def create_log(
+        self,
+        user_id: str,
+        activity_type: UserActivityType,
+        created_by: Optional[str] = None,
+        detail: Optional[str] = None,
+    ) -> UserActivityLog:
+        log = UserActivityLog(
+            user_id=user_id,
+            activity_type=activity_type,
+            created_by=created_by,
+            detail=detail,
+        )
+        return self.create(log)
+
+    def update(self, *_: Any, **__: Any) -> None:
+        raise NotImplementedError("User activity logs are append-only")
+
+    def delete(self, *_: Any, **__: Any) -> None:
+        raise NotImplementedError("User activity logs are append-only")
+
+    def delete_all(self, *_: Any, **__: Any) -> None:
+        raise NotImplementedError("User activity logs are append-only")
+
+    def get_by_user_id(
+        self,
+        user_id: str,
+        limit: int,
+        next_id: Optional[int] = None,
+    ) -> Sequence[UserActivityLog]:
+        query = select(UserActivityLog).where(UserActivityLog.user_id == user_id)
+
+        if next_id is not None:
+            query = query.where(UserActivityLog.id < next_id)
+
+        return self.session.scalars(
+            query.order_by(desc(UserActivityLog.id)).limit(limit)
+        ).all()
+
+    def list_recent(
+        self,
+        limit: int,
+        next_id: Optional[int] = None,
+    ) -> Sequence[UserActivityLog]:
+        query = select(UserActivityLog)
+
+        if next_id is not None:
+            query = query.where(UserActivityLog.id < next_id)
+
+        return self.session.scalars(
+            query.order_by(desc(UserActivityLog.id)).limit(limit)
+        ).all()
+
+
 UserRepositoryDep = Annotated[UserRepository, Depends()]
 UserRoleRepositoryDep = Annotated[UserRoleRepository, Depends()]
 StandbyReqTblRepositoryDep = Annotated[StandbyReqTblRepository, Depends()]
 OldboyApplicantRepositoryDep = Annotated[OldboyApplicantRepository, Depends()]
 EnrollmentRepositoryDep = Annotated[EnrollmentRepository, Depends()]
+UserActivityLogRepositoryDep = Annotated[UserActivityLogRepository, Depends()]

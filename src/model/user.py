@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.util import utcnow
@@ -83,6 +92,41 @@ class UserSummary(Base):
 
     major: Mapped[Major] = relationship(
         "Major", lazy="selectin", init=False, viewonly=True
+    )
+
+
+class UserActivityType(StrEnum):
+    SIGNED_UP = "SIGNED_UP"
+    REGISTERED = "REGISTERED"
+    SIG_JOINED = "SIG_JOINED"
+    SIG_LEFT = "SIG_LEFT"
+    SIG_LEADER_APPOINTED = "SIG_LEADER_APPOINTED"
+
+
+class UserActivityLog(Base):
+    __tablename__ = "user_activity_log"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True, init=False
+    )
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("user.id"), nullable=False)
+    activity_type: Mapped[UserActivityType] = mapped_column(
+        Enum(
+            UserActivityType,
+            name="user_activity_type_enum",
+            native_enum=False,
+            values_callable=lambda obj: [e.value for e in obj],
+        ),
+        nullable=False,
+    )
+    created_by: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("user.id"), default=None, nullable=True
+    )
+    detail: Mapped[Optional[str]] = mapped_column(String, default=None, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+        nullable=False,
     )
 
 

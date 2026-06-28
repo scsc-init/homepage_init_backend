@@ -20,6 +20,7 @@ from .user import (
     EnrollmentRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
+    UserActivityLogRepositoryDep,
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
