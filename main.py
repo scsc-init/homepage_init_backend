@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from src.amqp import mq_client
 
 # Middleware
-from src.core import get_settings, logger
+from src.core import get_settings, logger, register_exception_handlers
 
 # Dependencies
 from src.dependencies import check_user_status, user_auth
