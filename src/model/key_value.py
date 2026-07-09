@@ -12,7 +12,7 @@ class KeyValue(Base):
     __tablename__ = "key_value"
 
     key: Mapped[str] = mapped_column(String, primary_key=True)
-    value: Mapped[str] = mapped_column(String, default=None, nullable=False)
+    value: Mapped[str] = mapped_column(String, nullable=False)
     writing_permission_level: Mapped[int] = mapped_column(
         Integer, ForeignKey("user_role.level"), default=500
     )
