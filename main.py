@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from src.amqp import mq_client
 
 # Middleware
-from src.core import get_settings, logger, register_exception_handlers
+from src.core import get_settings, logger, unhandled_exception_handler
 
 # Dependencies
 from src.dependencies import check_user_status, user_auth
@@ -80,6 +80,8 @@ else:
 # Request flow (outer -> inner): HTTPLogger -> AssertPermission
 app.add_middleware(AssertPermissionMiddleware)
 app.add_middleware(HTTPLoggerMiddleware)
+
+app.add_exception_handler(Exception, unhandled_exception_handler)
 
 app.include_router(root_router)
 

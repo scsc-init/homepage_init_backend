@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import FastAPI, Request
+from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from .config import get_settings
@@ -32,7 +32,3 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         content={"detail": "Internal Server Error"},
         headers=cors_headers_for_origin(request.headers.get("origin")),
     )
-
-
-def register_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(Exception, unhandled_exception_handler)

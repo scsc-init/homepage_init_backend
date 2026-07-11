@@ -1,3 +1,3 @@
 from .config import get_settings
-from .exception_handlers import register_exception_handlers
+from .exception_handlers import unhandled_exception_handler
 from .logger import logger
