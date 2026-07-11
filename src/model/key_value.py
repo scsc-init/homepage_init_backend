@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,7 +12,7 @@ class KeyValue(Base):
     __tablename__ = "key_value"
 
     key: Mapped[str] = mapped_column(String, primary_key=True)
-    value: Mapped[Optional[str]] = mapped_column(String, default=None, nullable=True)
+    value: Mapped[str] = mapped_column(String, nullable=False)
     writing_permission_level: Mapped[int] = mapped_column(
         Integer, ForeignKey("user_role.level"), default=500
     )
