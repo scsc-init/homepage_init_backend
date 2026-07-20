@@ -6,6 +6,7 @@ from typing import Optional
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
@@ -171,6 +172,12 @@ class OldboyApplicant(Base):
 
 class ExternalMemberApplication(Base):
     __tablename__ = "external_member_application"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'approved', 'rejected')",
+            name="chk_external_member_application_status",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,

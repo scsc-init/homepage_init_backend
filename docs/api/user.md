@@ -47,13 +47,13 @@ WHEN
     OLD.email != NEW.email OR
     OLD.name != NEW.name OR
     OLD.phone != NEW.phone OR
-    OLD.student_id != NEW.student_id OR
+    OLD.student_id IS NOT NEW.student_id OR
     OLD.role != NEW.role OR
     OLD.is_active != NEW.is_active OR
     OLD.is_banned != NEW.is_banned OR
     OLD.discord_id IS NOT NEW.discord_id OR
     OLD.discord_name IS NOT NEW.discord_name OR
-    OLD.major_id != NEW.major_id
+    OLD.major_id IS NOT NEW.major_id
 BEGIN
     UPDATE user
     SET updated_at = CURRENT_TIMESTAMP

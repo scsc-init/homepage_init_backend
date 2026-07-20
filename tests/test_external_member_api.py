@@ -161,3 +161,18 @@ def test_non_executive_cannot_approve_external_member_application(
     )
 
     assert approve_response.status_code == 403
+
+
+def test_non_executive_cannot_get_external_member_applications(
+    api_client,
+    build_headers,
+    create_user,
+):
+    _, member_token = create_user(role_level=300)
+
+    response = api_client.get(
+        "/api/executive/user/external/applicants",
+        headers=build_headers(member_token),
+    )
+
+    assert response.status_code == 403
