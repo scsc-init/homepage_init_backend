@@ -6,6 +6,7 @@ from sqlalchemy import delete, desc, exists, func, select
 from src.db import get_user_role_level
 from src.model import (
     Enrollment,
+    ExternalMemberApplication,
     OldboyApplicant,
     StandbyReqTbl,
     User,
@@ -132,6 +133,26 @@ class OldboyApplicantRepository(CRUDRepository[OldboyApplicant, str]):
         return self.session.scalars(stmt).all()
 
 
+class ExternalMemberApplicationRepository(
+    CRUDRepository[ExternalMemberApplication, int]
+):
+    @property
+    def model(self) -> type[ExternalMemberApplication]:
+        return ExternalMemberApplication
+
+    def get_by_email(self, email: str) -> Optional[ExternalMemberApplication]:
+        stmt = select(ExternalMemberApplication).where(
+            ExternalMemberApplication.email == email.lower()
+        )
+        return self.session.scalars(stmt).first()
+
+    def get_pending(self) -> Sequence[ExternalMemberApplication]:
+        stmt = select(ExternalMemberApplication).where(
+            ExternalMemberApplication.status == "pending"
+        )
+        return self.session.scalars(stmt).all()
+
+
 class EnrollmentRepository(CRUDRepository[Enrollment, int]):
     @property
     def model(self) -> type[Enrollment]:
@@ -216,5 +237,8 @@ UserRepositoryDep = Annotated[UserRepository, Depends()]
 UserRoleRepositoryDep = Annotated[UserRoleRepository, Depends()]
 StandbyReqTblRepositoryDep = Annotated[StandbyReqTblRepository, Depends()]
 OldboyApplicantRepositoryDep = Annotated[OldboyApplicantRepository, Depends()]
+ExternalMemberApplicationRepositoryDep = Annotated[
+    ExternalMemberApplicationRepository, Depends()
+]
 EnrollmentRepositoryDep = Annotated[EnrollmentRepository, Depends()]
 UserActivityLogRepositoryDep = Annotated[UserActivityLogRepository, Depends()]

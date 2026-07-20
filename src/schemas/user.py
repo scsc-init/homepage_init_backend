@@ -10,9 +10,9 @@ class UserResponse(BaseResponse):
     email: str
     name: str
     phone: str
-    student_id: str
+    student_id: Optional[str] = None
     role: int
-    major_id: int
+    major_id: Optional[int] = None
     is_active: bool
     is_banned: bool
     discord_id: Optional[int] = None
@@ -28,11 +28,11 @@ class UserSummaryResponse(BaseResponse):
     id: str
     name: str
     email: str
-    major_id: int
+    major_id: Optional[int] = None
     role: int
     is_active: bool
     is_banned: bool
-    major: MajorResponse
+    major: Optional[MajorResponse] = None
 
 
 class PublicUserResponse(BaseResponse):

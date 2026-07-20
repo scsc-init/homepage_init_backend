@@ -38,12 +38,20 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     phone: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    student_id: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    student_id: Mapped[Optional[str]] = mapped_column(
+        String,
+        nullable=True,
+        unique=True,
+    )
 
     role: Mapped[int] = mapped_column(
         Integer, ForeignKey("user_role.level"), nullable=False
     )
-    major_id: Mapped[int] = mapped_column(ForeignKey("major.id"), nullable=False)
+    major_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("major.id"),
+        nullable=True,
+        default=None,
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_banned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
@@ -86,11 +94,11 @@ class UserSummary(Base):
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String)
     role: Mapped[int] = mapped_column(Integer, ForeignKey("user_role.level"))
-    major_id: Mapped[int] = mapped_column(ForeignKey("major.id"))
+    major_id: Mapped[Optional[int]] = mapped_column(ForeignKey("major.id"))
     is_active: Mapped[bool] = mapped_column(Boolean)
     is_banned: Mapped[bool] = mapped_column(Boolean)
 
-    major: Mapped[Major] = relationship(
+    major: Mapped[Optional[Major]] = relationship(
         "Major", lazy="selectin", init=False, viewonly=True
     )
 
@@ -153,6 +161,49 @@ class OldboyApplicant(Base):
     processed: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), default_factory=utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
+        onupdate=utcnow,
+    )
+
+
+class ExternalMemberApplication(Base):
+    __tablename__ = "external_member_application"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+        init=False,
+    )
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    phone: Mapped[str] = mapped_column(String, nullable=False)
+    student_id: Mapped[Optional[str]] = mapped_column(
+        String,
+        default=None,
+        nullable=True,
+    )
+    reason: Mapped[Optional[str]] = mapped_column(
+        String,
+        default=None,
+        nullable=True,
+    )
+    status: Mapped[str] = mapped_column(
+        String,
+        default="pending",
+        nullable=False,
+    )
+    reviewed_by: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("user.id"),
+        default=None,
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        default_factory=utcnow,
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False),

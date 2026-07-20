@@ -33,10 +33,12 @@ from .sig import (
 )
 from .test_utils import BodyCreateTestUser, TestUserServiceDep
 from .user import (
+    BodyCreateExternalMemberApplication,
     BodyCreateUser,
     BodyLogin,
     BodyUpdateMyProfile,
     BodyUpdateUser,
+    ExternalMemberServiceDep,
     OldboyServiceDep,
     ProcessDepositResponse,
     ProcessDepositResult,
