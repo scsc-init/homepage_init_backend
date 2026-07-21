@@ -176,3 +176,57 @@ def test_non_executive_cannot_get_external_member_applications(
     )
 
     assert response.status_code == 403
+
+
+def test_rejected_external_member_can_reapply(
+    api_client,
+    build_headers,
+    create_user,
+):
+    email = "reapply-external@example.com"
+    initial_payload = {
+        "email": email,
+        "name": "최초 신청자",
+        "phone": "01011112222",
+        "student_id": None,
+        "reason": "최초 신청",
+        "hashToken": generate_user_hash(email),
+    }
+
+    create_response = api_client.post(
+        "/api/user/external/register",
+        headers=build_headers(),
+        json=initial_payload,
+    )
+    assert create_response.status_code == 201
+
+    application_id = create_response.json()["id"]
+    _, executive_token = create_user(role_level=500)
+
+    reject_response = api_client.post(
+        f"/api/executive/user/external/{application_id}/reject",
+        headers=build_headers(executive_token),
+    )
+    assert reject_response.status_code == 200
+    assert reject_response.json()["status"] == "rejected"
+
+    reapply_response = api_client.post(
+        "/api/user/external/register",
+        headers=build_headers(),
+        json={
+            **initial_payload,
+            "name": "재신청자",
+            "phone": "01099998888",
+            "reason": "내용을 수정하여 재신청",
+        },
+    )
+
+    assert reapply_response.status_code == 201
+
+    data = reapply_response.json()
+    assert data["id"] == application_id
+    assert data["name"] == "재신청자"
+    assert data["phone"] == "01099998888"
+    assert data["reason"] == "내용을 수정하여 재신청"
+    assert data["status"] == "pending"
+    assert data["reviewed_by"] is None

@@ -619,6 +619,23 @@ class ExternalMemberService:
         if not hmac.compare_digest(body.hashToken, expected):
             raise HTTPException(401, detail="invalid hash token")
 
+        existing_application = self.application_repository.get_by_email(email)
+        if existing_application is not None:
+            if existing_application.status != "rejected":
+                raise HTTPException(
+                    409,
+                    detail="external member application already exists",
+                )
+
+            existing_application.name = name
+            existing_application.phone = body.phone
+            existing_application.student_id = body.student_id
+            existing_application.reason = body.reason
+            existing_application.status = "pending"
+            existing_application.reviewed_by = None
+
+            return self.application_repository.update(existing_application)
+
         application = ExternalMemberApplication(
             email=email,
             name=name,
