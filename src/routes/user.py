@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 from fastapi import APIRouter, Depends, UploadFile
 
 from src.dependencies import UserDep, api_secret
+from src.model import ExternalMemberApplication
 from src.schemas import PublicUserResponse, UserResponse, UserSummaryResponse
 from src.services import (
     BodyCreateExternalMemberApplication,
@@ -45,39 +46,49 @@ async def login(
     "/user/external/register",
     status_code=201,
     dependencies=[Depends(api_secret)],
+    response_model=None,
 )
 async def create_external_member_application(
     body: BodyCreateExternalMemberApplication,
     external_member_service: ExternalMemberServiceDep,
-):
+) -> ExternalMemberApplication:
     return external_member_service.register_application(body)
 
 
-@user_router.get("/executive/user/external/applicants")
+@user_router.get(
+    "/executive/user/external/applicants",
+    response_model=None,
+)
 async def get_external_member_applications(
     external_member_service: ExternalMemberServiceDep,
-):
+) -> Sequence[ExternalMemberApplication]:
     return external_member_service.get_pending_applications()
 
 
-@user_router.post("/executive/user/external/{application_id}/approve")
+@user_router.post(
+    "/executive/user/external/{application_id}/approve",
+    response_model=None,
+)
 async def approve_external_member_application(
     application_id: int,
     current_user: UserDep,
     external_member_service: ExternalMemberServiceDep,
-):
+) -> ExternalMemberApplication:
     return external_member_service.approve_application(
         application_id,
         current_user,
     )
 
 
-@user_router.post("/executive/user/external/{application_id}/reject")
+@user_router.post(
+    "/executive/user/external/{application_id}/reject",
+    response_model=None,
+)
 async def reject_external_member_application(
     application_id: int,
     current_user: UserDep,
     external_member_service: ExternalMemberServiceDep,
-):
+) -> ExternalMemberApplication:
     return external_member_service.reject_application(
         application_id,
         current_user,

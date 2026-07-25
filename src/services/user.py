@@ -662,9 +662,6 @@ class ExternalMemberService:
         application_id: int,
         current_user: User,
     ) -> ExternalMemberApplication:
-        if current_user.role < get_user_role_level("executive"):
-            raise HTTPException(403, detail="executive role required")
-
         application = self.application_repository.get_by_id(application_id)
         if application is None:
             raise HTTPException(404, detail="external member application not found")
@@ -706,9 +703,6 @@ class ExternalMemberService:
         application_id: int,
         current_user: User,
     ) -> ExternalMemberApplication:
-        if current_user.role < get_user_role_level("executive"):
-            raise HTTPException(403, detail="executive role required")
-
         application = self.application_repository.get_by_id(application_id)
         if application is None:
             raise HTTPException(404, detail="external member application not found")

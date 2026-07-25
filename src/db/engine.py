@@ -1,4 +1,3 @@
-import os
 import urllib.parse
 from typing import Annotated, Iterator
 
@@ -13,29 +12,20 @@ from src.util import SingletonMeta
 
 class DBSessionFactory(metaclass=SingletonMeta):
     def __init__(self):
-        sqlite_filename = os.environ.get("SQLITE_FILENAME")
+        settings = get_settings()
+        self._psql_url = (
+            f"postgresql://{urllib.parse.quote_plus(settings.db_user)}:{urllib.parse.quote_plus(settings.db_password)}@"
+            f"db/{urllib.parse.quote_plus(settings.db_name)}"
+        )
 
-        if sqlite_filename:
-            self._engine = sqlalchemy.create_engine(
-                f"sqlite:///{sqlite_filename}",
-                connect_args={"check_same_thread": False},
-            )
-        else:
-            settings = get_settings()
-            self._psql_url = (
-                f"postgresql://{urllib.parse.quote_plus(settings.db_user)}:"
-                f"{urllib.parse.quote_plus(settings.db_password)}@"
-                f"db/{urllib.parse.quote_plus(settings.db_name)}"
-            )
-
-            self._engine = sqlalchemy.create_engine(
-                self._psql_url,
-                pool_size=20,
-                max_overflow=40,
-                pool_timeout=30,
-                pool_recycle=600,
-                pool_pre_ping=True,
-            )
+        self._engine: sqlalchemy.Engine = sqlalchemy.create_engine(
+            self._psql_url,
+            pool_size=20,
+            max_overflow=40,
+            pool_timeout=30,
+            pool_recycle=600,
+            pool_pre_ping=True,
+        )
 
         self._session_maker = orm.sessionmaker(
             bind=self._engine, expire_on_commit=False
