@@ -16,6 +16,7 @@ from src.db import get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
 from src.model import (
     Enrollment,
+    ExternalMemberApplication,
     OldboyApplicant,
     StandbyReqTbl,
     User,
@@ -24,6 +25,7 @@ from src.model import (
 )
 from src.repositories import (
     EnrollmentRepositoryDep,
+    ExternalMemberApplicationRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
     UserActivityLogRepositoryDep,
@@ -60,6 +62,15 @@ class BodyCreateUser(BaseModel):
 
 class BodyLogin(BaseModel):
     email: str
+    hashToken: str
+
+
+class BodyCreateExternalMemberApplication(BaseModel):
+    email: str
+    name: str
+    phone: str
+    student_id: Optional[str] = None
+    reason: Optional[str] = None
     hashToken: str
 
 
@@ -577,6 +588,135 @@ class OldboyService:
 
 
 OldboyServiceDep = Annotated[OldboyService, Depends()]
+
+
+class ExternalMemberService:
+    def __init__(
+        self,
+        application_repository: ExternalMemberApplicationRepositoryDep,
+        user_repository: UserRepositoryDep,
+    ) -> None:
+        self.application_repository = application_repository
+        self.user_repository = user_repository
+
+    def register_application(
+        self,
+        body: BodyCreateExternalMemberApplication,
+    ) -> ExternalMemberApplication:
+        email = body.email.strip().lower()
+        name = body.name.strip()
+
+        if not email or not name:
+            raise HTTPException(422, detail="email and name are required")
+
+        if not is_valid_phone(body.phone):
+            raise HTTPException(422, detail="invalid phone number")
+
+        if body.student_id and not is_valid_student_id(body.student_id):
+            raise HTTPException(422, detail="invalid student_id")
+
+        expected = generate_user_hash(email)
+        if not hmac.compare_digest(body.hashToken, expected):
+            raise HTTPException(401, detail="invalid hash token")
+
+        existing_application = self.application_repository.get_by_email(email)
+        if existing_application is not None:
+            if existing_application.status != "rejected":
+                raise HTTPException(
+                    409,
+                    detail="external member application already exists",
+                )
+
+            existing_application.name = name
+            existing_application.phone = body.phone
+            existing_application.student_id = body.student_id
+            existing_application.reason = body.reason
+            existing_application.status = "pending"
+            existing_application.reviewed_by = None
+
+            return self.application_repository.update(existing_application)
+
+        application = ExternalMemberApplication(
+            email=email,
+            name=name,
+            phone=body.phone,
+            student_id=body.student_id,
+            reason=body.reason,
+        )
+
+        try:
+            return self.application_repository.create(application)
+        except IntegrityError:
+            raise HTTPException(
+                409,
+                detail="external member application already exists",
+            )
+
+    def get_pending_applications(
+        self,
+    ) -> Sequence[ExternalMemberApplication]:
+        return self.application_repository.get_pending()
+
+    def approve_application(
+        self,
+        application_id: int,
+        current_user: User,
+    ) -> ExternalMemberApplication:
+        application = self.application_repository.get_by_id(application_id)
+        if application is None:
+            raise HTTPException(404, detail="external member application not found")
+
+        if application.status != "pending":
+            raise HTTPException(409, detail="application already processed")
+
+        user_id = sha256_hash(application.email.lower())
+
+        if self.user_repository.get_by_id(user_id) is not None:
+            raise HTTPException(409, detail="user already exists")
+
+        user = User(
+            id=user_id,
+            email=application.email,
+            name=application.name,
+            phone=application.phone,
+            student_id=application.student_id,
+            role=get_user_role_level("external"),
+            major_id=None,
+            is_active=True,
+        )
+
+        try:
+            self.user_repository.create(user)
+        except IntegrityError:
+            raise HTTPException(
+                409,
+                detail="user with the same email or phone already exists",
+            )
+
+        application.status = "approved"
+        application.reviewed_by = current_user.id
+
+        return self.application_repository.update(application)
+
+    def reject_application(
+        self,
+        application_id: int,
+        current_user: User,
+    ) -> ExternalMemberApplication:
+        application = self.application_repository.get_by_id(application_id)
+        if application is None:
+            raise HTTPException(404, detail="external member application not found")
+
+        if application.status != "pending":
+            raise HTTPException(409, detail="application already processed")
+
+        application.status = "rejected"
+        application.reviewed_by = current_user.id
+
+        return self.application_repository.update(application)
+
+
+ExternalMemberServiceDep = Annotated[ExternalMemberService, Depends()]
 
 
 class StandbyService:

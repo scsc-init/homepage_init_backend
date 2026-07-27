@@ -18,6 +18,7 @@ from .sig import (
 )
 from .user import (
     EnrollmentRepositoryDep,
+    ExternalMemberApplicationRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
     UserActivityLogRepositoryDep,

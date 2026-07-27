@@ -11,6 +11,7 @@ from .scsc_global_status import SCSCGlobalStatus, SCSCStatus
 from .sig import SIG, SIGMember, SIGTag, SIGWebsite, Tag
 from .user import (
     Enrollment,
+    ExternalMemberApplication,
     OldboyApplicant,
     StandbyReqTbl,
     User,
