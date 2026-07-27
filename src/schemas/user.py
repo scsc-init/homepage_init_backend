@@ -9,6 +9,7 @@ class UserResponse(BaseResponse):
     id: str
     email: str
     name: str
+    kakao_name: Optional[str] = None
     phone: str
     student_id: str
     role: int
