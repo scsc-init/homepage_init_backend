@@ -52,6 +52,7 @@ from .key_value import KvServiceDep
 class BodyCreateUser(BaseModel):
     email: str
     name: str
+    kakao_name: Optional[str] = None
     phone: str
     student_id: str
     major_id: int
@@ -92,6 +93,7 @@ class BodyUpdateUser(BaseModel):
 
 class BodyUpdateMyProfile(BaseModel):
     name: Optional[str] = None
+    kakao_name: Optional[str] = None
     phone: Optional[str] = None
     student_id: Optional[str] = None
     major_id: Optional[int] = None
@@ -163,10 +165,12 @@ class UserService:
         if not hmac.compare_digest(body.hashToken, expected):
             raise HTTPException(401, detail="invalid hash token")
 
+        kakao_name = body.kakao_name.strip() if body.kakao_name else None
         user = User(
             id=sha256_hash(body.email.lower()),
             email=body.email,
             name=body.name,
+            kakao_name=kakao_name or None,
             phone=body.phone,
             student_id=body.student_id,
             role=get_user_role_level("newcomer"),
@@ -315,6 +319,9 @@ class UserService:
 
         if body.name:
             current_user.name = body.name
+        if body.kakao_name is not None:
+            # empty string clears the field back to NULL
+            current_user.kakao_name = body.kakao_name.strip() or None
         if body.phone:
             current_user.phone = body.phone
         if body.student_id:

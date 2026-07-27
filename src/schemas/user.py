@@ -9,6 +9,7 @@ class UserResponse(BaseResponse):
     id: str
     email: str
     name: str
+    kakao_name: Optional[str] = None
     phone: str
     student_id: Optional[str] = None
     role: int
@@ -27,6 +28,7 @@ class UserResponse(BaseResponse):
 class UserSummaryResponse(BaseResponse):
     id: str
     name: str
+    kakao_name: Optional[str] = None
     email: str
     major_id: Optional[int] = None
     role: int

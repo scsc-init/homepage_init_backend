@@ -56,6 +56,10 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_banned: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    kakao_name: Mapped[Optional[str]] = mapped_column(
+        String, default=None, nullable=True
+    )
+
     discord_id: Mapped[Optional[int]] = mapped_column(
         default=None, nullable=True, unique=True
     )
