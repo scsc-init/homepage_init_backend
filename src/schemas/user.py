@@ -28,6 +28,7 @@ class UserResponse(BaseResponse):
 class UserSummaryResponse(BaseResponse):
     id: str
     name: str
+    kakao_name: Optional[str] = None
     email: str
     major_id: int
     role: int

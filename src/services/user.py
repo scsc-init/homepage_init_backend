@@ -82,6 +82,7 @@ class BodyUpdateUser(BaseModel):
 
 class BodyUpdateMyProfile(BaseModel):
     name: Optional[str] = None
+    kakao_name: Optional[str] = None
     phone: Optional[str] = None
     student_id: Optional[str] = None
     major_id: Optional[int] = None
@@ -307,6 +308,9 @@ class UserService:
 
         if body.name:
             current_user.name = body.name
+        if body.kakao_name is not None:
+            # empty string clears the field back to NULL
+            current_user.kakao_name = body.kakao_name.strip() or None
         if body.phone:
             current_user.phone = body.phone
         if body.student_id:
