@@ -1,5 +1,4 @@
 import os
-import subprocess
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -15,16 +14,6 @@ TEST_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 # Always use an isolated SQLite file for tests, regardless of any pre-existing env.
 os.environ["SQLITE_FILENAME"] = str(TEST_DB_PATH)
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-MIGRATION_SCRIPT = ROOT_DIR / "script/migrations/index.sh"
-CLEAR_DB_SCRIPT = ROOT_DIR / "script/clear_db.sh"
-
-
-def run_script(script_path: Path, *args: str) -> None:
-    cmd = ["bash", str(script_path), *[str(arg) for arg in args]]
-    subprocess.run(cmd, check=True)
-
-
 from main import app
 from src.core import get_settings
 from src.db import DBSessionFactory, get_user_role_level
@@ -36,6 +25,7 @@ ROLE_DATA = [
     (100, "dormant", "dormant_kor"),
     (200, "newcomer", "newcomer_kor"),
     (300, "member", "member_kor"),
+    (350, "external", "external_kor"),
     (400, "oldboy", "oldboy_kor"),
     (500, "executive", "executive_kor"),
     (1000, "president", "president_kor"),
@@ -45,14 +35,14 @@ ROLE_DATA = [
 @pytest.fixture(scope="session", autouse=True)
 def manage_test_database():
     if TEST_DB_PATH.exists():
-        run_script(CLEAR_DB_SCRIPT, "--force", TEST_DB_PATH)
-    run_script(MIGRATION_SCRIPT, TEST_DB_PATH)
+        TEST_DB_PATH.unlink()
+
     try:
         yield
     finally:
         DBSessionFactory().teardown()
         if TEST_DB_PATH.exists():
-            run_script(CLEAR_DB_SCRIPT, "--force", TEST_DB_PATH)
+            TEST_DB_PATH.unlink()
 
 
 @pytest.fixture(autouse=True)

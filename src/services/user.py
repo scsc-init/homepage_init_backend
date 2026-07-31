@@ -1,6 +1,6 @@
 import asyncio
 import hmac
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Annotated, Optional, Sequence
 
 import aiofiles
@@ -14,11 +14,21 @@ from src.amqp import mq_client
 from src.core import get_settings, logger
 from src.db import get_user_role_level
 from src.dependencies import SCSCGlobalStatusDep
-from src.model import Enrollment, OldboyApplicant, StandbyReqTbl, User, UserSummary
+from src.model import (
+    Enrollment,
+    ExternalMemberApplication,
+    OldboyApplicant,
+    StandbyReqTbl,
+    User,
+    UserActivityType,
+    UserSummary,
+)
 from src.repositories import (
     EnrollmentRepositoryDep,
+    ExternalMemberApplicationRepositoryDep,
     OldboyApplicantRepositoryDep,
     StandbyReqTblRepositoryDep,
+    UserActivityLogRepositoryDep,
     UserRepositoryDep,
     UserRoleRepositoryDep,
 )
@@ -42,6 +52,7 @@ from .key_value import KvServiceDep
 class BodyCreateUser(BaseModel):
     email: str
     name: str
+    kakao_name: Optional[str] = None
     phone: str
     student_id: str
     major_id: int
@@ -52,6 +63,15 @@ class BodyCreateUser(BaseModel):
 
 class BodyLogin(BaseModel):
     email: str
+    hashToken: str
+
+
+class BodyCreateExternalMemberApplication(BaseModel):
+    email: str
+    name: str
+    phone: str
+    student_id: Optional[str] = None
+    reason: Optional[str] = None
     hashToken: str
 
 
@@ -73,6 +93,7 @@ class BodyUpdateUser(BaseModel):
 
 class BodyUpdateMyProfile(BaseModel):
     name: Optional[str] = None
+    kakao_name: Optional[str] = None
     phone: Optional[str] = None
     student_id: Optional[str] = None
     major_id: Optional[int] = None
@@ -105,16 +126,29 @@ class ProcessDepositResponse(BaseModel):
     model_config = {"from_attributes": True}  # enables reading from ORM objects
 
 
+class UserActivityLogResponse(BaseModel):
+    id: int
+    user_id: str
+    activity_type: UserActivityType
+    created_by: Optional[str] = None
+    detail: Optional[str] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}  # enables reading from ORM objects
+
+
 class UserService:
     def __init__(
         self,
         user_repository: UserRepositoryDep,
         user_role_repository: UserRoleRepositoryDep,
         standby_repository: StandbyReqTblRepositoryDep,
+        user_activity_log_repository: UserActivityLogRepositoryDep,
     ) -> None:
         self.user_repository = user_repository
         self.user_role_repository = user_role_repository
         self.standby_repository = standby_repository
+        self.user_activity_log_repository = user_activity_log_repository
 
     async def create_user(self, body: BodyCreateUser) -> UserResponse:
         if not is_valid_phone(body.phone):
@@ -131,10 +165,12 @@ class UserService:
         if not hmac.compare_digest(body.hashToken, expected):
             raise HTTPException(401, detail="invalid hash token")
 
+        kakao_name = body.kakao_name.strip() if body.kakao_name else None
         user = User(
             id=sha256_hash(body.email.lower()),
             email=body.email,
             name=body.name,
+            kakao_name=kakao_name or None,
             phone=body.phone,
             student_id=body.student_id,
             role=get_user_role_level("newcomer"),
@@ -147,6 +183,12 @@ class UserService:
             user = self.user_repository.create(user)
         except IntegrityError:
             raise HTTPException(status_code=409, detail="unique field already exists")
+
+        self.user_activity_log_repository.create_log(
+            user_id=user.id,
+            activity_type=UserActivityType.SIGNED_UP,
+            detail="user created",
+        )
 
         logger.info(f"info_type=user_created ; user_id={user.id}")
         return UserResponse.model_validate(user)
@@ -232,6 +274,30 @@ class UserService:
             )
         return self.user_repository.get_all_summary()
 
+    def get_user_activity_logs(
+        self,
+        user_id: Optional[str],
+        limit: int,
+        next_id: Optional[int],
+    ) -> list[UserActivityLogResponse]:
+        if limit < 1 or limit > 500:
+            raise HTTPException(422, detail="limit must be between 1 and 500")
+
+        if next_id is not None and next_id < 1:
+            raise HTTPException(422, detail="next_id must be greater than 0")
+
+        if user_id is not None:
+            user = self.user_repository.get_by_id(user_id)
+            if user is None:
+                raise HTTPException(404, detail="user not found")
+            logs = self.user_activity_log_repository.get_by_user_id(
+                user_id, limit, next_id
+            )
+        else:
+            logs = self.user_activity_log_repository.list_recent(limit, next_id)
+
+        return [UserActivityLogResponse.model_validate(log) for log in logs]
+
     def get_public_executives(self) -> Sequence[PublicUserResponse]:
         return PublicUserResponse.model_validate_list(
             self.user_repository.get_executives()
@@ -253,6 +319,9 @@ class UserService:
 
         if body.name:
             current_user.name = body.name
+        if body.kakao_name is not None:
+            # empty string clears the field back to NULL
+            current_user.kakao_name = body.kakao_name.strip() or None
         if body.phone:
             current_user.phone = body.phone
         if body.student_id:
@@ -528,6 +597,135 @@ class OldboyService:
 OldboyServiceDep = Annotated[OldboyService, Depends()]
 
 
+class ExternalMemberService:
+    def __init__(
+        self,
+        application_repository: ExternalMemberApplicationRepositoryDep,
+        user_repository: UserRepositoryDep,
+    ) -> None:
+        self.application_repository = application_repository
+        self.user_repository = user_repository
+
+    def register_application(
+        self,
+        body: BodyCreateExternalMemberApplication,
+    ) -> ExternalMemberApplication:
+        email = body.email.strip().lower()
+        name = body.name.strip()
+
+        if not email or not name:
+            raise HTTPException(422, detail="email and name are required")
+
+        if not is_valid_phone(body.phone):
+            raise HTTPException(422, detail="invalid phone number")
+
+        if body.student_id and not is_valid_student_id(body.student_id):
+            raise HTTPException(422, detail="invalid student_id")
+
+        expected = generate_user_hash(email)
+        if not hmac.compare_digest(body.hashToken, expected):
+            raise HTTPException(401, detail="invalid hash token")
+
+        existing_application = self.application_repository.get_by_email(email)
+        if existing_application is not None:
+            if existing_application.status != "rejected":
+                raise HTTPException(
+                    409,
+                    detail="external member application already exists",
+                )
+
+            existing_application.name = name
+            existing_application.phone = body.phone
+            existing_application.student_id = body.student_id
+            existing_application.reason = body.reason
+            existing_application.status = "pending"
+            existing_application.reviewed_by = None
+
+            return self.application_repository.update(existing_application)
+
+        application = ExternalMemberApplication(
+            email=email,
+            name=name,
+            phone=body.phone,
+            student_id=body.student_id,
+            reason=body.reason,
+        )
+
+        try:
+            return self.application_repository.create(application)
+        except IntegrityError:
+            raise HTTPException(
+                409,
+                detail="external member application already exists",
+            )
+
+    def get_pending_applications(
+        self,
+    ) -> Sequence[ExternalMemberApplication]:
+        return self.application_repository.get_pending()
+
+    def approve_application(
+        self,
+        application_id: int,
+        current_user: User,
+    ) -> ExternalMemberApplication:
+        application = self.application_repository.get_by_id(application_id)
+        if application is None:
+            raise HTTPException(404, detail="external member application not found")
+
+        if application.status != "pending":
+            raise HTTPException(409, detail="application already processed")
+
+        user_id = sha256_hash(application.email.lower())
+
+        if self.user_repository.get_by_id(user_id) is not None:
+            raise HTTPException(409, detail="user already exists")
+
+        user = User(
+            id=user_id,
+            email=application.email,
+            name=application.name,
+            phone=application.phone,
+            student_id=application.student_id,
+            role=get_user_role_level("external"),
+            major_id=None,
+            is_active=True,
+        )
+
+        try:
+            self.user_repository.create(user)
+        except IntegrityError:
+            raise HTTPException(
+                409,
+                detail="user with the same email or phone already exists",
+            )
+
+        application.status = "approved"
+        application.reviewed_by = current_user.id
+
+        return self.application_repository.update(application)
+
+    def reject_application(
+        self,
+        application_id: int,
+        current_user: User,
+    ) -> ExternalMemberApplication:
+        application = self.application_repository.get_by_id(application_id)
+        if application is None:
+            raise HTTPException(404, detail="external member application not found")
+
+        if application.status != "pending":
+            raise HTTPException(409, detail="application already processed")
+
+        application.status = "rejected"
+        application.reviewed_by = current_user.id
+
+        return self.application_repository.update(application)
+
+
+ExternalMemberServiceDep = Annotated[ExternalMemberService, Depends()]
+
+
 class StandbyService:
     def __init__(
         self,
@@ -536,12 +734,14 @@ class StandbyService:
         enrollment_repository: EnrollmentRepositoryDep,
         scsc_global_status: SCSCGlobalStatusDep,
         kv_service: KvServiceDep,
+        user_activity_log_repository: UserActivityLogRepositoryDep,
     ):
         self.standby_repository = standby_repository
         self.user_repository = user_repository
         self.enrollment_repository = enrollment_repository
         self.scsc_global_status = scsc_global_status
         self.kv_service = kv_service
+        self.user_activity_log_repository = user_activity_log_repository
 
     def get_standby_list(self) -> Sequence[StandbyReqTbl]:
         return self.standby_repository.list_all()
@@ -574,6 +774,13 @@ class StandbyService:
                 is_checked=True,
             )
             self.standby_repository.create(standbyreq)
+
+        self.user_activity_log_repository.create_log(
+            user_id=user.id,
+            activity_type=UserActivityType.REGISTERED,
+            created_by=current_user.id,
+            detail="manually processed standby request",
+        )
 
     async def process_standby_list(
         self, file: UploadFile
@@ -763,6 +970,11 @@ class StandbyService:
             stby_user.deposit_name = deposit.deposit_name
             stby_user.is_checked = True
             self.standby_repository.update(stby_user)
+            self.user_activity_log_repository.create_log(
+                user_id=user.id,
+                activity_type=UserActivityType.REGISTERED,
+                detail="deposit processed",
+            )
             logger.info(
                 f"info_type=deposit ; deposit={deposit} ; users={matching_users}"
             )

@@ -17,6 +17,7 @@ from src.model import (
     SIGWebsite,
     Tag,
     User,
+    UserActivityType,
 )
 from src.repositories import (
     SigMemberRepositoryDep,
@@ -24,6 +25,7 @@ from src.repositories import (
     SigTagRepositoryDep,
     SigWebsiteRepositoryDep,
     TagRepositoryDep,
+    UserActivityLogRepositoryDep,
     UserRepositoryDep,
 )
 from src.util import map_semester_name
@@ -81,6 +83,7 @@ class SigService:
         sig_tag_repository: SigTagRepositoryDep,
         tag_repository: TagRepositoryDep,
         user_repository: UserRepositoryDep,
+        user_activity_log_repository: UserActivityLogRepositoryDep,
     ) -> None:
         self.article_service = article_service
         self.sig_repository = sig_repository
@@ -89,6 +92,7 @@ class SigService:
         self.sig_tag_repository = sig_tag_repository
         self.tag_repository = tag_repository
         self.user_repository = user_repository
+        self.user_activity_log_repository = user_activity_log_repository
 
     def _is_executive(self, user: User) -> bool:
         return user.role >= get_user_role_level("executive")
@@ -160,6 +164,20 @@ class SigService:
             raise HTTPException(
                 409, detail="시그/피그장 자동 가입 중 중복 오류가 발생했습니다"
             ) from exc
+
+        self.user_activity_log_repository.create_log(
+            user_id=current_user.id,
+            activity_type=UserActivityType.SIG_JOINED,
+            created_by=current_user.id,
+            detail=f"joined sig {sig.id}: {sig.title}",
+        )
+
+        self.user_activity_log_repository.create_log(
+            user_id=current_user.id,
+            activity_type=UserActivityType.SIG_LEADER_APPOINTED,
+            created_by=current_user.id,
+            detail=f"appointed as leader of sig {sig.id}: {sig.title}",
+        )
 
         if current_user.discord_id:
             if mq_client:
@@ -334,6 +352,12 @@ class SigService:
         old_owner = sig.owner
         sig.owner = new_owner_id
         self.sig_repository.update(sig)
+        self.user_activity_log_repository.create_log(
+            user_id=new_owner_id,
+            activity_type=UserActivityType.SIG_LEADER_APPOINTED,
+            created_by=executor_id,
+            detail=f"appointed as leader of sig {sig.id}: {sig.title}",
+        )
 
         handover_type = "forced" if is_forced else "voluntary"
         logger.info(
@@ -384,6 +408,13 @@ class SigService:
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
 
+        self.user_activity_log_repository.create_log(
+            user_id=current_user.id,
+            activity_type=UserActivityType.SIG_JOINED,
+            created_by=current_user.id,
+            detail=f"joined sig {sig.id}: {sig.title}",
+        )
+
         if current_user.discord_id:
             if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
@@ -411,6 +442,13 @@ class SigService:
             self.sig_member_repository.create(sig_member)
         except IntegrityError:
             raise HTTPException(409, detail="기존 시그/피그와 중복된 항목이 있습니다")
+
+        self.user_activity_log_repository.create_log(
+            user_id=body.user_id,
+            activity_type=UserActivityType.SIG_JOINED,
+            created_by=current_user.id,
+            detail=f"joined sig {sig.id}: {sig.title} by executive",
+        )
 
         if user.discord_id:
             if mq_client:
@@ -447,6 +485,13 @@ class SigService:
 
         self.sig_member_repository.delete(member)
 
+        self.user_activity_log_repository.create_log(
+            user_id=executor.id,
+            activity_type=UserActivityType.SIG_LEFT,
+            created_by=executor.id,
+            detail=f"left sig {sig.id}: {sig.title}",
+        )
+
         if executor.discord_id:
             if mq_client:
                 await mq_client.send_discord_bot_request_no_reply(
@@ -479,6 +524,13 @@ class SigService:
             raise HTTPException(404, detail="시그/피그의 구성원이 아닙니다")
 
         self.sig_member_repository.delete(member)
+
+        self.user_activity_log_repository.create_log(
+            user_id=body.user_id,
+            activity_type=UserActivityType.SIG_LEFT,
+            created_by=executor.id,
+            detail=f"left sig {sig.id}: {sig.title} by executive",
+        )
 
         if user.discord_id:
             if mq_client:

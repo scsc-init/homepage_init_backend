@@ -2,6 +2,7 @@ from typing import Annotated, Optional, Sequence
 
 from fastapi import Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError
 
 from src.core import logger
 from src.model import KeyValue, User
@@ -9,7 +10,7 @@ from src.repositories import KeyValueRepositoryDep
 
 
 class KvUpdateBody(BaseModel):
-    value: Optional[str]
+    value: str
 
 
 class KvService:
@@ -37,7 +38,10 @@ class KvService:
             raise HTTPException(status_code=403, detail="insufficient permission")
 
         kv_entry.value = body.value
-        updated_entry = self.kv_repository.update(kv_entry)
+        try:
+            updated_entry = self.kv_repository.update(kv_entry)
+        except IntegrityError:
+            raise HTTPException(status_code=400, detail="invalid kv value")
 
         logger.info(
             "info_type=kv_updated ; key=%s ; value=%s ; updater_id=%s",
