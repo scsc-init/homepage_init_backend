@@ -72,6 +72,7 @@ class BodyCreateExternalMemberApplication(BaseModel):
     phone: str
     student_id: Optional[str] = None
     reason: Optional[str] = None
+    kakao_name: Optional[str] = None
     hashToken: str
 
 
@@ -612,6 +613,7 @@ class ExternalMemberService:
     ) -> ExternalMemberApplication:
         email = body.email.strip().lower()
         name = body.name.strip()
+        kakao_name = body.kakao_name.strip() if body.kakao_name else None
 
         if not email or not name:
             raise HTTPException(422, detail="email and name are required")
@@ -638,6 +640,7 @@ class ExternalMemberService:
             existing_application.phone = body.phone
             existing_application.student_id = body.student_id
             existing_application.reason = body.reason
+            existing_application.kakao_name = kakao_name or None
             existing_application.status = "pending"
             existing_application.reviewed_by = None
 
@@ -649,6 +652,7 @@ class ExternalMemberService:
             phone=body.phone,
             student_id=body.student_id,
             reason=body.reason,
+            kakao_name=kakao_name or None,
         )
 
         try:
@@ -685,6 +689,7 @@ class ExternalMemberService:
             id=user_id,
             email=application.email,
             name=application.name,
+            kakao_name=application.kakao_name,
             phone=application.phone,
             student_id=application.student_id,
             role=get_user_role_level("external"),
