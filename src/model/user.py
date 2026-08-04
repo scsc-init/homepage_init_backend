@@ -202,6 +202,11 @@ class ExternalMemberApplication(Base):
         default=None,
         nullable=True,
     )
+    kakao_name: Mapped[Optional[str]] = mapped_column(
+        String,
+        default=None,
+        nullable=True,
+    )
     status: Mapped[str] = mapped_column(
         String,
         default="pending",

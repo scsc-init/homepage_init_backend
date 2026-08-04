@@ -230,3 +230,44 @@ def test_rejected_external_member_can_reapply(
     assert data["reason"] == "내용을 수정하여 재신청"
     assert data["status"] == "pending"
     assert data["reviewed_by"] is None
+
+
+def test_external_member_kakao_name_is_stored_and_propagated_on_approval(
+    api_client,
+    build_headers,
+    create_user,
+    db_session,
+):
+    from src.model import User
+    from src.util import sha256_hash
+
+    email = "kakao-external@example.com"
+
+    create_response = api_client.post(
+        "/api/user/external/register",
+        headers=build_headers(),
+        json={
+            "email": email,
+            "name": "카톡 이름 신청자",
+            "phone": "01033334444",
+            "student_id": None,
+            "reason": "카톡 이름 테스트",
+            "kakao_name": "실제카톡이름",
+            "hashToken": generate_user_hash(email),
+        },
+    )
+    assert create_response.status_code == 201
+    assert create_response.json()["kakao_name"] == "실제카톡이름"
+
+    application_id = create_response.json()["id"]
+    _, executive_token = create_user(role_level=500)
+
+    approve_response = api_client.post(
+        f"/api/executive/user/external/{application_id}/approve",
+        headers=build_headers(executive_token),
+    )
+    assert approve_response.status_code == 200
+
+    external_user = db_session.get(User, sha256_hash(email))
+    assert external_user is not None
+    assert external_user.kakao_name == "실제카톡이름"
