@@ -7,7 +7,7 @@ from .file_metadata import FileMetadata
 from .key_value import KeyValue
 from .major import Major
 from .scsc_global_status import SCSCGlobalStatus, SCSCStatus
-from .sig import RollingAdmission, SIG, SIGMember, SIGTag, SIGWebsite, Tag
+from .sig import SIG, RollingAdmission, SIGMember, SIGTag, SIGWebsite, Tag
 from .user import (
     Enrollment,
     ExternalMemberApplication,
