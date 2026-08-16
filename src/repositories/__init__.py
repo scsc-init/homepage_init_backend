@@ -6,7 +6,6 @@ from .comment import CommentRepositoryDep
 from .file_metadata import FileMetadataRepositoryDep
 from .key_value import KeyValueRepositoryDep
 from .major import MajorRepositoryDep
-from .pig import PigMemberRepositoryDep, PigRepositoryDep, PigWebsiteRepositoryDep
 from .scsc import SCSCGlobalStatusRepositoryDep
 from .sig import (
     SigMemberRepositoryDep,
