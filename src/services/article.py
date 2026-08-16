@@ -193,9 +193,7 @@ class ArticleService:
                 detail="You are not the author of this article",
             )
         if article.board_id in (1, 2):
-            raise HTTPException(
-                status_code=400, detail="cannot delete article of sig"
-            )
+            raise HTTPException(status_code=400, detail="cannot delete article of sig")
 
         self.article_repository.delete(article)
 
@@ -208,9 +206,7 @@ class ArticleService:
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
         if article.board_id in (1, 2):
-            raise HTTPException(
-                status_code=400, detail="cannot delete article of sig"
-            )
+            raise HTTPException(status_code=400, detail="cannot delete article of sig")
 
         self.article_repository.delete(article)
 

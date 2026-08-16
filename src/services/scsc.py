@@ -101,9 +101,7 @@ class SCSCService:
                 detail="failed to back up database",
             ) from exc
 
-    async def _process_igs_change_semester(
-        self, scsc_global_status: SCSCGlobalStatus
-    ):
+    async def _process_igs_change_semester(self, scsc_global_status: SCSCGlobalStatus):
         igs = self.sig_repository.get_by_year_semester_not_inactive(
             scsc_global_status.year, scsc_global_status.semester
         )
@@ -199,7 +197,6 @@ class SCSCService:
                 .values(status=SCSCStatus.ACTIVE)
                 .execution_options(synchronize_session=False)
             )
-
 
         # end of active (active -> recruiting, semester changes)
         if scsc_global_status.status == SCSCStatus.ACTIVE:
