@@ -103,10 +103,10 @@ class SigService:
         current_user: User,
         body: BodyCreateSIG,
     ) -> SIG:
-        if scsc_global_status.status not in ctrl_status_available.create_sigpig:
+        if scsc_global_status.status not in ctrl_status_available.create_ig:
             raise HTTPException(
                 400,
-                f"SCSC 전역 상태가 {ctrl_status_available.create_sigpig}일 때만 시그/피그를 생성할 수 있습니다",
+                f"SCSC 전역 상태가 {ctrl_status_available.create_ig}일 때만 시그/피그를 생성할 수 있습니다",
             )
 
         sig_article = await self.article_service.create_article(
@@ -391,9 +391,9 @@ class SigService:
         sig = self.get_by_id(id)
 
         if sig.is_rolling_admission == RollingAdmission.ALWAYS:
-            allowed = ctrl_status_available.join_sigpig_rolling_admission
+            allowed = ctrl_status_available.join_ig_rolling_admission
         elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
-            allowed = ctrl_status_available.join_sigpig
+            allowed = ctrl_status_available.join_ig
         else:
             raise HTTPException(400, "해당 시그는 가입을 받지 않습니다")
 
@@ -464,9 +464,9 @@ class SigService:
     async def leave_sig(self, id: int, executor: User) -> None:
         sig = self.get_by_id(id)
         if sig.is_rolling_admission == RollingAdmission.ALWAYS:
-            allowed = ctrl_status_available.join_sigpig_rolling_admission
+            allowed = ctrl_status_available.join_ig_rolling_admission
         elif sig.is_rolling_admission == RollingAdmission.DURING_RECRUITING:
-            allowed = ctrl_status_available.join_sigpig
+            allowed = ctrl_status_available.join_ig
         else:
             raise HTTPException(400, "해당 시그는 탈퇴를 받지 않는 상태입니다.")
         if sig.status not in allowed:

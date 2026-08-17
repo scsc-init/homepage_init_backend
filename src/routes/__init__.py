@@ -9,7 +9,6 @@ from .comment import comment_router
 from .file import file_router
 from .key_value import kv_router
 from .major import major_router
-from .pig import pig_router
 from .scsc import scsc_router
 from .sig import sig_router
 from .test_utils import test_router
@@ -21,7 +20,6 @@ root_router = APIRouter()
 root_router.include_router(major_router, prefix="/api")
 root_router.include_router(user_router, prefix="/api")
 root_router.include_router(sig_router, prefix="/api")
-root_router.include_router(pig_router, prefix="/api")
 root_router.include_router(article_router, prefix="/api")
 root_router.include_router(comment_router, prefix="/api")
 root_router.include_router(board_router, prefix="/api")
