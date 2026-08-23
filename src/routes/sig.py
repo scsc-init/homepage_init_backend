@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
-from src.dependencies import SCSCGlobalStatusDep, UserDep
+from src.dependencies import NullableUserDep, SCSCGlobalStatusDep, UserDep
 from src.model import SCSCStatus
 from src.schemas import SigMemberResponse, SigResponse, SigTagResponse, TagResponse
 from src.services import (
@@ -35,12 +35,19 @@ async def create_sig(
 
 
 @sig_router.get("/sig/{id}")
-async def get_sig_by_id(id: int, sig_service: SigServiceDep) -> SigResponse:
-    return SigResponse.model_validate(sig_service.get_by_id(id))
+async def get_sig_by_id(
+    id: int,
+    current_user: NullableUserDep,
+    sig_service: SigServiceDep,
+) -> SigResponse:
+    return SigResponse.model_validate_visible(
+        sig_service.get_by_id(id), include_members=current_user is not None
+    )
 
 
 @sig_router.get("/sigs")
 async def get_all_sigs(
+    current_user: NullableUserDep,
     sig_service: SigServiceDep,
     year: Optional[int] = None,
     semester: Optional[int] = None,
@@ -53,7 +60,9 @@ async def get_all_sigs(
         status,
         tag,
     )
-    return SigResponse.model_validate_list(sigs)
+    return SigResponse.model_validate_visible_list(
+        sigs, include_members=current_user is not None
+    )
 
 
 @sig_router.post("/sig/{id}/update", status_code=204)
@@ -116,7 +125,9 @@ async def executive_handover_sig(
 
 @sig_router.get("/sig/{id}/members")
 async def get_sig_members(
-    id: int, sig_service: SigServiceDep
+    id: int,
+    current_user: UserDep,
+    sig_service: SigServiceDep,
 ) -> Sequence[SigMemberResponse]:
     return SigMemberResponse.model_validate_list(sig_service.get_members(id))
 
