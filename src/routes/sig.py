@@ -126,7 +126,7 @@ async def executive_handover_sig(
 @sig_router.get("/sig/{id}/members")
 async def get_sig_members(
     id: int,
-    current_user: NullableUserDep,
+    current_user: UserDep,
     sig_service: SigServiceDep,
 ) -> Sequence[SigMemberResponse]:
     return SigMemberResponse.model_validate_list(sig_service.get_members(id))
