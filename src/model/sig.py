@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum as enum
 
 from sqlalchemy import (
     Boolean,
@@ -18,9 +19,14 @@ from src.util import utcnow
 
 from .article import Article
 from .base import Base
-from .pig import RollingAdmission
 from .scsc_global_status import SCSCStatus
 from .user import UserSummary
+
+
+class RollingAdmission(str, enum):
+    ALWAYS = "always"
+    NEVER = "never"
+    DURING_RECRUITING = "during_recruiting"
 
 
 class SIG(Base):
