@@ -1,6 +1,5 @@
 BEGIN;
 
--- Remove only the SIG association from groups that also have the 소모임 tag.
 DELETE FROM public.sig_tag AS sig_link
 USING public.tag AS sig_tag
 WHERE sig_link.tag_id = sig_tag.id
