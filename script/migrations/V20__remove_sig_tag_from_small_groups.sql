@@ -1,5 +1,10 @@
 BEGIN;
 
+INSERT INTO public.tag (text, is_major)
+VALUES ('소모임', true)
+ON CONFLICT (text) DO UPDATE
+SET is_major = true;
+
 DELETE FROM public.sig_tag AS sig_link
 USING public.tag AS sig_tag
 WHERE sig_link.tag_id = sig_tag.id
