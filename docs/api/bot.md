@@ -1,5 +1,5 @@
 # 봇 관련 API 명세서
-**최신개정일:** 2025-08-27
+**최신개정일:** 2026-09-20
 
 # API 구조
 
@@ -22,6 +22,30 @@
 - **Status Codes**:
   - `500 Internal Server Error`: 예기치 못한 오류
   - `504 Gateway Timeout`: 봇이 시간 안에 응답하지 않음
+
+---
+
+## Send Developer Contact
+
+- **Method**: `POST`
+- **URL**: `/api/bot/discord/developer/contact`
+- 홈페이지에서 접수한 개발자 문의를 RabbitMQ를 통해 설정된 디스코드 채널로 전송한다.
+
+- **Request Body** (JSON):
+
+```json
+{
+  "name": "홍길동",
+  "email": "example@snu.ac.kr",
+  "title": "문의 제목",
+  "content": "문의 내용"
+}
+```
+
+- **Status Codes**:
+  - `201 Created`: 문의 전송 요청 성공
+  - `422 Unprocessable Entity`: 요청값 형식 또는 길이가 올바르지 않음
+  - `503 Service Unavailable`: RabbitMQ가 비활성화됨
 
 ---
 
