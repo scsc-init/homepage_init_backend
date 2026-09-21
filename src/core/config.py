@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     enable_test_routes: bool = False
     notice_channel_id: int
     grant_channel_id: int
+    developer_contact_channel_id: int
     w_html_dir: str = "static/w/"
     db_name: str = "main_db"
     db_user: str

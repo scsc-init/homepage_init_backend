@@ -4,7 +4,11 @@ from .article import (
     BodyUpdateArticle,
 )
 from .board import BoardServiceDep, BodyCreateBoard, BodyUpdateBoard
-from .bot import BodySendMessageToID, BotServiceDep
+from .bot import (
+    BodySendDeveloperContact,
+    BodySendMessageToID,
+    BotServiceDep,
+)
 from .comment import BodyCreateComment, BodyUpdateComment, CommentServiceDep
 from .file import FileServiceDep
 from .key_value import KvServiceDep, KvUpdateBody
