@@ -2,7 +2,7 @@ from typing import Annotated
 
 import httpx
 from fastapi import Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 from src.amqp import mq_client
 from src.core import get_settings, logger
@@ -11,6 +11,13 @@ from src.core import get_settings, logger
 class BodySendMessageToID(BaseModel):
     id: int
     content: str = Field(..., min_length=1, max_length=2000)
+
+
+class BodySendDeveloperContact(BaseModel):
+    name: str = Field(..., min_length=1, max_length=50)
+    email: EmailStr
+    title: str = Field(..., min_length=1, max_length=100)
+    content: str = Field(..., min_length=1, max_length=1500)
 
 
 class BotService:
@@ -38,6 +45,35 @@ class BotService:
             raise HTTPException(status_code=503, detail="RabbitMQ is disabled")
         await mq_client.send_discord_bot_request_no_reply(
             action_code=1002, body=body.model_dump()
+        )
+
+    async def send_developer_contact(self, body: BodySendDeveloperContact):
+        if not mq_client:
+            raise HTTPException(status_code=503, detail="RabbitMQ is disabled")
+
+        await mq_client.send_discord_bot_request_no_reply(
+            action_code=1002,
+            body={
+                "channel_id": get_settings().developer_contact_channel_id,
+                "content": "새로운 개발자 문의가 도착했습니다.",
+                "embed": {
+                    "title": body.title,
+                    "description": body.content,
+                    "color": 0x5865F2,
+                    "fields": [
+                        {
+                            "name": "문의자",
+                            "value": body.name,
+                            "inline": True,
+                        },
+                        {
+                            "name": "회신 이메일",
+                            "value": str(body.email),
+                            "inline": True,
+                        },
+                    ],
+                },
+            },
         )
 
     async def get_status(self):
