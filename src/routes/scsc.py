@@ -45,5 +45,5 @@ async def download_scsc_global_status_backup(
     return FileResponse(
         path=backup_path,
         filename=backup_path.name,
-        media_type="application/sql",
+        media_type="application/gzip",
     )

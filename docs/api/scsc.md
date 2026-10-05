@@ -1,5 +1,5 @@
 # SCSC 전역 상태 관련 DB, API 명세서
-**최신개정일:** 2025-07-01
+**최신개정일:** 2026-10-05
 
 # DB 구조
 [./common.md](./common.md) 참고
@@ -88,7 +88,7 @@ status는 ('recruiting', 'active', 'inactive') 중 하나
 
 * **Method**: `POST`
 * **URL**: `/api/executive/scsc/global/status/backup`
-* **설명**: 현재 DB 상태를 백업한 뒤 `.sql` 파일로 내려받습니다.
+* **설명**: 현재 DB 상태(`pg_dump` SQL)와 `static` 폴더를 함께 `.tar.gz` 파일로 백업한 뒤 내려받습니다.
 
 * **Status Codes**:
   * `200 OK` - 백업 파일 다운로드 성공
@@ -99,11 +99,17 @@ status는 ('recruiting', 'active', 'inactive') 중 하나
 * **응답 형식**:
 
 ```http
-Content-Type: application/sql
+Content-Type: application/gzip
 ```
 
 * **백업 파일 위치**:
   * 서버 내부 `logs/db_backups` 디렉터리에 생성됩니다.
   * 파일명에는 DB 이름, 연도, 학기, 상태, 생성 시각이 포함됩니다.
+
+* **백업 파일 구성**:
+  * `db.sql` - `pg_dump` 결과 (`--no-owner --clean --if-exists`)
+  * `static/` - 업로드된 파일 폴더
+
+* **백업 적용 방법**: 프로젝트 루트에서 `./script/restore_backup.sh <백업파일.tar.gz>`를 실행합니다.
 
 ---
