@@ -3,9 +3,9 @@
 SCSC 홈페이지 Main BE 문서
 
 > 최초작성일: 2025-04-30  
-> 최신개정일: 2026-09-20  
-> 최신개정자: 김도현  
-> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com), [최정원](jwchoi915@snu.ac.kr)  
+> 최신개정일: 2026-10-05
+> 최신개정자: 김지인  
+> 작성자: [강명석](tomskang@naver.com), 이한경, [윤영우](dan.yun0821@gmail.com), [최정원](jwchoi915@snu.ac.kr) , 김도현, 김지인
 
 ## 브랜치
 
@@ -115,6 +115,18 @@ uv pip compile pyproject.toml -o requirements.txt --no-deps
 DB 및 연관된 데이터 파일을 모두 삭제합니다.(실행 후 DB 파일을 다시 생성할 필요가 있습니다. 단, docker compose 실행 시에는 DB 파일을 체크하고 없을 시 자동으로 entry에서 생성하므로, 수동으로 파일을 생성할 필요는 없습니다.)  
 
 `./script/clear_db.sh`를 실행합니다. macOS의 경우 대신 `./script/clear_db_mac.sh`를 실행합니다. 
+
+### DB 백업 및 복원
+
+백업은 `POST /api/executive/scsc/global/status/backup` 호출 시, 그리고 학기 상태 변경 직전에 자동으로 생성됩니다. 백업 파일은 `logs/db_backups/`에 `.tar.gz`로 저장되며, `db.sql`(`pg_dump` 결과)과 `static/` 폴더를 함께 포함합니다.
+
+백업 파일을 적용하려면 docker compose로 `db` 컨테이너가 실행 중인 상태에서 프로젝트 루트에서 다음을 실행합니다.
+
+```bash
+./script/restore_backup.sh <백업파일.tar.gz>
+```
+
+현재 DB를 백업 내용으로 덮어쓰고, `static/` 폴더를 백업본으로 교체합니다. 기존 `static/` 파일은 `static_before_restore_<시각>/`에 보관됩니다. `--force` 옵션을 주면 확인 질문 없이 진행합니다. 복원 후 `docker compose restart backend`로 백엔드를 재시작합니다.
 
 ## Tests
 Pytest는 파이썬 테스트 러너로, 이 프로젝트의 모든 API/서비스 시나리오를 자동으로 검증합니다. 다음 명령어를 통해 pytest를 실행시킵니다.

@@ -65,6 +65,7 @@ if get_settings().cors_all_accept:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
     )
 else:
     app.add_middleware(
@@ -73,6 +74,7 @@ else:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
     )
 
 # Custom middleware follows
