@@ -48,5 +48,5 @@ ENV PATH="/app/.venv/bin:$PATH"
 WORKDIR /app
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -fsS http://localhost:8080/health || exit 1
+    CMD curl -fsS http://localhost:8080/api/health || exit 1
 

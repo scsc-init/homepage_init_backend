@@ -5,6 +5,7 @@ data/
 
 # user uploaded files
 static/
+static_before_restore_*/
 
 # private files
 ignoredir/

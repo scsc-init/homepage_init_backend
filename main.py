@@ -65,6 +65,7 @@ if get_settings().cors_all_accept:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
     )
 else:
     app.add_middleware(
@@ -73,6 +74,7 @@ else:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Content-Disposition"],
     )
 
 # Custom middleware follows
@@ -86,7 +88,7 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 app.include_router(root_router)
 
 
-@app.get("/health", include_in_schema=False)
+@app.get("/api/health", include_in_schema=False)
 async def health_check():
     return {"status": "ok"}
 
